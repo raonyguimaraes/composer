@@ -28,7 +28,8 @@ export class ModalService {
         this.onClose.next();
     }
 
-    public fromComponent<T>(component: { new (...args: any[]): T; }, config?: Partial<ModalOptions>): T {
+    public fromComponent<T>(component: { new (...args: any[]): T; },
+                            config?: Partial<ModalOptions>): T {
 
         this.close();
 

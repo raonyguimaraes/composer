@@ -1,6 +1,9 @@
 import {ErrorHandler, NgModule} from "@angular/core";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {BrowserModule} from "@angular/platform-browser";
+import {PublishModalComponent} from "app/core/modals/publish-modal/publish-modal.component";
+import {NgStringPipesModule} from "../../../node_modules/ngx-pipes/src/app/pipes/string/index";
+import {AuthModule} from "../auth/auth.module";
 import {GettingStartedComponent} from "../components/onboarding/getting-started.component";
 import {NewFileTabComponent} from "../components/onboarding/new-file.component";
 import {WelcomeTabComponent} from "../components/onboarding/welcome.component";
@@ -9,13 +12,15 @@ import {LayoutModule} from "../layout/layout.module";
 import {PlatformAPI} from "../services/api/platforms/platform-api.service";
 import {GuidService} from "../services/guid.service";
 import {ToolEditorModule} from "../tool-editor/tool-editor.module";
-import {ModalService} from "../ui/modal/modal.service";
 import {UIModule} from "../ui/ui.module";
 import {WorkflowEditorModule} from "../workflow-editor/workflow-editor.module";
+import {ErrorReportComponent} from "./error-report/error-report.component";
+import {ModalErrorHandler} from "./error-report/modal-error-handler";
 import {LayoutTabContentComponent} from "./layout-tab-content/layout-tab-content.component";
 import {LayoutComponent} from "./layout/layout.component";
 import {LogoComponent} from "./logo/logo.component";
 import {AddSourceModalComponent} from "./modals/add-source-modal/add-source-modal.component";
+import {CreateAppModalComponent} from "./modals/create-app-modal/create-app-modal.component";
 import {SendFeedbackModalComponent} from "./modals/send-feedback-modal/send-feedback.modal.component";
 import {AppsPanelComponent} from "./panels/apps-panel/apps-panel.component";
 import {MyAppsPanelComponent} from "./panels/my-apps-panel/my-apps-panel.component";
@@ -25,13 +30,9 @@ import {PublicAppsPanelComponent} from "./panels/public-apps-panel/public-apps-p
 import {WebWorkerBuilderService} from "./web-worker/web-worker-builder.service";
 import {SettingsButtonComponent} from "./workbox/settings-button.component";
 import {WorkboxComponent} from "./workbox/workbox.component";
-import {AuthModule} from "../auth/auth.module";
-import {ModalErrorHandler} from "./error-report/modal-error-handler";
-import {ErrorReportComponent} from "./error-report/error-report.component";
-import {CreateAppModalComponent} from "./modals/create-app-modal/create-app-modal.component";
-import {NgStringPipesModule} from "../../../node_modules/ngx-pipes/src/app/pipes/string/index";
 import {WorkboxService} from "./workbox/workbox.service";
-import {PublishModalComponent} from "app/core/modals/publish-modal/publish-modal.component";
+import {IpcService} from "../services/ipc.service";
+import { PlatformCredentialsModalComponent } from './modals/platform-credentials-modal/platform-credentials-modal.component';
 
 @NgModule({
     entryComponents: [
@@ -39,7 +40,8 @@ import {PublishModalComponent} from "app/core/modals/publish-modal/publish-modal
         SendFeedbackModalComponent,
         ErrorReportComponent,
         CreateAppModalComponent,
-        PublishModalComponent
+        PublishModalComponent,
+        PlatformCredentialsModalComponent,
     ],
     declarations: [
         LayoutComponent,
@@ -59,7 +61,8 @@ import {PublishModalComponent} from "app/core/modals/publish-modal/publish-modal
         SendFeedbackModalComponent,
         ErrorReportComponent,
         CreateAppModalComponent,
-        PublishModalComponent
+        PublishModalComponent,
+        PlatformCredentialsModalComponent
     ],
     exports: [
         LogoComponent,
@@ -69,7 +72,6 @@ import {PublishModalComponent} from "app/core/modals/publish-modal/publish-modal
         GuidService,
         WebWorkerBuilderService,
         WorkboxService,
-        ModalService,
         PlatformAPI,
         {provide: ErrorHandler, useClass: ModalErrorHandler}
     ],

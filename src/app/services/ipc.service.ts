@@ -3,8 +3,6 @@ import {AsyncSubject} from "rxjs/AsyncSubject";
 import {Subject} from "rxjs/Subject";
 import {GuidService} from "./guid.service";
 
-const {ipcRenderer} = window["require"]("electron");
-
 enum RequestType {
     Once,
     Watch
@@ -32,6 +30,7 @@ export type IPCRoute =
 @Injectable()
 export class IpcService {
 
+    private ipcRenderer = window["require"]("electron").ipcRenderer;
     private pendingRequests: {
         [id: string]: {
             type: RequestType,
@@ -41,7 +40,7 @@ export class IpcService {
     } = {};
 
     constructor(private guid: GuidService, @Optional() private zone: NgZone) {
-        ipcRenderer.on("data-reply", (sender, response) => {
+        this.ipcRenderer.on("data-reply", (sender, response) => {
 
             // console.debug("Data reply received", response.id, response);
 
@@ -86,7 +85,7 @@ export class IpcService {
 
         // console.debug("Sending", message, "(", messageID, ")", data);
 
-        ipcRenderer.send("data-request", {
+        this.ipcRenderer.send("data-request", {
             id: messageID,
             message,
             data
@@ -103,7 +102,7 @@ export class IpcService {
             stream: new Subject<any>()
         };
 
-        ipcRenderer.send("data-request", {
+        this.ipcRenderer.send("data-request", {
             id: messageID,
             message,
             data
@@ -113,6 +112,6 @@ export class IpcService {
     }
 
     public notify(message: any): void {
-        ipcRenderer.send("notification", {message});
+        this.ipcRenderer.send("notification", {message});
     }
 }

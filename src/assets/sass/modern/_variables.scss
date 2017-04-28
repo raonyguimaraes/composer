@@ -62,6 +62,11 @@ $btn-secondary-color: $text-color;
 $btn-border-hover-color: $input-border-color;
 $btn-gradient-active: true;
 
+// ----- Alerts -----
+$alert-border-radius: $border-radius;
+$alert-padding-x: $input-padding-x;
+$alert-padding-y: $input-padding-y;
+
 // ----- Links -----
 $link-color: $brand-primary;
 $link-hover-color: lighten($brand-primary, 10%);

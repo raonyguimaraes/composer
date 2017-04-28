@@ -12,13 +12,14 @@ import {CWLModule} from "./cwl/cwl.module";
 import {EditorCommonModule} from "./editor-common/editor-common.module";
 import {DomEventService} from "./services/dom/dom-event.service";
 import {GuidService} from "./services/guid.service";
-import {IpcService} from "./services/ipc.service";
 import {SettingsService} from "./services/settings/settings.service";
 import {UserPreferencesService} from "./services/storage/user-preferences.service";
 import {TemplateProviderService} from "./services/template-provider.service";
 import {ToolEditorModule} from "./tool-editor/tool-editor.module";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
+import {IpcService} from "./services/ipc.service";
+import {ModalService} from "./ui/modal/modal.service";
 import {CtHttp} from "./http/ct-http.service";
 
 @NgModule({
@@ -27,8 +28,9 @@ import {CtHttp} from "./http/ct-http.service";
         TemplateProviderService,
         UserPreferencesService,
         DomEventService,
-        GuidService,
+        ModalService,
         IpcService,
+        GuidService,
         SettingsService,
         PlatformConnectionService,
         PlatformAPIGatewayService,

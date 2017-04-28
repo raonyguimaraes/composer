@@ -5,15 +5,15 @@ import * as YAML from "js-yaml";
 import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
+import {AuthService} from "../../auth/auth/auth.service";
 import {noop} from "../../lib/utils.lib";
 import {PlatformAPI} from "../../services/api/platforms/platform-api.service";
+import {PlatformAppEntry} from "../../services/api/platforms/platform-api.types";
 import {IpcService} from "../../services/ipc.service";
 import {ConnectionState, CredentialsEntry} from "../../services/storage/user-preferences-types";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import Platform = NodeJS.Platform;
-import {AuthService} from "../../auth/auth/auth.service";
-import {PlatformAppEntry} from "../../services/api/platforms/platform-api.types";
 
 @Injectable()
 export class DataGatewayService {
