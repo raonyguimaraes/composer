@@ -4,6 +4,9 @@ import {SettingsService} from "../../services/settings/settings.service";
 import {CredentialsEntry} from "../../services/storage/user-preferences-types";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
+import {ModalService} from "../../ui/modal/modal.service";
+import {CredentialsFormComponent} from "../credentials-form/credentials-form.component";
+import {PlatformCredentialsModalComponent} from "../../core/modals/platform-credentials-modal/platform-credentials-modal.component";
 
 type ViewMode = "auth" | "keyBindings" | "cache";
 
@@ -22,17 +25,17 @@ type ViewMode = "auth" | "keyBindings" | "cache";
             <div class="document-controls pr-1">
 
                 <!--Add Another-->
-                <button (click)="creds.addEntry()"
-                        class="btn btn-secondary text-inherit"
-                        type="button"> Add an Account
-                </button>
+                <!--<button (click)="creds.addEntry()"-->
+                <!--class="btn btn-secondary text-inherit"-->
+                <!--type="button"> Add an Account-->
+                <!--</button>-->
 
-                <!--Save-->
-                <button (click)="creds.submit()"
-                        [disabled]="creds.form.invalid"
-                        class="btn btn-secondary text-inherit"
-                        type="button"> Apply Changes
-                </button>
+                <!--&lt;!&ndash;Save&ndash;&gt;-->
+                <!--<button (click)="creds.submit()"-->
+                <!--[disabled]="creds.form.invalid"-->
+                <!--class="btn btn-secondary text-inherit"-->
+                <!--type="button"> Apply Changes-->
+                <!--</button>-->
 
             </div>
 
@@ -40,9 +43,13 @@ type ViewMode = "auth" | "keyBindings" | "cache";
 
         <ct-line-loader *ngIf="auth.authenticationProgress | async"></ct-line-loader>
 
-        <ct-credentials-form #creds [credentials]="credentials"
-                             (onSubmit)="preferences.setCredentials($event)"
-                             class="m-2"></ct-credentials-form>
+        <ct-form-panel class="m-2">
+            <div class="tc-header">Authentication</div>
+            <div class="tc-body">
+                <button class="btn btn-secondary" (click)="openCredentialsForm()">Edit</button>
+            </div>
+        </ct-form-panel>
+
     `
 })
 export class SettingsComponent extends DirectiveBase {
@@ -52,9 +59,16 @@ export class SettingsComponent extends DirectiveBase {
 
     constructor(private settings: SettingsService,
                 public preferences: UserPreferencesService,
+                public modal: ModalService,
                 public auth: AuthService) {
 
         super();
+    }
+
+    openCredentialsForm() {
+        this.modal.fromComponent(PlatformCredentialsModalComponent, {
+            title: "Edit Platform Connection"
+        });
     }
 
     ngOnInit() {

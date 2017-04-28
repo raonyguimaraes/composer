@@ -45,10 +45,16 @@
 .selectize-control {
 
     &.single, &.multi {
+
         .selectize-input {
+            color: $input-color;
             background: $input-bg;
             border: $input-btn-border-width solid $input-border-color;
             box-shadow: none;
+
+            .has-warning & {
+                border-color: $brand-warning;
+            }
 
             &.dropdown-active::before,
             &.input-active {

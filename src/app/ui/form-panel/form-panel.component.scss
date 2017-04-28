@@ -1,6 +1,8 @@
 @import "../../../assets/sass/variables";
 
 :host {
+    display: block;
+
     &.borderless .form-section {
         border: none;
         padding: 0 !important;

@@ -1,147 +1,169 @@
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from "@angular/core";
-import {AbstractControl, FormArray, FormControl, FormGroup, Validators} from "@angular/forms";
+import {Component, EventEmitter, Input, Output} from "@angular/core";
+import {Http, Headers} from "@angular/http";
+import {AbstractControl, FormControl, FormGroup, Validators} from "@angular/forms";
 import {ConnectionState, CredentialsEntry} from "app/services/storage/user-preferences-types";
 import {AuthService} from "../../auth/auth/auth.service";
+import {SystemService} from "../../platform-providers/system.service";
+import {Observable} from "rxjs/Observable";
 
 @Component({
     selector: "ct-credentials-form",
     styleUrls: ["./credentials-form.component.scss"],
     template: `
-        <form class="auth-form" data-test="form" (ngSubmit)="submit()" [formGroup]="form">
+        <form class="auth-form m-2" data-test="form" (ngSubmit)="submit()" [formGroup]="form">
 
-            <div class="row">
-                <label class="strong col-xs-5">Seven Bridges Platform URL</label>
-                <label class="strong col-xs-6">Developer Token</label>
+            <div class="row form-group" [class.has-warning]="form.get('url').invalid">
+                <label class="col-xs-4 col-form-label">Platform:</label>
+                <div class="col-xs-8">
+                    <ct-auto-complete #url
+                                      [mono]="true"
+                                      [create]="true"
+                                      [sortField]="false"
+                                      formControlName="url"
+                                      [options]="platformList"
+                                      data-test="platform-field"
+                    ></ct-auto-complete>
+                </div>
             </div>
 
-            <div *ngFor="let pair of getPairControls(); let i = index;"
-                 class="row mb-1"
-                 data-test="credentials-entry">
+            <div class="row form-group" [class.has-warning]="form.get('token').invalid">
+                <label class="col-xs-4 col-form-label">Developer Token:</label>
+                <div class="col-xs-8  form-inline token-form">
+                    <input data-test="token-field"
+                           [formControl]="form.get('token')"
+                           class="form-control token-control"
+                           type="password"/>
 
-                <div class="col-xs-5" [class.has-danger]="pair.dirty && pair.get('url').invalid">
-
-                    <input class="form-control"
-                           data-test="url-field"
-                           [class.has-warning]="pair.get('url').invalid"
-                           [formControl]="pair.get('url')" (blur)="expandPlatformUrl(pair.get('url'))"/>
-
-                    <div class="form-control-feedback" *ngIf="pair.dirty && pair.get('url').errors?.pattern">
-                        Invalid Platform Name. Try with <i>“https://igor.sbgenomics.com”</i>.
-                    </div>
-                </div>
-
-                <div class="col-xs-5 pr-0" [class.has-danger]="pair.dirty && pair.get('token').invalid">
-                    <input data-test="token-field" #tin class="form-control" type="password" [formControl]="pair.get('token')"/>
-
-                    <div class="form-control-feedback" *ngIf="pair.dirty && pair.get('token').errors?.length">
-                        The Authentication Key must be 32 characters long.
-                    </div>
-                </div>
-
-                <div class="col-xs-2 deep-unselectable">
-
-                    <!--Eye icon that covers and uncovers the password-->
-                    <button class="btn btn-icon" data-test="token-cover-toggle" type="button"
-                            (click)="tin.type = tin.type === 'text' ? 'password' : 'text'">
-                        <i class="fa" [class.fa-eye]="tin.type === 'text'" [class.fa-eye-slash]="tin.type === 'password'"></i>
+                    <button class="ml-1 btn btn-secondary" type="button"
+                            [disabled]="form.get('url').invalid"
+                            (click)="openTokenPage()">Get Token
                     </button>
-
-                    <!--Thrash can (delete button)-->
-                    <button *ngIf="removable" class="btn btn-icon" data-test="delete-handle" type="button" (click)="removeIndex(i)">
-                        <i class="fa fa-trash"></i>
-                    </button>
-
-
                 </div>
+
+            </div>
+
+            <div class="alert alert-info" *ngIf="form.hasError('isValidating')">
+                Validating...
+            </div>
+
+            <div class="alert alert-warning pl-2" *ngIf="form.dirty && form.invalid && !form.hasError('isValidating')">
+
+                <ul>
+                    <li *ngIf="form.hasError('tokenCheck')">
+                        Token is not valid for selected platform.
+                    </li>
+
+                    <li *ngIf="form.get('url').hasError('name')">
+                        Given platform does not exist.
+                    </li>
+                    <li *ngIf="form.get('token').hasError('minlength') 
+                                || form.get('token').hasError('required')
+                                || form.get('token').hasError('maxlength')">
+                        Developer token should be 32 characters long.
+                    </li>
+                </ul>
             </div>
         </form>
     `
 })
-export class CredentialsFormComponent implements OnInit, OnChanges {
+export class CredentialsFormComponent {
 
     /** Whether entries can be removed from the list. Disabling is useful when using this component outside the settings page. */
     @Input() removable = true;
 
     @Input() credentials: Partial<CredentialsEntry>[] = [];
 
+    @Input() form: FormGroup;
+
     /** Emits an event each time the form is submitted. */
     @Output() onSubmit = new EventEmitter<CredentialsEntry[]>();
 
-    /** Holds the main form that the component operates on. */
-    form = new FormGroup({pairs: new FormArray([])});
+    isValidating = false;
 
-    constructor() {
+    platformList = [
+        {text: "Seven Bridges (Default)", value: "igor"},
+        {text: "Seven Bridges (Google Cloud Platform)", value: "gcp"},
+        {text: "Seven Bridges (EU)", value: "eu"},
+        {text: "Cancer Genomics Cloud", value: "cgc"},
+        {text: "Cavatica", value: "pgc"},
+        {text: "Blood Profiling Atlas", value: "bpa"},
+    ];
+
+    constructor(private system: SystemService, private http: Http) {
+
     }
 
     ngOnInit() {
-        this.updateFormArrayWithCredentials();
-    }
-
-    ngOnChanges(changes: SimpleChanges): void {
-        if (this.credentials) {
-            this.updateFormArrayWithCredentials();
-        }
-    }
-
-    private updateFormArrayWithCredentials() {
-        this.form.setControl("pairs", new FormArray([]));
-        this.addEntry();
-
-        if (this.credentials.length > 1) {
-            for (let i = 0; i < this.credentials.length - 1; i++) {
-                this.addEntry();
-            }
+        if (!this.form) {
+            this.form = new FormGroup({});
         }
 
-        this.form.get("pairs").patchValue(this.credentials || []);
-    }
 
-    /**
-     * Inserts a new key-token pair to the end of the form
-     */
-    addEntry(): void {
-
-        const pairs = this.form.get("pairs") as FormArray;
-
-        (this.form.get("pairs") as FormArray).push(new FormGroup({
-
-            url: new FormControl("https://igor.sbgenomics.com",
-                [Validators.required, Validators.pattern("https://[^/?]+\.[^.]+\\.sbgenomics\\.com")]),
-
-            token: new FormControl("", [Validators.required, (control) => {
-                if (String(control.value).length === 32) {
-                    return null;
+        this.form.addControl("url", new FormControl("igor", [
+            Validators.required,
+            (ctrl: AbstractControl) => {
+                const val = ctrl.value || "";
+                //
+                if (this.platformList.map(e => e.value).indexOf(val) === -1
+                    && !val.endsWith("-vayu")
+                    && !val.startsWith("staging-")) {
+                    return {name: true};
                 }
-                return {length: "Authentication token must be 32 characters long."};
-            }])
-        }));
-    }
 
-    submit() {
-        if (this.form.invalid) {
-            return;
-        }
+                return null;
+            }
 
-        this.applyValues();
-    }
+        ]));
 
-    /**
-     * Removes a url-token pair at the given index
-     * @param i Index of the pair to remove
-     */
-    removeIndex(i: number): void {
-        (this.form.get("pairs") as FormArray).removeAt(i);
-    }
+        this.form.addControl("token", new FormControl("", [
+            Validators.required,
+            Validators.minLength(32),
+            Validators.maxLength(32)
+        ]));
 
-    /**
-     * Checks if the given control value matches some patterns for vayu and platform names
-     * and updates the control values if the do
-     * @param control
-     */
-    expandPlatformUrl(control: AbstractControl): void {
-        if (!/^https?:\/\//gi.test(control.value) && control.value.length > 2) {
-            control.setValue(`https://${control.value}.sbgenomics.com`);
-        }
+        // this.form.valueChanges.subscribe(() => {
+        //     this.isValidating = true;
+        //     this.form.setErrors({validating: true});
+        // });
+
+        this.form.valueChanges
+            .filter(() => this.form.valid)
+            .do(() => {
+                this.form.setErrors({isValidating: true});
+            })
+            .debounceTime(150).map(values => {
+            const token   = values.token;
+            let subdomain = "api";
+            if (values.url !== "igor" && !values.url.endsWith("-vayu")) {
+                subdomain = values.url + "-api";
+            }
+
+            let url = `https://${subdomain}.sbgenomics.com`;
+            if (values.url.endsWith("-vayu")) {
+                url += ":27445";
+            }
+            url += "/v2/user";
+
+            return {url, token};
+        }).flatMap(vals => {
+            return this.http.get(vals.url, {
+                headers: new Headers({
+                    "X-SBG-Auth-Token": vals.token
+                })
+            }).catch(ex => {
+                return Observable.of(ex);
+            });
+        }).subscribe((res) => {
+            if (res.status === 200) {
+                this.form.setErrors(null);
+            } else {
+                this.form.setErrors({
+                    tokenCheck: true
+                });
+            }
+        }, err => {
+            console.log("Got the api error");
+        });
     }
 
     /**
@@ -160,8 +182,9 @@ export class CredentialsFormComponent implements OnInit, OnChanges {
         this.onSubmit.emit(values);
     }
 
-    getPairControls(): AbstractControl[] {
-        return (this.form.get("pairs") as FormArray).controls;
+    openTokenPage() {
+        const url = `https://${this.form.get("url").value}.sbgenomics.com/developer#token`;
+        this.system.openLink(url);
     }
 
 }

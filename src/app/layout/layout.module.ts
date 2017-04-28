@@ -8,7 +8,7 @@ import {StatusBarComponent} from "./status-bar/status-bar.component";
 import {UIModule} from "../ui/ui.module";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {ActionBarComponent} from "./action-bar/action-bar.component";
-import { TabLoaderComponent } from "./tab-loader/tab-loader.component";
+import {TabLoaderComponent} from "./tab-loader/tab-loader.component";
 import {ErrorBarComponent} from "./error-bar/error-bar.component";
 import {ErrorBarService} from "./error-bar/error-bar.service";
 import {CredentialsFormComponent} from "./credentials-form/credentials-form.component";
@@ -29,6 +29,9 @@ import {CredentialsFormComponent} from "./credentials-form/credentials-form.comp
         StatusBarComponent,
         TabLoaderComponent,
         ErrorBarComponent,
+        CredentialsFormComponent,
+    ],
+    entryComponents: [
         CredentialsFormComponent,
     ],
     exports: [

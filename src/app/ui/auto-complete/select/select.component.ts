@@ -1,6 +1,6 @@
 import {
     Component, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, Input,
-    OnDestroy
+    OnDestroy, ChangeDetectorRef
 } from "@angular/core";
 import * as jQuery from "jquery";
 import "selectize";
@@ -20,7 +20,7 @@ export class SelectComponent implements AfterViewInit, OnDestroy {
     private options = [];
 
     @Input("options")
-    set setOptions(opt: any []) {
+    set setOptions(opt: any[]) {
 
         // If options is array of primitive values ["1","2","3"] instead of ([{text:"", value:""}])
         if (opt.length && ObjectHelper.isPrimitiveValue(opt[0])) {
@@ -121,12 +121,22 @@ export class SelectComponent implements AfterViewInit, OnDestroy {
     @Input()
     public labelField = "text";
 
+    @Input()
+    sortField = "text";
+
+    @Input()
+    sortDirection = "asc";
+
     @ViewChild("el", {read: ElementRef})
     private el;
 
     private component = null;
 
-    protected updateOptions(items: any []) {
+    constructor(private cdr: ChangeDetectorRef){
+
+    }
+
+    protected updateOptions(items?: any []) {
         if (this.component) {
 
             // Clear dropdown options and load new ones
@@ -136,6 +146,10 @@ export class SelectComponent implements AfterViewInit, OnDestroy {
             this.component.userOptions = [];
             // Refresh dropdown list
             this.component.refreshOptions(false);
+
+            if (items || !Array.isArray(items)) {
+                items = [items];
+            }
 
             if (items && Array.isArray(items)) {
                 items.forEach((item) => {
@@ -183,10 +197,10 @@ export class SelectComponent implements AfterViewInit, OnDestroy {
             selectOnTab: this.selectOnTab,
             valueField: this.valueField,
             labelField: this.labelField,
-            sortField: {
-                field: this.labelField,
-                direction: "asc"
-            },
+            sortField: this.sortField ? {
+                field: this.sortField,
+                direction: this.sortDirection || "asc"
+            } : undefined,
             onChange: this.onChange.bind(this)
 
         })[0].selectize;
@@ -201,6 +215,8 @@ export class SelectComponent implements AfterViewInit, OnDestroy {
     };
 
     ngOnDestroy(): void {
-        this.component.destroy();
+        if (this.component) {
+            this.component.destroy();
+        }
     }
 }
