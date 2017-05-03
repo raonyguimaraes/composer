@@ -18,8 +18,9 @@ import {TemplateProviderService} from "./services/template-provider.service";
 import {ToolEditorModule} from "./tool-editor/tool-editor.module";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
-import {IpcService} from "./services/ipc.service";
 import {ModalService} from "./ui/modal/modal.service";
+import {PlatformAPI} from "app/auth/api/platform-api";
+import {IpcService} from "./services/ipc.service";
 import {CtHttp} from "./http/ct-http.service";
 
 @NgModule({
@@ -30,6 +31,7 @@ import {CtHttp} from "./http/ct-http.service";
         DomEventService,
         ModalService,
         IpcService,
+        PlatformAPI,
         GuidService,
         SettingsService,
         PlatformConnectionService,
