@@ -5,7 +5,7 @@ import * as YAML from "js-yaml";
 import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
-import {AuthService} from "../../auth/auth/auth.service";
+import {OldAuthService} from "../../auth/auth/auth.service";
 import {noop} from "../../lib/utils.lib";
 import {PlatformAPI} from "../../services/api/platforms/platform-api.service";
 import {PlatformAppEntry} from "../../services/api/platforms/platform-api.types";
@@ -36,7 +36,7 @@ export class DataGatewayService {
                 private api: PlatformAPI,
                 private http: Http,
                 private modal: ModalService,
-                private auth: AuthService,
+                private auth: OldAuthService,
                 private apiGateway: PlatformAPIGatewayService,
                 private ipc: IpcService) {
     }
@@ -125,16 +125,16 @@ export class DataGatewayService {
 
     searchUserProjects(term: string, limit = 20): Observable<{ hash: string, results: PlatformAppEntry[] }[]> {
         return this.auth.connections.take(1).flatMap(credentials => {
-            const hashes = credentials.map(c => c.hash);
+            const hashes   = credentials.map(c => c.hash);
             const requests = hashes.map(hash => {
 
-                    const platform = this.apiGateway.forHash(hash);
+                const platform = this.apiGateway.forHash(hash);
 
-                    return platform ? platform.searchUserProjects(term, limit).map(results => ({results, hash}))
-                        : Observable.throw(
-                            new Error("Cannot get public apps because you are not connected to the necessary platform."));
+                return platform ? platform.searchUserProjects(term, limit).map(results => ({results, hash}))
+                    : Observable.throw(
+                        new Error("Cannot get public apps because you are not connected to the necessary platform."));
 
-                });
+            });
 
             return Observable.zip(...requests);
         });
@@ -282,6 +282,7 @@ export class DataGatewayService {
         if (nlen > hlen) {
             return 0;
         }
+
         if (nlen === hlen) {
             return 1;
         }
@@ -325,5 +326,14 @@ export class DataGatewayService {
 
     invalidateCache(key: string) {
         this.cacheInvalidation.next(key);
+    }
+
+    /**
+     *
+     * @param url
+     * @param token
+     */
+    getUserWithToken(url, token): Observable<any> {
+        return this.ipc.request("getUserByToken", {url, token});
     }
 }

@@ -10,6 +10,17 @@ $gradientDarken: 4%;
     border-radius: $btn-border-radius;
 }
 
+.btn:disabled {
+    color: $text-muted;
+    opacity: 1;
+}
+
+.btn-loader {
+    min-height: 2.25em;
+    position: relative;
+    padding: 0;
+}
+
 .btn-link {
     border: none;
     background: none;
@@ -24,7 +35,7 @@ $gradientDarken: 4%;
 }
 
 .btn-primary,
-.btn-primary:hover {
+.btn-primary:enabled:hover {
     border-color: $btn-primary-border-color;
 
     @if $btn-gradient-active {
@@ -37,7 +48,7 @@ $gradientDarken: 4%;
 }
 
 .btn-secondary,
-.btn-secondary:hover {
+.btn-secondary:enabled:hover {
 
     @if $btn-gradient-active {
         $gradientStop: darken($btn-secondary-bg, $gradientDarken);
@@ -47,4 +58,15 @@ $gradientDarken: 4%;
     } @else {
         background: $btn-secondary-bg;
     }
+}
+
+.btn-primary:disabled,
+.btn-primary:disabled:hover {
+    background: darken($btn-primary-bg, $gradientDarken);
+    border-color: $btn-primary-border-color;
+}
+
+.btn-secondary:disabled,
+.btn-secondary:disabled:hover {
+    background: darken($btn-secondary-bg, $gradientDarken);
 }

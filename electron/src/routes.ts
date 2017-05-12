@@ -1,7 +1,9 @@
 import * as SearchController from "./controllers/search.controller";
+import {RequestCallback} from "request";
 const fsController          = require("./controllers/fs.controller");
 const acceleratorController = require("./controllers/accelerator.controller");
 const resolver              = require("./schema-salad-resolver");
+import {PublicAPI} from "./controllers/public-api.controller";
 
 module.exports = {
 
@@ -35,6 +37,11 @@ module.exports = {
         }, err => {
             callback(err);
         });
+    },
+
+    getUserByToken: (data: { url, token }, callback: RequestCallback) => {
+        const api = new PublicAPI(data.url, data.token);
+        api.getUser(callback);
     },
 
     resolveContent: (data, callback) => {

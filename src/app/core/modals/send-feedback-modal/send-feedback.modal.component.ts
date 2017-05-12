@@ -144,7 +144,7 @@ export class SendFeedbackModalComponent {
     });
 
     @Input()
-    public feedbackPlatform: CredentialsEntry = null;
+    public feedbackPlatform: CredentialsEntry | any = null;
 
     constructor(private modal: ModalService, private formBuilder: FormBuilder, private errorBar: ErrorBarService,
                 private apiGateway: PlatformAPIGatewayService) {

@@ -13,7 +13,7 @@ import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 import {PlatformAppEntry} from "../../data-gateway/data-types/platform-api.types";
 import {WorkboxService} from "../../workbox/workbox.service";
 import {NavSearchResultComponent} from "../nav-search-result/nav-search-result.component";
-import {AuthService} from "../../../auth/auth/auth.service";
+import {OldAuthService} from "../../../auth/auth/auth.service";
 import {Observable} from "rxjs/Observable";
 
 @Component({
@@ -103,7 +103,7 @@ export class PublicAppsPanelComponent extends DirectiveBase implements AfterView
     constructor(private preferences: UserPreferencesService,
                 private cdr: ChangeDetectorRef,
                 private workbox: WorkboxService,
-                private auth: AuthService,
+                private auth: OldAuthService,
                 private dataGateway: DataGatewayService) {
         super();
 

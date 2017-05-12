@@ -6,7 +6,7 @@ import {Validation} from "cwlts/models/helpers/validation";
 import * as Yaml from "js-yaml";
 import {Observable} from "rxjs/Observable";
 import {ReplaySubject, Subject} from "rxjs/Rx";
-import {AuthService} from "../auth/auth/auth.service";
+import {OldAuthService} from "../auth/auth/auth.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
@@ -87,7 +87,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
                 private dataGateway: DataGatewayService,
                 private modal: ModalService,
                 private system: SystemService,
-                private auth: AuthService,
+                private auth: OldAuthService,
                 private errorBarService: ErrorBarService) {
 
         super();

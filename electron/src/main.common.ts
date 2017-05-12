@@ -11,17 +11,18 @@ function start(config: { devTools: boolean, url: string }) {
 
     router.start();
 
-    splash = new BrowserWindow({
-        width: 580,
-        height: 310,
-        frame: false,
-        show: false,
-        resizable: false
-    });
-    splash.loadURL(`file://${__dirname}/splash/index.html`);
-    splash.once("ready-to-show", () => {
-        splash.show();
-    });
+    // splash = new BrowserWindow({
+    //     width: 580,
+    //     height: 310,
+    //     frame: false,
+    //     show: false,
+    //     resizable: false
+    // });
+    // splash.loadURL(`file://${__dirname}/splash/index.html`);
+    // splash.once("ready-to-show", () => {
+    //     splash.show();
+    // })y
+
 
     win = new BrowserWindow({
         show: false
@@ -31,8 +32,8 @@ function start(config: { devTools: boolean, url: string }) {
     win.once("ready-to-show", () => {
         setTimeout(() => {
             win.show();
-            splash.destroy();
-            splash = undefined;
+            // splash.destroy();
+            // splash = undefined;
         }, 300);
     });
 

@@ -130,7 +130,7 @@ export class SelectComponent implements AfterViewInit, OnDestroy {
     @ViewChild("el", {read: ElementRef})
     private el;
 
-    private component = null;
+    protected component = null;
 
     constructor(private cdr: ChangeDetectorRef){
 

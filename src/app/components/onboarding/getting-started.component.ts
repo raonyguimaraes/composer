@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component} from "@angular/core";
 import {ModalService} from "../../ui/modal/modal.service";
 import {SendFeedbackModalComponent} from "../../core/modals/send-feedback-modal/send-feedback.modal.component";
 import {SystemService} from "../../platform-providers/system.service";
-import {AuthService} from "../../auth/auth/auth.service";
+import {OldAuthService} from "../../auth/auth/auth.service";
 import {CredentialsEntry} from "../../services/storage/user-preferences-types";
 
 @Component({
@@ -54,7 +54,7 @@ export class GettingStartedComponent {
     // FIXME Add correct url links
 
     constructor(private modal: ModalService,
-                private auth: AuthService,
+                private auth: OldAuthService,
                 private system: SystemService) {
     }
 

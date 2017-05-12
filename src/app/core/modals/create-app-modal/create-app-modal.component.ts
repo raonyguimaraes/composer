@@ -5,7 +5,7 @@ import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 import {SlugifyPipe} from "../../../../../node_modules/ngx-pipes/src/app/pipes/string/slugify";
 import {FormControl, Validators, FormGroup} from "@angular/forms";
-import {AuthService} from "../../../auth/auth/auth.service";
+import {OldAuthService} from "../../../auth/auth/auth.service";
 import {PlatformAPIGatewayService} from "../../../auth/api/platform-api-gateway.service";
 import {AppGeneratorService} from "../../../cwl/app-generator/app-generator.service";
 const {app, dialog} = window["require"]("electron").remote;

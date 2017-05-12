@@ -73,7 +73,7 @@ import { PlatformCredentialsModalComponent } from './modals/platform-credentials
         WebWorkerBuilderService,
         WorkboxService,
         PlatformAPI,
-        {provide: ErrorHandler, useClass: ModalErrorHandler}
+        // {provide: ErrorHandler, useClass: ModalErrorHandler}
     ],
     imports: [
         BrowserModule,

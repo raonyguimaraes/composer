@@ -11,7 +11,7 @@ import {StatusBarService} from "./status-bar.service";
         <!--Status & panel toggle button-->
         <span class="status-item status-buttons">
             <span class="btn-group">
-                <button class="sidebar-toggle btn btn-sm"
+                <button class="sidebar-toggle btn btn-sm" data-test="sidebar-toggle"
                         [class.active]="!layoutService.sidebarHidden"
                         (click)="layoutService.toggleSidebar()">
                     <i class="fa"

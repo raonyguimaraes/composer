@@ -6,7 +6,7 @@ import {noop} from "rxjs/util/noop";
 import "rxjs/add/observable/of";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 
-import {AuthService} from "../../auth/auth/auth.service";
+import {OldAuthService} from "../../auth/auth/auth.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import {SystemService} from "../../platform-providers/system.service";
 
@@ -21,7 +21,7 @@ describe("GettingStartedComponent", () => {
     let learnHowToLink: DebugElement;
     let getSupportButton: DebugElement;
     let systemServiceStub: Partial<SystemService>;
-    let authServiceStub: Partial<AuthService>;
+    let authServiceStub: Partial<OldAuthService>;
     let modalServiceStub: Partial<ModalService>;
 
     let detectChanges: () => void;
@@ -35,7 +35,7 @@ describe("GettingStartedComponent", () => {
     };
 
     const AuthServiceMock = {
-        connections: new ReplaySubject<CredentialsEntry[]>(1)
+        connections: new ReplaySubject<any[]>(1)
     };
 
     const SystemServiceMock = {
@@ -117,7 +117,7 @@ describe("GettingStartedComponent", () => {
                     provide: ModalService, useValue: ModalServiceMock
                 },
                 {
-                    provide: AuthService, useValue: AuthServiceMock
+                    provide: OldAuthService, useValue: AuthServiceMock
                 },
                 {
                     provide: SystemService, useValue: SystemServiceMock
@@ -137,7 +137,7 @@ describe("GettingStartedComponent", () => {
         getSupportButton = fixture.debugElement.query(By.css("[data-test='get-support-btn']"));
 
         systemServiceStub = fixture.debugElement.injector.get(SystemService);
-        authServiceStub = fixture.debugElement.injector.get(AuthService);
+        authServiceStub = fixture.debugElement.injector.get(OldAuthService);
         modalServiceStub = fixture.debugElement.injector.get(ModalService);
 
         // Change detection - this line is necessary when testing components with OnPush strategy
@@ -212,7 +212,7 @@ describe("GettingStartedComponent", () => {
 
     it("should open modal when click on 'Get support' button (credentialsMock2)", () => {
 
-        authServiceStub.connections.next(credentialsMockData2);
+        authServiceStub.connections.next(credentialsMockData2 as any);
 
         const spyOnOpenLink = spyOn(systemServiceStub, "openLink");
         const spyOnFromComponent = spyOn(modalServiceStub, "fromComponent").and.callThrough();

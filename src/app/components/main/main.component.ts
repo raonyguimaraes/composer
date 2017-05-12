@@ -1,11 +1,10 @@
 import {Component, ViewContainerRef, ViewEncapsulation} from "@angular/core";
 import {Observable} from "rxjs/Rx";
-import {AuthService} from "../../auth/auth/auth.service";
+import {OldAuthService} from "../../auth/auth/auth.service";
 import {StatusBarService} from "../../layout/status-bar/status-bar.service";
 import {SystemService} from "../../platform-providers/system.service";
 import {PlatformAPI} from "../../services/api/platforms/platform-api.service";
 import {GuidService} from "../../services/guid.service";
-import {IpcService} from "../../services/ipc.service";
 import {ContextService} from "../../ui/context/context.service";
 import {MarkdownService} from "../../ui/markdown/markdown.service";
 import {ModalService} from "../../ui/modal/modal.service";
@@ -39,7 +38,7 @@ export class MainComponent {
     constructor(modal: ModalService,
                 system: SystemService,
                 vcRef: ViewContainerRef,
-                auth: AuthService) {
+                auth: OldAuthService) {
 
         system.boot();
 

@@ -49,6 +49,7 @@
         "cwl-svg": "^0.0.31",
         "cwlts": "^1.13.2",
         "font-awesome": "^4.7.0",
+        "jailed": "^0.3.1",
         "jquery": "^3.2.0",
         "js-yaml": "^3.8.3",
         "markdown-it-lazy-headers": "^0.1.3",

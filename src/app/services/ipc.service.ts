@@ -2,6 +2,7 @@ import {Injectable, NgZone, Optional} from "@angular/core";
 import {AsyncSubject} from "rxjs/AsyncSubject";
 import {Subject} from "rxjs/Subject";
 import {GuidService} from "./guid.service";
+import {Observable} from "rxjs/Observable";
 
 enum RequestType {
     Once,
@@ -17,6 +18,7 @@ export type IPCRoute =
     | "hasDataCache"
     | "pathExists"
     | "putSetting"
+    | "getUserByToken"
     | "readDirectory"
     | "readFileContent"
     | "resolve"
@@ -37,7 +39,7 @@ export class IpcService {
             stream: Subject<any>,
             zone?: NgZone
         }
-    } = {};
+    }                   = {};
 
     constructor(private guid: GuidService, @Optional() private zone: NgZone) {
         this.ipcRenderer.on("data-reply", (sender, response) => {
@@ -74,7 +76,7 @@ export class IpcService {
         });
     }
 
-    public request(message: IPCRoute, data = {}, zone?: NgZone) {
+    public request(message: IPCRoute, data = {}, zone?: NgZone): Observable<any> {
         const messageID = this.guid.generate();
 
         this.pendingRequests[messageID] = {

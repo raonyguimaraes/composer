@@ -1,6 +1,6 @@
 import {Component, OnInit} from "@angular/core";
 import {Observable} from "rxjs/Observable";
-import {AuthService} from "../../../auth/auth/auth.service";
+import {OldAuthService} from "../../../auth/auth/auth.service";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
@@ -31,7 +31,7 @@ const {app, dialog} = window["require"]("electron").remote;
                     Connect to the Seven Bridges Platform
                 </p>
 
-                <ct-credentials-form #credsForm [removable]="false"></ct-credentials-form>
+                <!--<ct-credentials-form #credsForm [removable]="false"></ct-credentials-form>-->
                 <p>
                     <button type="button" class="btn btn-primary" (click)="credsForm.applyValues(); connecting = true;">Connect</button>
                 </p>
@@ -108,7 +108,7 @@ export class AddSourceModalComponent extends DirectiveBase implements OnInit {
 
     platformOptgroups = [];
 
-    constructor(private auth: AuthService,
+    constructor(private auth: OldAuthService,
                 private data: DataGatewayService,
                 public modal: ModalService,
                 private preferences: UserPreferencesService) {

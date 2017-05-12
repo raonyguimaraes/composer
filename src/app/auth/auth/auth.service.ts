@@ -1,50 +1,56 @@
-import {Injectable} from "@angular/core";
+import {Injectable, Optional} from "@angular/core";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
-import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Observable} from "rxjs/Observable";
+import {ReplaySubject} from "rxjs/ReplaySubject";
+
 import {ErrorBarService} from "../../layout/error-bar/error-bar.service";
 import {ConnectionState, CredentialsEntry} from "../../services/storage/user-preferences-types";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {PlatformAPIGatewayService} from "../api/platform-api-gateway.service";
 
-
 @Injectable()
-export class AuthService {
+export class OldAuthService {
 
     authenticationProgress = new BehaviorSubject(false);
 
-    connections = new ReplaySubject<CredentialsEntry[]>(1);
+    connections = new ReplaySubject<any[]>(1);
 
-    /**
-     * Converts a https://*.sbgenomics.com url to a profile name
-     */
-    static urlToProfile(url) {
-        const match = url.match("https:\/\/(.*?)\.sbgenomics\.com");
-        if (Array.isArray(match) && match[1]) {
-            const profile = match[1].toLowerCase();
-            return profile === "igor" ? "default" : profile;
+    credentials: Map<string, CredentialsEntry> = new Map();
+
+    credentialsChange: ReplaySubject<Map<string, CredentialsEntry>> = new ReplaySubject();
+
+    constructor(private errorBar: ErrorBarService,
+                private api: PlatformAPIGatewayService,
+                @Optional() private store: UserPreferencesService) {
+
+
+        this.invalidateSessions();
+
+        this.credentialsChange.next(this.credentials);
+
+    }
+
+    setConnection(subdomain: string, token: string, user: any): void {
+        const hash   = `${subdomain}_${user.username}`;
+        const status = ConnectionState.Connecting;
+
+        let url = `https://${subdomain}.sbgenomics.com`;
+        if (subdomain === "igor") {
+            url = `https://api.sbgenomics.com`;
         }
-        throw "Could not convert a non-sbg url to profile";
+
+
+        this.credentials.set(hash, {user, token, subdomain, status, url, hash} as CredentialsEntry);
+        this.credentialsChange.next(this.credentials);
     }
 
-    static hashUrlTokenPair(url: string, token: string) {
-        const profile = AuthService.urlToProfile(url);
-        return profile + "_" + token;
-    }
-
-    constructor(private prefs: UserPreferencesService,
-                private errorBar: ErrorBarService,
-                private api: PlatformAPIGatewayService) {
-        this.invalidateConnections();
-
-        this.prefs.getCredentials()
-            .map(creds => creds.filter(c => c.status === ConnectionState.Connected && c.sessionID))
-            .distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)).subscribe(this.connections);
-
+    removeConnection(hash: string): void {
+        this.credentials.delete(hash);
+        this.credentialsChange.next(this.credentials);
     }
 
     watchCredentials() {
-        this.prefs.getCredentials()
+        this.store.getCredentials()
             .distinctUntilChanged((a, b) => {
                 const hashesA = a.map(c => c.hash).toString();
                 const hashesB = b.map(c => c.hash).toString();
@@ -56,7 +62,7 @@ export class AuthService {
                     status: ConnectionState.Connecting
                 }));
                 this.authenticationProgress.next(true);
-                return this.prefs.setCredentials(m);
+                return this.store.setCredentials(m);
             })
             .flatMap((creds: CredentialsEntry[]) => {
                 const checks = creds.map(c => {
@@ -104,17 +110,17 @@ export class AuthService {
                         user
                     };
                 });
-                this.prefs.setCredentials(update);
+                this.store.setCredentials(update);
 
             }, err => {
                 console.log("Error on watch", err);
             });
     }
 
-    invalidateConnections() {
+    invalidateSessions() {
 
 
-        return this.prefs.getCredentials().take(1).flatMap(creds => {
+        return this.store.getCredentials().take(1).flatMap(creds => {
             const invalidated = creds.map(c => {
                 return {
                     ...c,
@@ -122,7 +128,7 @@ export class AuthService {
                     sessionID: undefined
                 };
             });
-            return this.prefs.setCredentials(invalidated);
+            return this.store.setCredentials(invalidated);
 
         });
     }
