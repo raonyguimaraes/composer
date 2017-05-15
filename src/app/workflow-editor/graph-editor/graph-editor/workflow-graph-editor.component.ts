@@ -158,6 +158,7 @@ import {WorkflowEditorService} from "../../workflow-editor.service";
             </g>
         </svg>
         <svg (dblclick)="openInspector($event)" #canvas class="cwl-workflow" tabindex="-1"
+             (mousedown)="onSvgMouseDown()"
              [ct-drop-enabled]="true"
              [ct-drop-zones]="['zone1']"
              (onDropSuccess)="onDrop($event.detail.data.event, $event.detail.data.transfer_data)"></svg>
@@ -398,6 +399,21 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
         this.selectedElement = null;
     }
 
+    onSvgMouseDown() {
+        const body = document.querySelector("body");
+        const coverDiv = document.createElement("div");
+        coverDiv.className = "invisible-page-cover clickable";
+        body.appendChild(coverDiv);
+        body.className += " deep-unselectable";
+
+        const listener = (ev) => {
+            body.removeChild(coverDiv);
+            body.classList.remove("deep-unselectable");
+            body.removeEventListener("mouseup", listener);
+        };
+
+        body.addEventListener("mouseup", listener);
+    }
 
     /**
      * Triggers when app is dropped on canvas
