@@ -6,7 +6,7 @@ describe("SBGClient", () => {
     let client: SBGClient;
 
     beforeEach(() => {
-        client = new SBGClient("https://api.sbgenomics.com", "ce5dcd6905cd4e01a7c63f645c0acec3");
+        client = new SBGClient("https://api.sbgenomics.com", "");
     });
 
     describe("user", () => {

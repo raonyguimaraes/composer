@@ -31,7 +31,6 @@ import {MenuComponent} from "./menu/menu.component";
 import {CheckboxPromptComponent} from "./modal/common/checkbox-prompt.component";
 import {ConfirmComponent} from "./modal/common/confirm.component";
 import {PromptComponent} from "./modal/common/prompt.component";
-import {NewFileModalComponent} from "./modal/custom/new-file-modal.component";
 import {ProjectSelectionModal} from "./modal/custom/project-selection-modal.component";
 import {ModalComponent} from "./modal/modal.component";
 import {ProgressComponent} from "./progress/progress.component";

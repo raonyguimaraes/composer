@@ -44,7 +44,9 @@ import {DataGatewayService} from "../../data-gateway/data-gateway.service";
                 </div>
 
                 <div class="alert alert-warning pl-2" *ngIf="form.dirty && form.invalid">
-                    <span *ngIf="form.hasError('tokenCheck')">Token is not valid for the selected platform.</span>
+                    <span *ngIf="form.hasError('tokenCheck')">
+                        Token is not valid for the selected platform. ({{ form.getError("tokenCheck") }})
+                    </span>
                     <span *ngIf="form.get('url').hasError('name')">Given platform does not exist.</span>
                     <span *ngIf="form.get('token').errors">Invalid Token</span>
                 </div>
@@ -100,7 +102,6 @@ export class PlatformCredentialsModalComponent implements OnInit {
 
     getValue(): AuthCredentials {
         const {url, token, user} = this.form.getRawValue();
-        console.log("Raw value", this.form.getRawValue());
         return new AuthCredentials(url, token, user);
     }
 
@@ -108,8 +109,6 @@ export class PlatformCredentialsModalComponent implements OnInit {
         let timeout;
 
         return (control: AbstractControl) => {
-            console.log("clearing timeout");
-
             return new Promise((resolve, reject) => {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
@@ -124,7 +123,8 @@ export class PlatformCredentialsModalComponent implements OnInit {
     ngOnInit() {
 
         this.form = new FormGroup({
-                "url": new FormControl(this.platform, [
+
+                url: new FormControl(this.platform, [
                     Validators.required,
                     (ctrl: AbstractControl) => {
                         const val = ctrl.value || "";
@@ -141,15 +141,28 @@ export class PlatformCredentialsModalComponent implements OnInit {
                 ]),
                 user: new FormControl(this.user)
             },
+            // No sync validators on the form level
             null,
+
+            /**
+             * Create an async validator which checks if we can fetch a user from the selected platform with a given token
+             */
             this.debounce((form: FormGroup) => {
+
                 form.get("user").setValue(undefined, {emitEvent: false, onlySelf: true});
+
                 const {url, token} = form.getRawValue();
+
                 return this.data.getUserWithToken(url, token).take(1).toPromise().then(user => {
                     form.get("user").setValue(user, {emitEvent: false, onlySelf: true});
+
+                    if (this.tokenOnly && user.username !== this.user.username) {
+                        return {tokenCheck: "Token belongs to a different user."};
+                    }
+
                     return null;
                 }, rejection => {
-
+                    console.log("Token rejection", rejection);
                     return {tokenCheck: rejection.message};
                 });
 

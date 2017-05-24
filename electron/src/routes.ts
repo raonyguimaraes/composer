@@ -41,6 +41,7 @@ module.exports = {
 
     getUserByToken: (data: { url, token }, callback: RequestCallback) => {
         const api = new PublicAPI(data.url, data.token);
+        console.log("Asking for user token", data);
         api.getUser(callback);
     },
 

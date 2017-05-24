@@ -11,24 +11,24 @@ export class PlatformAPIGatewayService {
 
     constructor(private http: CtHttp, private prefs: UserPreferencesService) {
 
-        prefs.getCredentials().subscribe(credentials => {
-            credentials.forEach(cred => {
-                if (this.apis[cred.hash]) {
-                    this.apis[cred.hash].setSessionID(cred.sessionID);
-                } else {
-                    this.apis[cred.hash] = new PlatformAPI(this.http, cred.url, cred.token, cred.sessionID);
-                }
-            });
-
-            const hashes = credentials.map(c => c.hash);
-            for (const hash in this.apis) {
-                if (hashes.indexOf(hash) === -1) {
-                    delete this.apis[hash];
-                }
-            }
-
-
-        });
+        // prefs.getCredentials().subscribe(credentials => {
+        //     credentials.forEach(cred => {
+        //         if (this.apis[cred.hash]) {
+        //             this.apis[cred.hash].setSessionID(cred.sessionID);
+        //         } else {
+        //             this.apis[cred.hash] = new PlatformAPI(this.http, cred.url, cred.token, cred.sessionID);
+        //         }
+        //     });
+        //
+        //     const hashes = credentials.map(c => c.hash);
+        //     for (const hash in this.apis) {
+        //         if (hashes.indexOf(hash) === -1) {
+        //             delete this.apis[hash];
+        //         }
+        //     }
+        //
+        //
+        // });
     }
 
     forHash(hash: string): PlatformAPI {

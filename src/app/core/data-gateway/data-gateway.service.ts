@@ -14,6 +14,7 @@ import {ConnectionState, CredentialsEntry} from "../../services/storage/user-pre
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import Platform = NodeJS.Platform;
+import {AuthService} from "../../auth/auth.service";
 
 @Injectable()
 export class DataGatewayService {
@@ -36,13 +37,15 @@ export class DataGatewayService {
                 private api: PlatformAPI,
                 private http: Http,
                 private modal: ModalService,
-                private auth: OldAuthService,
+                private auth: AuthService,
+                private oldAuth: OldAuthService,
                 private apiGateway: PlatformAPIGatewayService,
                 private ipc: IpcService) {
     }
 
     getDataSources(): Observable<CredentialsEntry[]> {
-        return this.auth.connections.map((credentials) => {
+
+        return this.oldAuth.connections.map((credentials) => {
 
             const local = {
                 hash: "local",
@@ -124,7 +127,7 @@ export class DataGatewayService {
     }
 
     searchUserProjects(term: string, limit = 20): Observable<{ hash: string, results: PlatformAppEntry[] }[]> {
-        return this.auth.connections.take(1).flatMap(credentials => {
+        return this.oldAuth.connections.take(1).flatMap(credentials => {
             const hashes   = credentials.map(c => c.hash);
             const requests = hashes.map(hash => {
 
@@ -313,7 +316,7 @@ export class DataGatewayService {
     }
 
     getProjectsForAllConnections(all = false) {
-        return this.auth.connections.flatMap((credentials: any) => {
+        return this.oldAuth.connections.flatMap((credentials: any) => {
             const listings = credentials.map(creds => this.getPlatformListing(creds.hash));
 
             if (listings.length === 0) {

@@ -5,11 +5,11 @@ import {StatusBarService} from "../../layout/status-bar/status-bar.service";
 import {SystemService} from "../../platform-providers/system.service";
 import {PlatformAPI} from "../../services/api/platforms/platform-api.service";
 import {GuidService} from "../../services/guid.service";
+import {JavascriptEvalService} from "../../services/javascript-eval/javascript-eval.service";
 import {ContextService} from "../../ui/context/context.service";
 import {MarkdownService} from "../../ui/markdown/markdown.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import {UrlValidator} from "../../validators/url.validator";
-import {JavascriptEvalService} from "../../services/javascript-eval/javascript-eval.service";
 
 @Component({
     encapsulation: ViewEncapsulation.None,

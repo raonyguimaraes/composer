@@ -42,17 +42,17 @@ type ViewMode = "auth" | "keyBindings" | "cache";
                         <td class="align-middle">{{ entry.url }}</td>
                         <td class="align-middle">
                             {{ entry.user.username }}
-                            <span *ngIf="(auth.user | async) === entry.user" class="tag tag-primary">active</span>
+                            <span *ngIf="(auth.active| async) === entry" class="tag tag-primary">active</span>
                         </td>
                         <td class="text-xs-right">
-                            <button *ngIf="(auth.user | async) === entry.user; else deactivate;"
+                            <button *ngIf="(auth.active | async) === entry; else deactivate;"
                                     (click)="auth.deactivate()"
                                     class="btn btn-secondary">Deactivate
                             </button>
                             <ng-template #deactivate>
                                 <button class="btn btn-secondary" (click)="auth.activate(entry)">Activate</button>
                             </ng-template>
-                            <button class="btn btn-secondary" (click)="editCredentials(cred)">Edit</button>
+                            <button class="btn btn-secondary" (click)="editCredentials(entry)">Edit</button>
                             <button class="btn btn-secondary">Remove</button>
                         </td>
                     </tr>
@@ -77,15 +77,6 @@ export class SettingsComponent extends DirectiveBase {
                 public auth: AuthService) {
 
         super();
-
-        auth.credentials.subscribe(val => {
-            console.log("Auth values", val);
-        });
-
-        auth.user.subscribe(user => {
-            console.log("Got an auth user", user);
-        })
-
     }
 
     openCredentialsForm() {
@@ -95,25 +86,19 @@ export class SettingsComponent extends DirectiveBase {
 
         credentialsModal.submit = () => {
             const credentials = credentialsModal.getValue();
-            console.log("Credentials are", credentials);
             this.auth.addCredentials(credentials);
-
             this.modal.close();
         }
 
     }
 
-    ngOnInit() {
-    }
-
     editCredentials(credentials: AuthCredentials) {
         const editor = this.modal.fromComponent(PlatformCredentialsModalComponent, {title: "Edit Connection"});
 
-        editor.token     = credentials.url;
         editor.user      = credentials.user;
-        editor.platform  = credentials.url.substring(8, credentials.url.indexOf("."));
+        editor.token     = credentials.token;
+        editor.platform  = credentials.url;
         editor.tokenOnly = true;
-        console.log("Assigned values");
     }
 
     /**

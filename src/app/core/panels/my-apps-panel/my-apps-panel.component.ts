@@ -1,21 +1,13 @@
-import {
-    AfterViewInit,
-    ChangeDetectorRef,
-    Component,
-    ElementRef,
-    OnInit,
-    QueryList,
-    ViewChild,
-    ViewChildren
-} from "@angular/core";
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren} from "@angular/core";
 import {FormControl} from "@angular/forms";
 
 import "rxjs/add/operator/map";
 import {Observable} from "rxjs/Observable";
 
 import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
-import {ConnectionState} from "../../../services/storage/user-preferences-types";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
+import {ContextService} from "../../../ui/context/context.service";
+import {MenuItem} from "../../../ui/menu/menu-item";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {TreeNode} from "../../../ui/tree-view/tree-node";
 import {TreeNodeComponent} from "../../../ui/tree-view/tree-node/tree-node.component";
@@ -26,22 +18,20 @@ import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 import {FilesystemEntry, FolderListing} from "../../data-gateway/data-types/local.types";
 import {PlatformAppEntry} from "../../data-gateway/data-types/platform-api.types";
 import {AddSourceModalComponent} from "../../modals/add-source-modal/add-source-modal.component";
+import {CreateAppModalComponent} from "../../modals/create-app-modal/create-app-modal.component";
 import {WorkboxService} from "../../workbox/workbox.service";
 import {NavSearchResultComponent} from "../nav-search-result/nav-search-result.component";
-import {ContextService} from "../../../ui/context/context.service";
-import {MenuItem} from "../../../ui/menu/menu-item";
-import {CreateAppModalComponent} from "../../modals/create-app-modal/create-app-modal.component";
+import {MyAppsPanelService} from "./my-apps-panel.service";
+import {AfterContentInit} from "../../../../../node_modules/@angular/core/src/metadata/lifecycle_hooks";
 
 /** @deprecated */
 @Component({
     selector: "ct-my-apps-panel",
-    providers: [LocalFileRepositoryService],
+    providers: [LocalFileRepositoryService, MyAppsPanelService],
     templateUrl: "./my-apps-panel.component.html",
     styleUrls: ["./my-apps-panel.component.scss"]
 })
-export class MyAppsPanelComponent extends DirectiveBase implements OnInit, AfterViewInit {
-
-    treeNodes: TreeNode<any>[];
+export class MyAppsPanelComponent extends DirectiveBase implements AfterContentInit, OnInit, AfterViewInit {
 
     searchContent = new FormControl();
 
@@ -64,6 +54,7 @@ export class MyAppsPanelComponent extends DirectiveBase implements OnInit, After
                 private workbox: WorkboxService,
                 private modal: ModalService,
                 private dataGateway: DataGatewayService,
+                private service: MyAppsPanelService,
                 private context: ContextService) {
         super();
 
@@ -71,16 +62,17 @@ export class MyAppsPanelComponent extends DirectiveBase implements OnInit, After
     }
 
     ngOnInit(): void {
+    }
 
+    ngAfterContentInit() {
+        this.tree = this.treeView.getService();
+        this.listenForLocalExpansion();
     }
 
     ngAfterViewInit() {
-        this.tree = this.treeView.getService();
-
         setTimeout(() => {
             this.loadDataSources();
             this.attachSearchObserver();
-            this.listenForLocalExpansion();
             this.listenForPlatformExpansion();
             this.listenForProjectExpansion();
             this.listenForFolderExpansion();
@@ -96,33 +88,34 @@ export class MyAppsPanelComponent extends DirectiveBase implements OnInit, After
     }
 
     private loadDataSources() {
-        this.tracked = this.dataGateway.getDataSources()
-            .withLatestFrom(this.expandedNodes, (sources, expanded) => ({sources, expanded}))
-            .subscribe((data: { sources: any[], expanded: string[] }) => {
-                this.treeNodes = data.sources.map(source => {
 
-                    let icon = "fa-folder";
-                    if (source.status === ConnectionState.Disconnected) {
-                        icon = "fa-chain-broken";
-                    } else if (source.status === ConnectionState.Connecting) {
-                        icon = "fa-bolt";
-                    }
-
-
-                    return {
-                        id: source.hash,
-                        label: source.label,
-                        isExpandable: true,
-                        isExpanded: data.expanded.indexOf(source.hash) !== -1,
-                        iconExpanded: "fa-folder-open",
-                        type: "source",
-                        data: source,
-                        icon: `${icon} ${source.connected ? "connected" : "disconnected"}`
-
-                    };
-                });
-                this.cdr.markForCheck();
-            });
+        // this.tracked = this.dataGateway.getDataSources()
+        //     .withLatestFrom(this.expandedNodes, (sources, expanded) => ({sources, expanded}))
+        //     .subscribe((data: { sources: any[], expanded: string[] }) => {
+        //         this.treeNodes = data.sources.map(source => {
+        //
+        //             let icon = "fa-folder";
+        //             if (source.status === ConnectionState.Disconnected) {
+        //                 icon = "fa-chain-broken";
+        //             } else if (source.status === ConnectionState.Connecting) {
+        //                 icon = "fa-bolt";
+        //             }
+        //
+        //
+        //             return {
+        //                 id: source.hash,
+        //                 label: source.label,
+        //                 isExpandable: true,
+        //                 isExpanded: data.expanded.indexOf(source.hash) !== -1,
+        //                 iconExpanded: "fa-folder-open",
+        //                 type: "source",
+        //                 data: source,
+        //                 icon: `${icon} ${source.connected ? "connected" : "disconnected"}`
+        //
+        //             };
+        //         });
+        //         this.cdr.markForCheck();
+        //     });
     }
 
     private attachSearchObserver() {
@@ -253,7 +246,9 @@ export class MyAppsPanelComponent extends DirectiveBase implements OnInit, After
 
     private listenForLocalExpansion() {
 
-        this.tree.expansionChanges.filter(n => n.isExpanded === true && n.type === "source" && n.id === "local")
+        this.tree.expansionChanges
+            .do(data => console.log("Local Expansion", data.id))
+            .filter(n => n.isExpanded === true && n.type === "source" && n.id === "local")
             .do(n => n.modify(() => n.loading = true))
             .switchMap(n => this.dataGateway.getLocalListing(), (node, listing) => ({node, listing}))
             .withLatestFrom(this.expandedNodes, (outer, expanded) => ({...outer, expanded}))
@@ -411,7 +406,7 @@ export class MyAppsPanelComponent extends DirectiveBase implements OnInit, After
                         closeOnEscape: true
                     });
 
-                    modal.appType = 'workflow';
+                    modal.appType = "workflow";
                 }
             }),
             new MenuItem("Create new Command Line Tool", {
@@ -423,7 +418,7 @@ export class MyAppsPanelComponent extends DirectiveBase implements OnInit, After
                         closeOnEscape: true
                     });
 
-                    modal.appType = 'tool';
+                    modal.appType = "tool";
                 }
             })
         ];

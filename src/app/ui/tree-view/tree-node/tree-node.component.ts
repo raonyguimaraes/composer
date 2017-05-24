@@ -98,6 +98,7 @@ export class TreeNodeComponent<T> implements OnInit {
         this.tree.nodeInit.next(this);
 
         if (this.isExpanded) {
+            console.log("Toggling expansion in node");
             this.expand(true);
         }
     }

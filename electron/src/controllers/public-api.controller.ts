@@ -37,10 +37,11 @@ export class PublicAPI {
 
     getUser(callback): Request {
         return request.get(this.url + "/v2/user", {
-            timeout: 5000,
+            timeout: 10001,
             headers: {"X-SBG-Auth-Token": this.token}
         }, (err: RequestError, response: RequestResponse, body) => {
 
+            console.log("getUser response", response, err);
             if (err) {
                 return callback(PublicAPIError.fromSystemError(err));
             }

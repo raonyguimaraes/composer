@@ -6,6 +6,7 @@ import {Subject} from "rxjs/Subject";
 import {IpcService} from "../ipc.service";
 import {CredentialsEntry} from "./user-preferences-types";
 import {UserProfileCacheKey} from "./user-profile-cache-key";
+import {AuthCredentials, UserPlatformIdentifier} from "../../auth/model/auth-credentials";
 
 @Injectable()
 export class UserPreferencesService {
@@ -71,40 +72,12 @@ export class UserPreferencesService {
         }).flatMap(list => this.put("recentApps", list));
     }
 
-    patchCredentials(credentials: CredentialsEntry[]) {
-
-        const creds = this.getCredentials();
-
-        creds.take(1).subscribe(oldCredentials => {
-
-            const newCredentials = credentials.map(cred => {
-                const oldEntryButSame = oldCredentials.find(e => e.hash === cred.hash);
-                if (oldEntryButSame) {
-                    return oldEntryButSame;
-                }
-                return cred;
-            });
-
-            this.setCredentials(newCredentials);
-        });
-    }
-
-    getCredentials(): Observable<CredentialsEntry[]> {
-        return this.get("credentials", [] as CredentialsEntry[]);
+    getCredentials(): Observable<AuthCredentials[]> {
+        return this.get("credentials", []).map(list => list.map(item => AuthCredentials.from(item)));
     }
 
     setCredentials(credentials) {
-        return this.put("credentials", credentials);
-    }
-
-    clearSessions() {
-        this.getCredentials().take(1).subscribe((creds: CredentialsEntry[]) => {
-            creds.forEach((item) => {
-                item.sessionID = null;
-            });
-
-            this.setCredentials(creds);
-        });
+        return this.put("credentials", credentials || []);
     }
 
     getOpenProjects() {
@@ -125,5 +98,18 @@ export class UserPreferencesService {
 
     setSidebarHidden(hidden: boolean) {
         return this.put("sidebarHidden", hidden);
+    }
+
+    setActiveUser(user: any) {
+
+        return this.put("activeUser", user || "");
+    }
+
+    getActiveUser(): Observable<AuthCredentials> {
+        return this.get("activeUser").map((data?: UserPlatformIdentifier) => {
+            if (!data) return;
+
+            return AuthCredentials.from(data);
+        });
     }
 }

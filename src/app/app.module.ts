@@ -3,6 +3,7 @@ import {FormBuilder, FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {HttpModule, RequestOptions, XHRBackend} from "@angular/http";
 import {BrowserModule} from "@angular/platform-browser";
 import {PlatformAPIGatewayService} from "./auth/api/platform-api-gateway.service";
+import {AuthService} from "./auth/auth.service";
 import {OldAuthService} from "./auth/auth/auth.service";
 import {MainComponent} from "./components/main/main.component";
 import {PlatformConnectionService} from "./core/auth/platform-connection.service";
@@ -14,21 +15,20 @@ import {CtHttp} from "./http/ct-http.service";
 import {DomEventService} from "./services/dom/dom-event.service";
 import {GuidService} from "./services/guid.service";
 import {IpcService} from "./services/ipc.service";
+import {JavascriptEvalService} from "./services/javascript-eval/javascript-eval.service";
 import {SettingsService} from "./services/settings/settings.service";
-import {UserPreferencesService} from "./services/storage/user-preferences.service";
 import {ToolEditorModule} from "./tool-editor/tool-editor.module";
 import {ModalService} from "./ui/modal/modal.service";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
-import {AuthService} from "./auth/auth.service";
-import {JavascriptEvalService} from "./services/javascript-eval/javascript-eval.service";
+import {UserPreferencesService} from "./services/storage/user-preferences.service";
 
 @NgModule({
     providers: [
         AuthService,
         FormBuilder,
-        UserPreferencesService,
         DomEventService,
+        UserPreferencesService,
         ModalService,
         IpcService,
         GuidService,
@@ -64,10 +64,8 @@ import {JavascriptEvalService} from "./services/javascript-eval/javascript-eval.
 })
 export class AppModule {
 
-    constructor (userPref: UserPreferencesService) {
-        // When having an active connection, and restarting the app, new session ID call may end up in a race
-        // condition with other API calls which are using the old session ID, which gets invalidated in the meantime
-        userPref.clearSessions();
+    constructor () {
+
     }
 }
 

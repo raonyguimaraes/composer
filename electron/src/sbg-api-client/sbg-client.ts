@@ -4,6 +4,7 @@ import {RequestAPI} from "request";
 import * as requestPromise from "request-promise-native";
 import {RequestError, StatusCodeError, TransformError} from "request-promise-native/errors";
 import {User, Project} from "./interfaces";
+import {App} from "./interfaces/app";
 
 export interface SBGClientPromise<T, K> {
     /**
@@ -33,7 +34,6 @@ export class SBGClient {
             headers: {
                 "X-SBG-Auth-Token": token
             },
-
         });
     }
 
@@ -46,6 +46,13 @@ export class SBGClient {
     get projects() {
         return {
             all: () => this.fetchAll<Project>("projects?fields=_all")
+        }
+    }
+
+    get apps() {
+        return {
+            private: () => this.fetchAll<App>("apps"),
+            public: () => this.fetchAll<App>("apps?visibility=public")
         }
     }
 
