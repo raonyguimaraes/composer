@@ -12,15 +12,18 @@ import {LayoutModule} from "../layout/layout.module";
 import {PlatformAPI} from "../services/api/platforms/platform-api.service";
 import {GuidService} from "../services/guid.service";
 import {ToolEditorModule} from "../tool-editor/tool-editor.module";
+import {ModalService} from "../ui/modal/modal.service";
 import {UIModule} from "../ui/ui.module";
 import {WorkflowEditorModule} from "../workflow-editor/workflow-editor.module";
 import {ErrorReportComponent} from "./error-report/error-report.component";
 import {ModalErrorHandler} from "./error-report/modal-error-handler";
 import {LayoutTabContentComponent} from "./layout-tab-content/layout-tab-content.component";
 import {LayoutComponent} from "./layout/layout.component";
+import {LayoutService} from "./layout/layout.service";
 import {LogoComponent} from "./logo/logo.component";
 import {AddSourceModalComponent} from "./modals/add-source-modal/add-source-modal.component";
 import {CreateAppModalComponent} from "./modals/create-app-modal/create-app-modal.component";
+import {PlatformCredentialsModalComponent} from "./modals/platform-credentials-modal/platform-credentials-modal.component";
 import {SendFeedbackModalComponent} from "./modals/send-feedback-modal/send-feedback.modal.component";
 import {AppsPanelComponent} from "./panels/apps-panel/apps-panel.component";
 import {MyAppsPanelComponent} from "./panels/my-apps-panel/my-apps-panel.component";
@@ -31,8 +34,6 @@ import {WebWorkerBuilderService} from "./web-worker/web-worker-builder.service";
 import {SettingsButtonComponent} from "./workbox/settings-button.component";
 import {WorkboxComponent} from "./workbox/workbox.component";
 import {WorkboxService} from "./workbox/workbox.service";
-import {IpcService} from "../services/ipc.service";
-import { PlatformCredentialsModalComponent } from './modals/platform-credentials-modal/platform-credentials-modal.component';
 
 @NgModule({
     entryComponents: [
@@ -72,8 +73,10 @@ import { PlatformCredentialsModalComponent } from './modals/platform-credentials
         GuidService,
         WebWorkerBuilderService,
         WorkboxService,
+        ModalService,
+        LayoutService,
         PlatformAPI,
-        // {provide: ErrorHandler, useClass: ModalErrorHandler}
+        {provide: ErrorHandler, useClass: ModalErrorHandler}
     ],
     imports: [
         BrowserModule,

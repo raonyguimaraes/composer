@@ -1,6 +1,7 @@
 import {CommonModule} from "@angular/common";
 import {NgModule} from "@angular/core";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
+import {TrimValueAccessorModule} from "ng-trim-value-accessor";
 import {AutoCompleteComponent} from "./auto-complete/auto-complete.component";
 import {SelectComponent} from "./auto-complete/select/select.component";
 import {DisableFormControlDirective} from "./behaviors/disable-form-control.directive";
@@ -30,6 +31,7 @@ import {MenuComponent} from "./menu/menu.component";
 import {CheckboxPromptComponent} from "./modal/common/checkbox-prompt.component";
 import {ConfirmComponent} from "./modal/common/confirm.component";
 import {PromptComponent} from "./modal/common/prompt.component";
+import {NewFileModalComponent} from "./modal/custom/new-file-modal.component";
 import {ProjectSelectionModal} from "./modal/custom/project-selection-modal.component";
 import {ModalComponent} from "./modal/modal.component";
 import {ProgressComponent} from "./progress/progress.component";
@@ -50,6 +52,7 @@ import {TreeViewComponent} from "./tree-view/tree-view.component";
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
+        TrimValueAccessorModule,
     ],
     exports: [
         AutoCompleteComponent,
@@ -82,6 +85,7 @@ import {TreeViewComponent} from "./tree-view/tree-view.component";
         TooltipDirective,
         TreeNodeComponent,
         TreeViewComponent,
+        TrimValueAccessorModule
     ],
 
     entryComponents: [

@@ -21,6 +21,7 @@ import {ModalService} from "./ui/modal/modal.service";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
 import {AuthService} from "./auth/auth.service";
+import {JavascriptEvalService} from "./services/javascript-eval/javascript-eval.service";
 
 @NgModule({
     providers: [
@@ -40,7 +41,8 @@ import {AuthService} from "./auth/auth.service";
             provide: CtHttp,
             useFactory: ctHttpFactory,
             deps: [XHRBackend, RequestOptions]
-        }
+        },
+        JavascriptEvalService
 
     ],
     declarations: [
@@ -56,7 +58,7 @@ import {AuthService} from "./auth/auth.service";
         CWLModule,
         EditorCommonModule,
         ToolEditorModule,
-        WorkflowEditorModule,
+        WorkflowEditorModule
     ],
     bootstrap: [MainComponent]
 })
