@@ -1,10 +1,19 @@
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren} from "@angular/core";
+import {
+    AfterContentInit,
+    AfterViewInit,
+    ChangeDetectorRef,
+    Component,
+    ElementRef,
+    OnInit,
+    QueryList,
+    ViewChild,
+    ViewChildren
+} from "@angular/core";
 import {FormControl} from "@angular/forms";
 
 import "rxjs/add/operator/map";
 import {Observable} from "rxjs/Observable";
 import {App} from "../../../../../electron/src/sbg-api-client/interfaces/app";
-import {AfterContentInit} from "../../../../../node_modules/@angular/core/src/metadata/lifecycle_hooks";
 import {AuthService} from "../../../auth/auth.service";
 import {RepositoryService} from "../../../repository/repository.service";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
@@ -19,6 +28,7 @@ import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 import {FilesystemEntry, FolderListing} from "../../data-gateway/data-types/local.types";
 import {AddSourceModalComponent} from "../../modals/add-source-modal/add-source-modal.component";
 import {CreateAppModalComponent} from "../../modals/create-app-modal/create-app-modal.component";
+import {CreateLocalFolderModalComponent} from "../../modals/create-local-folder-modal/create-local-folder-modal.component";
 import {WorkboxService} from "../../workbox/workbox.service";
 import {NavSearchResultComponent} from "../nav-search-result/nav-search-result.component";
 import {MyAppsPanelService} from "./my-apps-panel.service";
@@ -34,8 +44,6 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
     searchContent = new FormControl();
 
     searchResults = undefined;
-
-    appliedSearchTerm: string;
 
     expandedNodes: Observable<string[]>;
 
@@ -147,9 +155,6 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
             .do(term => this.searchResults = undefined)
             .debounceTime(250)
             .distinctUntilChanged()
-            .do(term => {
-                this.appliedSearchTerm = term;
-            })
             .filter(term => term.trim().length !== 0)
             .flatMap(term => Observable.zip(localFileSearch(term), projectSearch(term)))
             .subscribe(datasets => {
@@ -363,57 +368,100 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
     private listenForContextMenu() {
 
         // When click on user project
-        const contextMenuStaticOptions = [
-            new MenuItem("Create new Workflow", {
-                click: () => {
-                    const modal = this.modal.fromComponent(CreateAppModalComponent, {
-                        closeOnOutsideClick: false,
-                        backdrop: true,
-                        title: `Create a New App`,
-                        closeOnEscape: true
-                    });
-
-                    modal.appType = "workflow";
-                }
-            }),
-            new MenuItem("Create new Command Line Tool", {
-                click: () => {
-                    const modal = this.modal.fromComponent(CreateAppModalComponent, {
-                        closeOnOutsideClick: false,
-                        backdrop: true,
-                        title: `Create a New App`,
-                        closeOnEscape: true
-                    });
-
-                    modal.appType = "tool";
-                }
-            })
-        ];
-
         this.tree.contextMenu.filter((data) => data.node.type === "project")
             .subscribe(data => {
-                const contextMenu = [new MenuItem("Remove from Workspace", {
-                    click: () => {
-                        this.preferences.get("openProjects", []).take(1).subscribe(openProjects => {
+                const contextMenu = [
+                    new MenuItem("Remove from Workspace", {
+                        click: () => {
+                            this.preferences.get("openProjects", []).take(1).subscribe(openProjects => {
 
-                            this.preferences.put("openProjects", openProjects.filter((el) => el !== data.node.id));
-                        });
-                    }
-                })].concat(contextMenuStaticOptions);
+                                this.preferences.put("openProjects", openProjects.filter((el) => el !== data.node.id));
+                            });
+                        }
+                    }),
+                    new MenuItem("Create new Workflow", {
+                        click: () => {
+                            const modal = this.modal.fromComponent(CreateAppModalComponent, {
+                                closeOnOutsideClick: false,
+                                backdrop: true,
+                                title: `Create a New App`,
+                                closeOnEscape: true
+                            });
+
+                            modal.appType = "workflow";
+                            modal.destination = 'remote';
+                            modal.defaultProject = data.node.id;
+                        }
+                    }),
+                    new MenuItem("Create new Command Line Tool", {
+                        click: () => {
+                            const modal = this.modal.fromComponent(CreateAppModalComponent, {
+                                closeOnOutsideClick: false,
+                                backdrop: true,
+                                title: `Create a New App`,
+                                closeOnEscape: true
+                            });
+
+                            modal.appType = "tool";
+                            modal.destination = 'remote';
+                            modal.defaultProject = data.node.id;
+                        }
+                    })
+                ];
                 this.context.showAt(data.node.getViewContainer(), contextMenu, data.coordinates);
             });
 
         // When click on some root local folder
         this.tree.contextMenu.filter((data) => data.node.type === "folder" && data.node.level === 2)
             .subscribe(data => {
-                const contextMenu = [new MenuItem("Remove from Workspace", {
-                    click: () => {
-                        this.preferences.get("localFolders", []).take(1).subscribe(openFolders => {
+                const contextMenu = [
+                    new MenuItem("Create new Folder", {
+                        click: () => {
+                            const modal = this.modal.fromComponent(CreateLocalFolderModalComponent, {
+                                closeOnOutsideClick: false,
+                                backdrop: true,
+                                title: `Create New Folder`,
+                                closeOnEscape: true
+                            });
 
-                            this.preferences.put("localFolders", openFolders.filter((el) => el !== data.node.id));
-                        });
-                    }
-                })].concat(contextMenuStaticOptions);
+                            modal.folderPath = data.node.id;
+                        }
+                    }),
+                    new MenuItem("Remove from Workspace", {
+                        click: () => {
+                            this.preferences.get("localFolders", []).take(1).subscribe(openFolders => {
+
+                                this.preferences.put("localFolders", openFolders.filter((el) => el !== data.node.id));
+                            });
+                        }
+                    }),
+                    new MenuItem("Create new Workflow", {
+                        click: () => {
+                            const modal = this.modal.fromComponent(CreateAppModalComponent, {
+                                closeOnOutsideClick: false,
+                                backdrop: true,
+                                title: `Create a New App`,
+                                closeOnEscape: true
+                            });
+
+                            modal.appType = 'workflow';
+                            modal.defaultFolder = data.node.id;
+                        }
+                    }),
+                    new MenuItem("Create new Command Line Tool", {
+                        click: () => {
+                            const modal = this.modal.fromComponent(CreateAppModalComponent, {
+                                closeOnOutsideClick: false,
+                                backdrop: true,
+                                title: `Create a New App`,
+                                closeOnEscape: true
+                            });
+
+                            modal.appType = 'tool';
+                            modal.defaultFolder = data.node.id;
+                        }
+                    })
+                ];
 
                 this.context.showAt(data.node.getViewContainer(), contextMenu, data.coordinates);
             });
