@@ -15,10 +15,16 @@ export type IPCRoute =
     | "createFile"
     | "deletePath"
     | "getSetting"
+    | "getProjects"
+    | "getApps"
     | "hasDataCache"
     | "pathExists"
     | "putSetting"
     | "getUserByToken"
+    | "getLocalRepository"
+    | "patchLocalRepository"
+    | "getUserRepository"
+    | "patchUserRepository"
     | "readDirectory"
     | "readFileContent"
     | "resolve"
@@ -28,6 +34,9 @@ export type IPCRoute =
     | "searchPublicApps"
     | "searchUserProjects"
     | "saveFileContent";
+
+export type IPCListeners =
+    "accelerator";
 
 @Injectable()
 export class IpcService {
@@ -89,13 +98,14 @@ export class IpcService {
 
         this.ipcRenderer.send("data-request", {
             id: messageID,
+            watch: false,
             message,
             data
         });
         return this.pendingRequests[messageID].stream;
     }
 
-    public watch(message: string, data = {}, zone?: NgZone) {
+    public watch(message: IPCListeners, data = {}, zone?: NgZone): Observable<any> {
         const messageID = this.guid.generate();
 
         this.pendingRequests[messageID] = {
@@ -106,6 +116,7 @@ export class IpcService {
 
         this.ipcRenderer.send("data-request", {
             id: messageID,
+            watch: true,
             message,
             data
         });

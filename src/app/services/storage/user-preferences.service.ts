@@ -2,11 +2,11 @@ import {Injectable} from "@angular/core";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/take";
 import {Observable} from "rxjs/Observable";
+import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Subject} from "rxjs/Subject";
-import {IpcService} from "../ipc.service";
-import {CredentialsEntry} from "./user-preferences-types";
-import {UserProfileCacheKey} from "./user-profile-cache-key";
 import {AuthCredentials, UserPlatformIdentifier} from "../../auth/model/auth-credentials";
+import {IpcService} from "../ipc.service";
+import {UserProfileCacheKey} from "./user-profile-cache-key";
 
 @Injectable()
 export class UserPreferencesService {
@@ -14,62 +14,52 @@ export class UserPreferencesService {
     private updates = new Subject<{
         key: string;
         value: any;
+        profile: "local" | string
     }>();
+
+    local = new ReplaySubject<Object>(1);
+
+    profile = new ReplaySubject<Object>(1);
+
 
     constructor(private ipc: IpcService) {
 
+        // this.updates.subscribe(update => {
+        //     const patch = {
+        //         profile: update.profile,
+        //         data: {
+        //             [update.key]: update.value
+        //         }
+        //     };
+        //     this.ipc.request("patchPreferences", patch)
+        // });
+        //
+        // this.ipc.request("getPreferences").subscribe(prefs => {
+        //     console.log("Got preferences from server", prefs);
+        //     this.local.next(prefs);
+        // });
     }
 
-    public put<T>(key: UserProfileCacheKey, value: T): Observable<T> {
+    public put<T>(key: UserProfileCacheKey, value: T, profile = "local"): Observable<T> {
 
-        this.updates.next({key, value});
+        this.updates.next({key, value, profile});
 
-        if (key.startsWith("dataCache")) {
-            return this.ipc.request("putSetting", {key, value});
-        }
-
-        window.localStorage.setItem(key, JSON.stringify(value));
         return Observable.of(value);
     }
 
-    public get<T>(key: UserProfileCacheKey, fallback?: T): Observable<T> {
+    public get<T>(key: UserProfileCacheKey, fallback?: T, profile = "local"): Observable<T> {
 
+        const dataStream = profile === "local" ? this.local : this.profile;
 
-        if (key.startsWith("dataCache")) {
-
-            return this.ipc.request("getSetting", key)
-
-                .merge(this.updates.filter(u => u.key === key).map(u => u.value))
-                .map(v => v === undefined ? fallback : v);
-        }
-
-        /**
-         * Temporary rerouting until we have a better cache system
-         * Stuff that are not in dataCache are small and can be stored in localStorage for now
-         */
-
-        const hit = window.localStorage.getItem(key);
-        let cacheItem;
-        if (hit === undefined || hit === null || hit === "undefined" || hit === "null") {
-            cacheItem = fallback;
-            this.put(key, cacheItem);
-        } else {
-            try {
-                cacheItem = JSON.parse(hit);
-            } catch (ex) {
-                cacheItem = fallback;
-                window.localStorage.setItem(key, cacheItem);
+        const val = dataStream.map(data => {
+            if ([undefined, null, "undefined", "null"].indexOf(data[key]) !== -1) {
+                return fallback;
             }
-        }
 
-        return Observable.of(cacheItem).merge(this.updates.filter(u => u.key === key).map(u => u.value)).distinctUntilChanged();
-    }
+            return data[key];
+        });
 
-    public addAppToRecentList(appID, appType: "Workflow" | "CommandLineTool") {
-        this.get("recentApps", []).take(1).map(list => {
-            list.unshift(appID);
-            return list.filter((e, i, a) => a.indexOf(e) === i).slice(0, 20);
-        }).flatMap(list => this.put("recentApps", list));
+        return val.merge(this.updates.filter(u => u.key === key).map(u => u.value)).distinctUntilChanged();
     }
 
     getCredentials(): Observable<AuthCredentials[]> {
@@ -84,20 +74,27 @@ export class UserPreferencesService {
         return this.get("openProjects", []);
     }
 
-    getOpenFolders() {
-        return this.get("localFolders", []);
+    setOpenProjects(projects = []) {
+        return this.put("openProjects", projects);
     }
 
+
+    /**
+     * @deprecated This doesn't use multiple sources, split it into multiple profile services
+     */
     getExpandedNodes() {
-        return this.get("expandedNodes", []);
+        return this.get("expandedNodes", []).do(data => console.log("Giving expanded nodes", data));
     }
 
     getSidebarHidden() {
-        return this.get("sidebarHidden", []);
+        return Observable.of(false);
+        // return this.ipc.watch("watchLocalProfile", {key: "sidebarHidden"});
     }
 
     setSidebarHidden(hidden: boolean) {
-        return this.put("sidebarHidden", hidden);
+        return this.ipc.request("patchLocalRepository", {
+            sidebarHidden: hidden
+        });
     }
 
     setActiveUser(user: any) {
@@ -111,5 +108,22 @@ export class UserPreferencesService {
 
             return AuthCredentials.from(data);
         });
+    }
+
+
+    addLocalFolders(paths: string[]) {
+        this.getOpenFolders()
+            .take(1)
+            .map(folders => {
+                return (folders || []).concat(paths).filter((v, i, a) => a.indexOf(v) === i);
+            })
+            .subscribe(folders => {
+                console.log("Pushing new localFolders list", folders);
+                this.put("localFolders", folders, "local");
+            });
+    }
+
+    getOpenFolders() {
+        return this.get("localFolders", [], "local");
     }
 }

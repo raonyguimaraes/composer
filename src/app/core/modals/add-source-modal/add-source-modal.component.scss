@@ -15,6 +15,15 @@
         line-height: 3em;
     }
 
+    .folder-selection-btn {
+        display: block;
+    }
+
+    .connection-loader {
+        position: relative;
+        height: 120px;
+    }
+
     .body {
         flex: 1 1 auto;
         min-height: 300px;
@@ -25,7 +34,7 @@
 
     .dialog-content {
         max-height: 500px;
-        overflow:auto;
+        overflow: auto;
     }
 
     .dialog-centered {
@@ -40,8 +49,6 @@
         flex: 1;
         padding: 1em;
     }
-
-
 
     .footer {
         text-align: right;

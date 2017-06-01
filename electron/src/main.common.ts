@@ -1,40 +1,45 @@
-const {app, Menu, BrowserWindow} = require("electron");
 import * as acceleratorProxy from "./accelerator-proxy";
-app.setPath("userData", app.getPath("home") + "/.sevenbridges/rabix-composer");
 
+const {app, Menu, BrowserWindow} = require("electron");
+
+app.setPath("userData", app.getPath("home") + "/.sevenbridges/rabix-composer");
 const router = require("./ipc-router");
 
 let win;
 let splash;
 
 function start(config: { devTools: boolean, url: string }) {
-
     router.start();
 
-    // splash = new BrowserWindow({
-    //     width: 580,
-    //     height: 310,
-    //     frame: false,
-    //     show: false,
-    //     resizable: false
-    // });
-    // splash.loadURL(`file://${__dirname}/splash/index.html`);
-    // splash.once("ready-to-show", () => {
-    //     splash.show();
-    // })y
+    splash = new BrowserWindow({
+        width: 580,
+        height: 310,
+        frame: false,
+        show: false,
+        resizable: false,
+        closable: true,
+    });
+    splash.loadURL(`file://${__dirname}/splash/index.html`);
+    splash.once("ready-to-show", () => {
+        splash.show();
+    });
+
+    splash.once("closed", () =>{
+        splash = undefined;
+    });
 
 
     win = new BrowserWindow({
         show: false
     });
+
     win.maximize();
     win.loadURL(config.url);
     win.once("ready-to-show", () => {
         setTimeout(() => {
+            splash.close();
             win.show();
-            // splash.destroy();
-            // splash = undefined;
-        }, 300);
+        }, 100);
     });
 
     if (config.devTools) {
@@ -130,7 +135,7 @@ export = {
 
 // Quit when all windows are closed.
         app.on("window-all-closed", () => {
-
+            console.log("Window all closed triggered");
             // On macOS it is common for applications and their menu bar
             // to stay active until the user quits explicitly with Cmd + Q
             if (process.platform !== "darwin") {

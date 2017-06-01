@@ -1,6 +1,6 @@
 import {Injectable, Optional} from "@angular/core";
-import {Observable} from "rxjs/Observable";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
+import "rxjs/add/operator/take";
 
 @Injectable()
 export class LayoutService {
@@ -8,14 +8,18 @@ export class LayoutService {
 
     constructor(@Optional() private preferences: UserPreferencesService) {
         if (this.preferences) {
-            this.preferences.getSidebarHidden().take(1).subscribe(val => this.sidebarHidden = !val);
+            this.preferences.getSidebarHidden().subscribe(val => {
+                console.log("Loaded sidebar state from prefs", this.sidebarHidden);
+                this.sidebarHidden = val;
+            });
         }
     }
 
     toggleSidebar() {
         this.sidebarHidden = !this.sidebarHidden;
+
         if (this.preferences) {
-            this.preferences.setSidebarHidden(!this.sidebarHidden);
+            this.preferences.setSidebarHidden(this.sidebarHidden);
         }
     }
 }

@@ -12,16 +12,19 @@ import {DataGatewayService} from "./core/data-gateway/data-gateway.service";
 import {CWLModule} from "./cwl/cwl.module";
 import {EditorCommonModule} from "./editor-common/editor-common.module";
 import {CtHttp} from "./http/ct-http.service";
+import {RepositoryService} from "./repository/repository.service";
 import {DomEventService} from "./services/dom/dom-event.service";
 import {GuidService} from "./services/guid.service";
 import {IpcService} from "./services/ipc.service";
 import {JavascriptEvalService} from "./services/javascript-eval/javascript-eval.service";
 import {SettingsService} from "./services/settings/settings.service";
+import {UserPreferencesService} from "./services/storage/user-preferences.service";
 import {ToolEditorModule} from "./tool-editor/tool-editor.module";
 import {ModalService} from "./ui/modal/modal.service";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
-import {UserPreferencesService} from "./services/storage/user-preferences.service";
+import {LocalProfileService} from "./profiles/local-profile.service";
+import {PlatformUserProfileService} from "./profiles/platform-user-profile.service";
 
 @NgModule({
     providers: [
@@ -36,6 +39,9 @@ import {UserPreferencesService} from "./services/storage/user-preferences.servic
         PlatformConnectionService,
         PlatformAPIGatewayService,
         DataGatewayService,
+        RepositoryService,
+        LocalProfileService,
+        PlatformUserProfileService,
         OldAuthService,
         {
             provide: CtHttp,
@@ -64,7 +70,7 @@ import {UserPreferencesService} from "./services/storage/user-preferences.servic
 })
 export class AppModule {
 
-    constructor () {
+    constructor() {
 
     }
 }

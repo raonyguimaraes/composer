@@ -3,31 +3,29 @@ import {FormControl} from "@angular/forms";
 
 import "rxjs/add/operator/map";
 import {Observable} from "rxjs/Observable";
-
-import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
+import {App} from "../../../../../electron/src/sbg-api-client/interfaces/app";
+import {AfterContentInit} from "../../../../../node_modules/@angular/core/src/metadata/lifecycle_hooks";
+import {AuthService} from "../../../auth/auth.service";
+import {RepositoryService} from "../../../repository/repository.service";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ContextService} from "../../../ui/context/context.service";
 import {MenuItem} from "../../../ui/menu/menu-item";
 import {ModalService} from "../../../ui/modal/modal.service";
-import {TreeNode} from "../../../ui/tree-view/tree-node";
 import {TreeNodeComponent} from "../../../ui/tree-view/tree-node/tree-node.component";
 import {TreeViewComponent} from "../../../ui/tree-view/tree-view.component";
 import {TreeViewService} from "../../../ui/tree-view/tree-view.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 import {FilesystemEntry, FolderListing} from "../../data-gateway/data-types/local.types";
-import {PlatformAppEntry} from "../../data-gateway/data-types/platform-api.types";
 import {AddSourceModalComponent} from "../../modals/add-source-modal/add-source-modal.component";
 import {CreateAppModalComponent} from "../../modals/create-app-modal/create-app-modal.component";
 import {WorkboxService} from "../../workbox/workbox.service";
 import {NavSearchResultComponent} from "../nav-search-result/nav-search-result.component";
 import {MyAppsPanelService} from "./my-apps-panel.service";
-import {AfterContentInit} from "../../../../../node_modules/@angular/core/src/metadata/lifecycle_hooks";
 
-/** @deprecated */
 @Component({
     selector: "ct-my-apps-panel",
-    providers: [LocalFileRepositoryService, MyAppsPanelService],
+    providers: [MyAppsPanelService],
     templateUrl: "./my-apps-panel.component.html",
     styleUrls: ["./my-apps-panel.component.scss"]
 })
@@ -52,7 +50,9 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
     constructor(private preferences: UserPreferencesService,
                 private cdr: ChangeDetectorRef,
                 private workbox: WorkboxService,
+                private auth: AuthService,
                 private modal: ModalService,
+                private repository: RepositoryService,
                 private dataGateway: DataGatewayService,
                 private service: MyAppsPanelService,
                 private context: ContextService) {
@@ -67,55 +67,22 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
     ngAfterContentInit() {
         this.tree = this.treeView.getService();
         this.listenForLocalExpansion();
+        this.listenForFolderExpansion();
+
+        this.attachSearchObserver();
+        this.listenForPlatformExpansion();
+        this.listenForProjectExpansion();
+
+        this.attachExpansionStateSaving();
+        this.listenForAppOpening();
+        this.listenForContextMenu();
+
     }
 
     ngAfterViewInit() {
-        setTimeout(() => {
-            this.loadDataSources();
-            this.attachSearchObserver();
-            this.listenForPlatformExpansion();
-            this.listenForProjectExpansion();
-            this.listenForFolderExpansion();
-            this.attachExpansionStateSaving();
-            this.listenForAppOpening();
-            this.listenForContextMenu();
-        });
-
-
         this.searchResultComponents.changes.subscribe(list => {
             list.forEach((el, idx) => setTimeout(() => el.nativeElement.classList.add("shown"), idx * 20));
         });
-    }
-
-    private loadDataSources() {
-
-        // this.tracked = this.dataGateway.getDataSources()
-        //     .withLatestFrom(this.expandedNodes, (sources, expanded) => ({sources, expanded}))
-        //     .subscribe((data: { sources: any[], expanded: string[] }) => {
-        //         this.treeNodes = data.sources.map(source => {
-        //
-        //             let icon = "fa-folder";
-        //             if (source.status === ConnectionState.Disconnected) {
-        //                 icon = "fa-chain-broken";
-        //             } else if (source.status === ConnectionState.Connecting) {
-        //                 icon = "fa-bolt";
-        //             }
-        //
-        //
-        //             return {
-        //                 id: source.hash,
-        //                 label: source.label,
-        //                 isExpandable: true,
-        //                 isExpanded: data.expanded.indexOf(source.hash) !== -1,
-        //                 iconExpanded: "fa-folder-open",
-        //                 type: "source",
-        //                 data: source,
-        //                 icon: `${icon} ${source.connected ? "connected" : "disconnected"}`
-        //
-        //             };
-        //         });
-        //         this.cdr.markForCheck();
-        //     });
     }
 
     private attachSearchObserver() {
@@ -197,60 +164,54 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
      */
     private listenForPlatformExpansion() {
 
-        this.tree.expansionChanges
-            .filter(node => node.isExpanded === true && node.type === "source" && node.id !== "local")
-            .do(n => n.modify(() => n.loading = true))
-            .flatMap(node => {
-                return Observable.combineLatest(
-                    this.dataGateway.getPlatformListing(node.id),
-                    this.preferences.getOpenProjects(),
-                    (listing, openProjects) => ({node, listing, openProjects})
-                ).map(data => {
-                    const {node, listing, openProjects} = data as any;
-                    return {
-                        ...data,
-                        listing: listing.filter(item => openProjects.indexOf(`${node.id}/${item.owner}/${item.slug}`) !== -1)
-                    };
-                });
-            })
-            .withLatestFrom(this.expandedNodes, (outer, expanded) => ({...outer, expanded}))
-            .subscribe((data: { node: TreeNodeComponent<any>, listing: any, expanded: string[] }) => {
-                const children = data.listing.map((child, index) => {
-                    const id = `${data.node.id}/${child.owner}/${child.slug}`;
+        const platformExpansion = this.tree.expansionChanges
+            .filter(node => node.isExpanded === true && node.type === "source" && node.id !== "local");
 
-                    const duplicate = data.listing.slice(0, index).concat(data.listing.slice(index + 1)).find(c => c.name === child.name);
-                    let label       = child.name;
+        platformExpansion.subscribe(n => n.modify(() => n.loading = true));
 
-                    if (duplicate) {
-                        label += ` (${child.owner})`;
-                    }
+        platformExpansion
+            .flatMap(node => this.service.projects, (node, projects) => ({node, projects}))
+            .withLatestFrom(this.expandedNodes, (data, expanded) => ({...data, expanded}))
+            .subscribe(data => {
+                const {projects, expanded, node} = data;
+                const auth                       = this.auth.active.getValue();
+
+
+                const nodes = projects.map(project => {
+                    const [owner] = project.id.split("/");
+                    const label   = project.name + (auth.user.username === owner ? "" : ` (${owner})`);
+                    const hash    = [auth.getHash(), project.id].join("/");
+
                     return {
-                        id,
+                        id: hash,
+                        data: project,
                         type: "project",
-                        data: child,
                         icon: "fa-folder",
                         label: label,
+                        isExpanded: expanded.indexOf(hash) !== -1,
                         isExpandable: true,
-                        isExpanded: data.expanded.indexOf(id) !== -1,
-                        iconExpanded: "fa-folder-open",
-                    };
+                        iconExpanded: "fa-folder-open"
+
+                    }
                 });
 
-                // Update the tree view
-                data.node.modify(() => {
-                    data.node.loading  = false;
-                    data.node.children = children;
+                node.modify(() => {
+                    node.loading  = false;
+                    node.children = nodes;
                 });
+
             });
     }
 
     private listenForLocalExpansion() {
+        // Create a stream of local root expansion events
+        const localRootExpansion = this.tree.expansionChanges.filter(n => n.isExpanded === true && n.id === "local");
 
-        this.tree.expansionChanges
-            .do(data => console.log("Local Expansion", data.id))
-            .filter(n => n.isExpanded === true && n.type === "source" && n.id === "local")
-            .do(n => n.modify(() => n.loading = true))
-            .switchMap(n => this.dataGateway.getLocalListing(), (node, listing) => ({node, listing}))
+        // When expanding, turn on the loader first
+        localRootExpansion.subscribe((node) => node.modify(() => node.loading = true));
+
+        // When expanding, check the local folders and expanded nodes
+        localRootExpansion.flatMap(n => this.dataGateway.getLocalListing(), (node, listing) => ({node, listing}))
             .withLatestFrom(this.expandedNodes, (outer, expanded) => ({...outer, expanded}))
             .subscribe((data: { node: TreeNodeComponent<any>, listing: any, expanded: string[] }) => {
                 const children = data.listing.map(path => {
@@ -271,35 +232,41 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
                     data.node.loading  = false;
                 });
             });
+
     }
 
     private listenForProjectExpansion() {
-        this.tree.expansionChanges.filter(n => n.isExpanded === true && n.type === "project")
-            .do(n => n.modify(() => n.loading = true))
-            .flatMap(n => {
-                const source = n.id.substr(0, n.id.indexOf("/"));
-                return this.dataGateway.getProjectListing(source, n.data.owner, n.data.slug);
-            }, (node, listing) => ({node, listing}))
+
+        const expansion: Observable<TreeNodeComponent<App>> = this.tree.expansionChanges
+            .filter(n => n.isExpanded === true && n.type === "project");
+
+        this.tracked = expansion.subscribe(n => n.modify(() => n.loading = true));
+
+        this.tracked = expansion
+            .flatMap(n => this.repository.getAppsForProject(n.data.id), (node, apps) => ({node, apps}))
             .subscribe(data => {
 
-                const children = data.listing.map(app => {
-                    const id = data.node.id + "/" + app["sbg:id"];
+                const {node, apps} = data;
+                const hash         = this.auth.active.getValue().getHash();
 
+                const nodes = apps.map(app => {
+                    const id = [hash, app.id].join("/");
                     return {
                         id,
                         type: "app",
-                        label: app.label,
-                        icon: app.class === "CommandLineTool" ? "fa-terminal" : "fa-share-alt",
+                        label: app.name,
+                        icon: app.raw.class === "CommandLineTool" ? "fa-terminal" : "fa-share-alt",
                         data: app,
                         dragEnabled: true,
                         dragTransferData: id,
                         dragDropZones: ["zone1"],
-                        dragLabel: app.label,
-                        dragImageClass: app.class === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
-                    } as TreeNode<PlatformAppEntry>;
+                        dragLabel: app.name,
+                        dragImageClass: app.raw.class === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
+                    }
                 });
+
                 data.node.modify(() => {
-                    data.node.children = children;
+                    data.node.children = nodes;
                     data.node.loading  = false;
                 });
             });

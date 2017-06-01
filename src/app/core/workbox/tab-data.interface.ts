@@ -3,4 +3,5 @@ export interface TabData<T> {
     label: string;
     type: "CommandLineTool" | "Workflow" | "Settings" | "Code" | "Welcome" | "NewFile";
     data?: T;
+    openTime?: number;
 }

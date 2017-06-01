@@ -1,6 +1,6 @@
 import {Component, OnInit, ViewChild, ViewContainerRef} from "@angular/core";
-import {DirectiveBase} from "../../util/directive-base/directive-base";
 import {LayoutService} from "../../core/layout/layout.service";
+import {DirectiveBase} from "../../util/directive-base/directive-base";
 import {StatusBarService} from "./status-bar.service";
 
 @Component({
@@ -15,8 +15,8 @@ import {StatusBarService} from "./status-bar.service";
                         [class.active]="layoutService.sidebarHidden"
                         (click)="layoutService.toggleSidebar()">
                     <i class="fa"
-                       [class.fa-angle-double-left] = "!layoutService.sidebarHidden"
-                       [class.fa-angle-double-right] = "layoutService.sidebarHidden"></i>
+                       [class.fa-angle-double-left]="!layoutService.sidebarHidden"
+                       [class.fa-angle-double-right]="layoutService.sidebarHidden"></i>
                 </button>
             </span>
             <span *ngIf="status">
@@ -53,6 +53,7 @@ export class StatusBarComponent extends DirectiveBase implements OnInit {
     constructor(public statusBar: StatusBarService,
                 public layoutService: LayoutService) {
         super();
+
         this.tracked = this.statusBar.status.subscribe(s => this.status = s);
         this.tracked = this.statusBar.queueSize.subscribe(s => this.queueSize = s);
     }

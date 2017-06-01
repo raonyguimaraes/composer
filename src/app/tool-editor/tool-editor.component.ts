@@ -32,7 +32,6 @@ import LoadOptions = jsyaml.LoadOptions;
 })
 export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDestroy, WorkboxTab, AfterViewInit {
 
-
     @Input()
     data: AppTabData;
 
@@ -91,7 +90,6 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
                 private errorBarService: ErrorBarService) {
 
         super();
-
 
         this.toolGroup = formBuilder.group({});
 
@@ -217,6 +215,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
     }
 
     save() {
+
         const proc = this.statusBar.startProcess(`Saving: ${this.originalTabLabel}`);
         const text = this.toolGroup.dirty ? this.getModelText() : this.codeEditorContent.value;
 

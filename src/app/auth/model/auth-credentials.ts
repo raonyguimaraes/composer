@@ -1,9 +1,10 @@
 import {User} from "../../../../electron/src/sbg-api-client/interfaces/user";
 
 export interface UserPlatformIdentifier {
-    user: User,
-    url: string,
-    token: string
+    user: User;
+    id: string;
+    url: string;
+    token: string;
 }
 
 export class AuthCredentials implements UserPlatformIdentifier {
@@ -12,6 +13,7 @@ export class AuthCredentials implements UserPlatformIdentifier {
 
     static readonly TOKEN_VALIDATION_REGEXP = "^[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}$";
 
+    id: string;
     user: User;
     url: string;
     token: string;
@@ -23,6 +25,8 @@ export class AuthCredentials implements UserPlatformIdentifier {
         this.url   = url;
         this.token = token;
         this.user  = user;
+
+        this.id = this.getHash();
     }
 
     static isValidToken(token: string): boolean {

@@ -4,6 +4,7 @@ import {User} from "../../../electron/src/sbg-api-client/interfaces/user";
 import {UserPreferencesService} from "../services/storage/user-preferences.service";
 import {AuthCredentials} from "./model/auth-credentials";
 import {Observable} from "rxjs/Observable";
+import {LocalProfileService} from "../profiles/local-profile.service";
 
 @Injectable()
 export class AuthService {
@@ -12,7 +13,7 @@ export class AuthService {
     active: BehaviorSubject<AuthCredentials>        = new BehaviorSubject(undefined);
     credentials: BehaviorSubject<AuthCredentials[]> = new BehaviorSubject([]);
 
-    constructor(@Optional() store: UserPreferencesService) {
+    constructor(@Optional() store: LocalProfileService) {
 
         this.active.distinctUntilChanged((x, y) => {
 
@@ -39,8 +40,7 @@ export class AuthService {
         }
     }
 
-    private bindPersistence(store: UserPreferencesService) {
-
+    private bindPersistence(store: LocalProfileService) {
         const storedCredentials = store.getCredentials().take(1);
         const storedActiveUser  = store.getActiveUser().take(1);
 
@@ -61,10 +61,10 @@ export class AuthService {
             });
 
 
-        this.credentials.subscribe(data => {
+        this.credentials.skip(1).subscribe(data => {
             store.setCredentials(data)
         });
-        this.active.subscribe(user => {
+        this.active.skip(1).subscribe(user => {
             store.setActiveUser(user);
         });
     }

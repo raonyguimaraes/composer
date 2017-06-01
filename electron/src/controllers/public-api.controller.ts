@@ -30,6 +30,10 @@ export class PublicAPI {
     url: string;
     token: string;
 
+    static with(url, token) {
+        return new PublicAPI(url, token);
+    }
+
     constructor(url, token?: string) {
         this.url   = url;
         this.token = token;
@@ -57,4 +61,5 @@ export class PublicAPI {
             }
         });
     }
+
 }

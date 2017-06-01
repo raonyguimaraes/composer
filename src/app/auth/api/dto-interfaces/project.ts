@@ -1,3 +1,6 @@
+/**
+ * @deprecated Use Project from sbg client in electron
+ */
 export interface Project {
 
     current_user_membership_status: "FULL" | string;

@@ -1,14 +1,18 @@
-import {Component, OnInit} from "@angular/core";
+import {Component} from "@angular/core";
 import {Observable} from "rxjs/Observable";
-import {OldAuthService} from "../../../auth/auth/auth.service";
+import {AuthService} from "../../../auth/auth.service";
+import {RepositoryService} from "../../../repository/repository.service";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {DataGatewayService} from "../../data-gateway/data-gateway.service";
+import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/project";
+
 const {app, dialog} = window["require"]("electron").remote;
 
 @Component({
     selector: "ct-add-source-modal",
+    styleUrls: ["./add-source-modal.component.scss"],
     template: `
         <div class="header">
             <ct-tab-selector [distribute]="'auto'" [(active)]="activeTab">
@@ -16,167 +20,126 @@ const {app, dialog} = window["require"]("electron").remote;
                 <ct-tab-selector-entry tabName="platform">Platform</ct-tab-selector-entry>
             </ct-tab-selector>
         </div>
+
         <div class="body">
-            <div class="dialog-centered dialog-content" *ngIf="activeTab === 'local' && localFoldersToAdd.length === 0">
+
+            <!--If we are on the local tab, we just need a button to choose a folder and that's it-->
+            <div *ngIf="activeTab === 'local'" class="dialog-centered dialog-content">
+                <p>Add one or more folders from your computer to the workspace.</p>
                 <p>
-                    Add one or more folders from your computer to the workspace
-                </p>
-                <div>
                     <button class="btn btn-secondary" (click)="selectLocalFolders()">Select a Folder...</button>
+                </p>
+            </div>
+
+            <!--If we want to add a platform projects, we may have multiple steps-->
+            <ng-container *ngIf="activeTab === 'platform'">
+
+                <!--If we have an active connection we should show the choice of projects to add-->
+                <div class="dialog-content dialog-connection" *ngIf="auth.active | async; else noActiveConnection">
+
+                    <!--Projects are loaded-->
+                    <ng-container *ngIf="allProjects !== undefined; else projectsNotLoadedYet">
+
+                        <!--Offer projects so users can choose which to add-->
+                        <div *ngIf="nonAddedUserProjects.length > 0; else allProjectsAreAdded">
+                            <p>Choose projects to add to the workspace:</p>
+                            <div>
+                                <ct-auto-complete [(ngModel)]="selectedProjects" [options]="nonAddedUserProjects"></ct-auto-complete>
+                            </div>
+                        </div>
+
+                    </ng-container>
+
+
                 </div>
-            </div>
+            </ng-container>
 
-            <div class="dialog-connection dialog-content" *ngIf="activeTab === 'platform' && !isConnected && !connecting">
-                <p>
-                    Connect to the Seven Bridges Platform
-                </p>
+            <ng-template #noActiveConnection>
 
-                <!--<ct-credentials-form #credsForm [removable]="false"></ct-credentials-form>-->
-                <p>
-                    <button type="button" class="btn btn-primary" (click)="credsForm.applyValues(); connecting = true;">Connect</button>
-                </p>
-            </div>
-
-            <div class="dialog-connection" *ngIf="activeTab === 'platform' && connecting ">
-                <p>
-                    Checking your connection to the platform...
-                    <ct-line-loader></ct-line-loader>
-                </p>
-            </div>
-
-            <div class="dialog-connection" *ngIf="activeTab === 'platform' && isConnected && !loadedProjects">
-                <p>
-                    Fetching your projects...
-                    <ct-line-loader></ct-line-loader>
-                </p>
-            </div>
-
-            <div class="dialog-connection dialog-content"
-                 *ngIf="activeTab === 'platform' && isConnected && loadedProjects && nonAddedUserProjects.length">
-                <p>
-                    Add Projects to the Workspace
-                </p>
-                <div>
-                    <ct-auto-complete [(ngModel)]="selectedProjects"
-                                      [options]="nonAddedUserProjects"
-                                      [optgroups]="platformOptgroups"
-                                      optgroupField="hash">
-
-                    </ct-auto-complete>
-                    <!--<select multiple class="form-control" [formControl]="projectSelectionControl">-->
-                    <!--<option *ngFor="let project of nonAddedUserProjects" [value]="project.value">{{ project.label }}</option>-->
-                    <!--</select>-->
+                <div *ngIf="(auth.credentials | async).length === 0; else platformActivation" class="dialog-content dialog-centered">
+                    User has no platforms listed
                 </div>
-            </div>
 
-            <div class="dialog-connection"
-                 *ngIf="activeTab === 'platform' && isConnected && loadedProjects && nonAddedUserProjects.length === 0">
-                <p>
-                    You have added all your projects to the workspace.
-                </p>
-            </div>
+            </ng-template>
+
+            <ng-template #platformActivation>
+                <div class="dialog-content dialog-centered">
+                    User has platforms listed but no connected ones.
+                </div>
+            </ng-template>
+
+            <ng-template #projectsNotLoadedYet>
+                Loading projects...
+            </ng-template>
+
+            <ng-template #allProjectsAreAdded>
+                All your projects are added to the workspace.
+            </ng-template>
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="modal.close()">Cancel</button>
-                <button type="button" class="btn btn-primary" (click)="onDone()">Done</button>
+                <button type="button" class="btn btn-primary" [disabled]="selectedProjects.length === 0" (click)="onDone()">Done</button>
             </div>
         </div>
     `,
-    styleUrls: ["./add-source-modal.component.scss"],
 })
-export class AddSourceModalComponent extends DirectiveBase implements OnInit {
+export class AddSourceModalComponent extends DirectiveBase {
 
-    activeTab = "local";
-
-    projectStep: "connect" |
-        "add" |
-        "checking-connection" |
-        "confirm-local-folders" |
-        "checking-apps" = "checking-connection";
-
+    activeTab            = "local";
+    allProjects: Project[];
+    selectedProjects     = [];
+    localFoldersToAdd    = [];
     nonAddedUserProjects = [];
 
-    localFoldersToAdd = [];
-
-    loadedProjects = false;
-
-    isConnected = false;
-
-    connecting = true;
-
-    selectedProjects = [];
-
-    platformOptgroups = [];
-
-    constructor(private auth: OldAuthService,
-                private data: DataGatewayService,
+    constructor(private data: DataGatewayService,
                 public modal: ModalService,
+                private repository: RepositoryService,
+                public auth: AuthService,
                 private preferences: UserPreferencesService) {
 
         super();
 
-        this.tracked = auth.connections
-            .flatMap((credentials: any) => {
-                const listings = credentials.map(creds => this.data.getPlatformListing(creds.hash));
+        const projects          = this.repository.projects;
+        const openProjects      = this.preferences.getOpenProjects();
+        const activeCredentials = this.auth.active;
 
-                if (listings.length === 0) {
-                    return Observable.of([]);
-                }
-
-                return Observable.zip(...listings);
-            }, (credentials, listings) => ({credentials, listings}))
-            .withLatestFrom(
-                this.preferences.getOpenProjects(),
-                (data, openProjects) => ({...data, openProjects}))
+        this.tracked = Observable
+            .combineLatest(
+                projects, openProjects, activeCredentials,
+                (projects, openProjects, activeCredentials) => ({projects, openProjects, activeCredentials})
+            )
             .subscribe(data => {
-                this.connecting = false;
+                const {projects, openProjects, activeCredentials} = data;
 
-                const {credentials, listings, openProjects} = data;
-                this.platformOptgroups                      = credentials.map(creds => ({value: creds.hash, label: creds.profile}));
-                this.nonAddedUserProjects                   = listings.reduce((acc, listing, index) => {
-                    return acc.concat(listing.map((entry: any) => {
-                        return {
-                            value: credentials[index].hash + `/${entry.owner}/${entry.slug}`,
-                            text: entry.name,
-                            hash: credentials[index].hash
-                        } as any;
-                    }));
-                }, []).filter((entry: any) => openProjects.indexOf(entry.value) === -1);
+                this.nonAddedUserProjects = projects.filter(project => {
+                    const ID = [activeCredentials.getHash(), project.id].join("/");
+                    return openProjects.indexOf(ID) === -1;
+                }).map(project => {
+                    return {value: project.id, text: project.name};
+                });
 
-                this.isConnected    = data.credentials.length > 0;
-                this.loadedProjects = true;
+                this.allProjects = projects;
+
             });
-    }
-
-
-    ngOnInit() {
-
     }
 
     onDone() {
-        if (this.activeTab === "platform" && this.loadedProjects) {
-            const val = this.selectedProjects;
-            if (val && val.length) {
-                this.preferences.get("openProjects", []).take(1).map(set => {
-                    return set.concat(val).filter((v, i, a) => a.indexOf(v) === i);
-                }).subscribe(newSet => {
-                    this.preferences.put("openProjects", newSet);
-                    this.modal.close();
-                });
-            } else {
-                this.modal.close();
-            }
-            return;
+
+        const activePlatform = this.auth.active.getValue();
+        if (!activePlatform) {
+            throw new Error("Trying to open a project, but there is no active platform set.");
         }
 
-        if (this.activeTab === "local" && this.localFoldersToAdd.length) {
-            this.preferences.get("localFolders", []).take(1).map(set => {
-                return set.concat(this.localFoldersToAdd).filter((v, i, a) => a.indexOf(v) === i);
-            }).subscribe(newSet => {
-                this.preferences.put("localFolders", newSet);
-                this.modal.close();
-            });
-        }
+        const selectedProjectIDs = this.selectedProjects.map(id => [activePlatform.getHash(), id].join("/"));
+
+        this.preferences.getOpenProjects().take(1).subscribe(openProjects => {
+            const update = openProjects.concat(selectedProjectIDs).filter((v, i, a) => a.indexOf(v) === i);
+
+            this.preferences.setOpenProjects(update);
+            this.modal.close();
+        });
+
+        return;
     }
 
     selectLocalFolders() {
@@ -187,7 +150,9 @@ export class AddSourceModalComponent extends DirectiveBase implements OnInit {
             properties: ["openDirectory", "multiSelections"]
         }, (paths) => {
             this.localFoldersToAdd = paths || [];
-            this.onDone();
+
+            this.preferences.addLocalFolders(paths);
+            this.modal.close();
         });
     }
 

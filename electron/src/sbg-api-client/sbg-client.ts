@@ -5,6 +5,7 @@ import * as requestPromise from "request-promise-native";
 import {RequestError, StatusCodeError, TransformError} from "request-promise-native/errors";
 import {User, Project} from "./interfaces";
 import {App} from "./interfaces/app";
+import {AppQueryParams, QueryParams} from "./interfaces/queries";
 
 export interface SBGClientPromise<T, K> {
     /**
@@ -23,6 +24,10 @@ export class SBGClient {
     private apiRequest: RequestAPI<any, any, any>;
 
     private static MAX_QUERY_LIMIT = 100;
+
+    static create(url: string, token: string): SBGClient {
+        return new SBGClient(url, token);
+    }
 
     constructor(url: string, token: string) {
 
@@ -51,12 +56,12 @@ export class SBGClient {
 
     get apps() {
         return {
-            private: () => this.fetchAll<App>("apps"),
+            private: (query: AppQueryParams) => this.fetchAll<App>("apps", query),
             public: () => this.fetchAll<App>("apps?visibility=public")
         }
     }
 
-    private fetchAll<T>(endpoint: string, qs?: Object): SBGClientResponse<T[]> {
+    private fetchAll<T>(endpoint: string, qs?: QueryParams): SBGClientResponse<T[]> {
         const load = (offset = 0) => this.apiRequest.defaults({
             qs: {...qs, offset, limit: SBGClient.MAX_QUERY_LIMIT},
             resolveWithFullResponse: true

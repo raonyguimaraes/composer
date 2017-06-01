@@ -5,6 +5,7 @@ import * as YAML from "js-yaml";
 import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
+import {AuthService} from "../../auth/auth.service";
 import {OldAuthService} from "../../auth/auth/auth.service";
 import {noop} from "../../lib/utils.lib";
 import {PlatformAPI} from "../../services/api/platforms/platform-api.service";
@@ -13,8 +14,10 @@ import {IpcService} from "../../services/ipc.service";
 import {ConnectionState, CredentialsEntry} from "../../services/storage/user-preferences-types";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {ModalService} from "../../ui/modal/modal.service";
-import Platform = NodeJS.Platform;
-import {AuthService} from "../../auth/auth.service";
+import {AsyncSubject} from "rxjs/AsyncSubject";
+import {Project} from "../../auth/api/dto-interfaces/project";
+import {App} from "../../../../electron/src/sbg-api-client/interfaces/app";
+import {AppQueryParams} from "../../../../electron/src/sbg-api-client/interfaces/queries";
 
 @Injectable()
 export class DataGatewayService {
@@ -33,6 +36,7 @@ export class DataGatewayService {
         return "app";
     }
 
+
     constructor(private preferences: UserPreferencesService,
                 private api: PlatformAPI,
                 private http: Http,
@@ -43,62 +47,19 @@ export class DataGatewayService {
                 private ipc: IpcService) {
     }
 
-    getDataSources(): Observable<CredentialsEntry[]> {
-
-        return this.oldAuth.connections.map((credentials) => {
-
-            const local = {
-                hash: "local",
-                label: "Local Files",
-                profile: "local",
-                status: ConnectionState.Connected
-            } as Partial<CredentialsEntry>;
-
-            const remote = credentials.map(c => {
-
-                let label = c.profile;
-
-                if (c.profile === "cgc") {
-                    label = "Cancer Genomics Cloud";
-                } else if (c.profile === "default" || c.profile === "igor") {
-                    label = "Seven Bridges";
-                }
-
-                return {...c, label};
-            });
-
-            return [local, ...remote];
-        }).distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b));
-    }
-
     /**
      * Gets the top-level data listing for a data source
      * @param hash hash
      * @returns {any}
      */
-    getPlatformListing(hash: string): Observable<{ id: string, name: string }[]> {
+    getPlatformListing(): Observable<{ id: string, name: string }[]> {
 
-        const platform = this.apiGateway.forHash(hash);
+        const call = this.auth.active.switchMap(connection => {
+            const {url, token} = connection;
+            return this.ipc.request("getProjects", {url, token});
+        }).do(data => console.log("Getting all the proijects", data));
 
-        const call = platform ? platform.getRabixProjects()
-            : Observable.throw(
-                new Error("Cannot get rabix projects because you are not connected to the necessary platform."));
-
-        return this.throughCache(
-            `${hash}.getPlatformListing`, call
-        );
-    }
-
-    getProjectListing(hash, projectOwner: string, projectSlug: string): Observable<any[]> {
-        const cacheKey = hash + `.getProjectListing.${projectOwner}.${projectSlug}`;
-
-        const platform = this.apiGateway.forHash(hash);
-
-        const call = platform ? platform.getProjectApps(projectOwner, projectSlug)
-            : Observable.throw(
-                new Error("Cannot get project apps because you are not connected to the necessary platform."));
-
-        return this.throughCache(cacheKey, call);
+        return this.throughCache(`getPlatformListing`, call);
     }
 
     invalidateProjectListing(hash, owner: string, project: string) {
@@ -264,10 +225,15 @@ export class DataGatewayService {
 
     private throughCache(key, handler) {
         return new Observable(subscriber => {
-            const cacheSub = Observable.merge(
-                Observable.of(1),
-                this.cacheInvalidation.filter(k => k === key)
-            ).flatMap(() => handler).subscribe(subscriber);
+            const cacheSub = Observable
+                .merge(
+                    Observable.of(1),
+                    this.cacheInvalidation.filter(k => k === key)
+                )
+                .flatMap(() => handler)
+                .subscribe(data => {
+                    subscriber.next(data);
+                });
 
             return () => {
                 cacheSub.unsubscribe();
@@ -317,7 +283,7 @@ export class DataGatewayService {
 
     getProjectsForAllConnections(all = false) {
         return this.oldAuth.connections.flatMap((credentials: any) => {
-            const listings = credentials.map(creds => this.getPlatformListing(creds.hash));
+            const listings = credentials.map(creds => this.getPlatformListing());
 
             if (listings.length === 0) {
                 return Observable.of([]);
@@ -339,4 +305,16 @@ export class DataGatewayService {
     getUserWithToken(url, token): Observable<any> {
         return this.ipc.request("getUserByToken", {url, token});
     }
+
+    getProjects(url: string, token: string): AsyncSubject<Project[]> {
+        return this.ipc.request("getProjects", {url, token}) as AsyncSubject<Project[]>;
+    }
+
+    getApps(url: any, token: any, query: AppQueryParams = {
+        fields: "id,name,project,raw.class"
+    }): AsyncSubject<App[]> {
+        return this.ipc.request("getApps", {url, token, query}) as AsyncSubject<App[]>;
+    }
+
+    loadUser
 }
