@@ -7,7 +7,7 @@ import {AuthService} from "../auth/auth.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 
 @Injectable()
-export class RepositoryService {
+export class PlatformRepositoryService {
 
     projects = new ReplaySubject<Project[]>(1);
 
@@ -45,12 +45,7 @@ export class RepositoryService {
     }
 
     getAppsForProject(projectID) {
-        return this.apps.map(apps => {
-            return apps.filter(app => {
-
-                return app.project === projectID;
-            });
-        });
+        return this.apps.map(apps => apps.filter(app => app.project === projectID));
     }
 
 }

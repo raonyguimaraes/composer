@@ -8,6 +8,7 @@ import {ModalService} from "../../ui/modal/modal.service";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
 import {AuthService} from "../../auth/auth.service";
 import {AuthCredentials} from "../../auth/model/auth-credentials";
+import {LocalRepositoryService} from "../../repository/local-repository.service";
 
 type ViewMode = "auth" | "keyBindings" | "cache";
 
@@ -42,18 +43,18 @@ type ViewMode = "auth" | "keyBindings" | "cache";
                         <td class="align-middle">{{ entry.url }}</td>
                         <td class="align-middle">
                             {{ entry.user.username }}
-                            <span *ngIf="(auth.active| async) === entry" class="tag tag-primary">active</span>
+                            <span *ngIf="(auth.active | async) === entry" class="tag tag-primary">active</span>
                         </td>
                         <td class="text-xs-right">
                             <button *ngIf="(auth.active | async) === entry; else deactivate;"
-                                    (click)="auth.deactivate()"
+                                    (click)="auth.setActiveCredentials(undefined)"
                                     class="btn btn-secondary">Deactivate
                             </button>
                             <ng-template #deactivate>
-                                <button class="btn btn-secondary" (click)="auth.activate(entry)">Activate</button>
+                                <button class="btn btn-secondary" (click)="auth.setActiveCredentials(entry)">Activate</button>
                             </ng-template>
                             <button class="btn btn-secondary" (click)="editCredentials(entry)">Edit</button>
-                            <button class="btn btn-secondary">Remove</button>
+                            <button class="btn btn-secondary" (click)="auth.removeCredentials(entry)">Remove</button>
                         </td>
                     </tr>
                     </tbody>

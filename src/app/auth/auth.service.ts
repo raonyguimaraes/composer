@@ -1,10 +1,9 @@
-import {Injectable, Optional} from "@angular/core";
+import {Injectable} from "@angular/core";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
-import {User} from "../../../electron/src/sbg-api-client/interfaces/user";
-import {UserPreferencesService} from "../services/storage/user-preferences.service";
-import {AuthCredentials} from "./model/auth-credentials";
 import {Observable} from "rxjs/Observable";
-import {LocalProfileService} from "../profiles/local-profile.service";
+import {User} from "../../../electron/src/sbg-api-client/interfaces/user";
+import {LocalRepositoryService} from "../repository/local-repository.service";
+import {AuthCredentials} from "./model/auth-credentials";
 
 @Injectable()
 export class AuthService {
@@ -13,77 +12,49 @@ export class AuthService {
     active: BehaviorSubject<AuthCredentials>        = new BehaviorSubject(undefined);
     credentials: BehaviorSubject<AuthCredentials[]> = new BehaviorSubject([]);
 
-    constructor(@Optional() store: LocalProfileService) {
+    constructor(private repository: LocalRepositoryService) {
 
-        this.active.distinctUntilChanged((x, y) => {
+        // Proxy all credentials from the repository
+        this.repository.getCredentials().subscribe(c => this.credentials.next(c));
 
-            const onlyXExists  = x !== undefined && y === undefined;
-            const onlyYExists  = y !== undefined && x === undefined;
-            const neitherExist = x === undefined && y === undefined;
+        // Proxy active credentials from the repository
+        this.repository.getActiveCredentials().map(active => {
 
-            if (onlyXExists || onlyYExists) {
-                return false;
-            }
+            // It is really convenient for components to be able to check for credentials by reference
+            // So, whenever we get new active entry, try to find a similar reference in the array of all credentials
+            // If it's not there, then we shouldn't have an active user anyway, so it's a bit of a safeguard as well
 
-            if (neitherExist) {
-                return true;
-            }
+            if (!active) return active;
+            return this.credentials.getValue().find(c => c.equals(active));
+        }).subscribe(c => this.active.next(c));
 
-            return x.equals(y);
+        // Filter whenever active credentials change, check if the user has changed.
+        // It might not change if only the token changed, but the owner is the same
+        this.active
+            .distinctUntilChanged((x, y) => AuthCredentials.isSimilar(x, y))
+            .map(c => c ? c.user : undefined)
+            .subscribe(u => this.user.next(u));
+    }
 
-        }).map(c => c ? c.user : undefined).subscribe(user => {
-            this.user.next(user);
-        });
+    /**
+     * Sets an AuthCredentials instance as an active one
+     * @returns {Observable<any>} Observable that completes when the activation is completed
+     */
+    setActiveCredentials(credentials?: AuthCredentials): Observable<any> {
 
-        if (store) {
-            this.bindPersistence(store);
+        if (!credentials) {
+            return this.repository.setActiveCredentials(undefined);
         }
-    }
-
-    private bindPersistence(store: LocalProfileService) {
-        const storedCredentials = store.getCredentials().take(1);
-        const storedActiveUser  = store.getActiveUser().take(1);
-
-        storedCredentials.subscribe(data => this.credentials.next(data));
-
-        Observable.forkJoin(storedCredentials, storedActiveUser, (credentials, active) => ({credentials, active}))
-            .subscribe((data: { credentials: AuthCredentials[], active: AuthCredentials }) => {
-
-                const {credentials, active} = data;
-                this.credentials.next(credentials || []);
-
-                if (active) {
-                    this.activate(active);
-                } else {
-                    this.deactivate();
-                }
-
-            });
-
-
-        this.credentials.skip(1).subscribe(data => {
-            store.setCredentials(data)
-        });
-        this.active.skip(1).subscribe(user => {
-            store.setActiveUser(user);
-        });
-    }
-
-    activate(credentials: AuthCredentials) {
 
         const c = this.credentials.getValue().find(c => c.equals(credentials));
         if (!c) {
             throw "Could not activate an unregistered credential set";
         }
 
-        this.active.next(c);
+        return this.repository.setActiveCredentials(c);
     }
 
-    deactivate() {
-        this.active.next(undefined);
-    }
-
-    addCredentials(credentials: AuthCredentials): void {
+    addCredentials(credentials: AuthCredentials): Observable<any> {
         const current = this.credentials.getValue();
         const similar = current.find(c => c.equals(credentials));
 
@@ -93,18 +64,17 @@ export class AuthService {
         }
 
         const updatedCredentials = current.concat(credentials);
-        this.credentials.next(updatedCredentials);
+
+        return this.repository.setCredentials(updatedCredentials);
     }
 
     removeCredentials(credentials: AuthCredentials): void {
         const current = this.credentials.getValue();
         const index   = current.findIndex(c => c.equals(credentials));
 
-        if (index) {
-            const updated = current.splice(index, 1);
-            this.credentials.next(updated);
+        if (index !== -1) {
+            const updated = current.slice(0, index).concat(current.slice(index + 1));
+            this.repository.setCredentials(updated);
         }
     }
-
-
 }

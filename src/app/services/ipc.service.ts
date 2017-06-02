@@ -36,6 +36,8 @@ export type IPCRoute =
     | "saveFileContent";
 
 export type IPCListeners =
+    "watchLocalRepository" |
+    "watchUserRepository" |
     "accelerator";
 
 @Injectable()

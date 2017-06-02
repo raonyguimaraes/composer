@@ -6,9 +6,9 @@ import {AuthService} from "../../../auth/auth.service";
 import {AuthCredentials} from "../../../auth/model/auth-credentials";
 import {LocalProfileService} from "../../../profiles/local-profile.service";
 import {PlatformUserProfileService} from "../../../profiles/platform-user-profile.service";
-import {RepositoryService} from "../../../repository/repository.service";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {TreeNode} from "../../../ui/tree-view/tree-node";
+import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
 
 @Injectable()
 export class MyAppsPanelService {
@@ -20,7 +20,7 @@ export class MyAppsPanelService {
     constructor(private auth: AuthService,
                 private localProfile: LocalProfileService,
                 private platformProfile: PlatformUserProfileService,
-                private repository: RepositoryService,
+                private repository: PlatformRepositoryService,
                 private preferences: UserPreferencesService) {
 
         this.rootFolders = this.watchRootFolders();

@@ -2,8 +2,12 @@ import {Injectable} from "@angular/core";
 import {FormControl} from "@angular/forms";
 import {Http} from "@angular/http";
 import * as YAML from "js-yaml";
+import {AsyncSubject} from "rxjs/AsyncSubject";
 import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
+import {App} from "../../../../electron/src/sbg-api-client/interfaces/app";
+import {AppQueryParams} from "../../../../electron/src/sbg-api-client/interfaces/queries";
+import {Project} from "../../auth/api/dto-interfaces/project";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
 import {AuthService} from "../../auth/auth.service";
 import {OldAuthService} from "../../auth/auth/auth.service";
@@ -11,13 +15,8 @@ import {noop} from "../../lib/utils.lib";
 import {PlatformAPI} from "../../services/api/platforms/platform-api.service";
 import {PlatformAppEntry} from "../../services/api/platforms/platform-api.types";
 import {IpcService} from "../../services/ipc.service";
-import {ConnectionState, CredentialsEntry} from "../../services/storage/user-preferences-types";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {ModalService} from "../../ui/modal/modal.service";
-import {AsyncSubject} from "rxjs/AsyncSubject";
-import {Project} from "../../auth/api/dto-interfaces/project";
-import {App} from "../../../../electron/src/sbg-api-client/interfaces/app";
-import {AppQueryParams} from "../../../../electron/src/sbg-api-client/interfaces/queries";
 
 @Injectable()
 export class DataGatewayService {
@@ -49,8 +48,6 @@ export class DataGatewayService {
 
     /**
      * Gets the top-level data listing for a data source
-     * @param hash hash
-     * @returns {any}
      */
     getPlatformListing(): Observable<{ id: string, name: string }[]> {
 

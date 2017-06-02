@@ -1,12 +1,12 @@
 import {Component} from "@angular/core";
 import {Observable} from "rxjs/Observable";
 import {AuthService} from "../../../auth/auth.service";
-import {RepositoryService} from "../../../repository/repository.service";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/project";
+import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
 
 const {app, dialog} = window["require"]("electron").remote;
 
@@ -93,7 +93,7 @@ export class AddSourceModalComponent extends DirectiveBase {
 
     constructor(private data: DataGatewayService,
                 public modal: ModalService,
-                private repository: RepositoryService,
+                private repository: PlatformRepositoryService,
                 public auth: AuthService,
                 private preferences: UserPreferencesService) {
 

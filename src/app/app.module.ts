@@ -12,7 +12,8 @@ import {DataGatewayService} from "./core/data-gateway/data-gateway.service";
 import {CWLModule} from "./cwl/cwl.module";
 import {EditorCommonModule} from "./editor-common/editor-common.module";
 import {CtHttp} from "./http/ct-http.service";
-import {RepositoryService} from "./repository/repository.service";
+import {LocalProfileService} from "./profiles/local-profile.service";
+import {PlatformUserProfileService} from "./profiles/platform-user-profile.service";
 import {DomEventService} from "./services/dom/dom-event.service";
 import {GuidService} from "./services/guid.service";
 import {IpcService} from "./services/ipc.service";
@@ -23,26 +24,27 @@ import {ToolEditorModule} from "./tool-editor/tool-editor.module";
 import {ModalService} from "./ui/modal/modal.service";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
-import {LocalProfileService} from "./profiles/local-profile.service";
-import {PlatformUserProfileService} from "./profiles/platform-user-profile.service";
+import {PlatformRepositoryService} from "./repository/platform-repository.service";
+import {LocalRepositoryService} from "./repository/local-repository.service";
 
 @NgModule({
     providers: [
         AuthService,
-        FormBuilder,
-        DomEventService,
-        UserPreferencesService,
-        ModalService,
-        IpcService,
-        GuidService,
-        SettingsService,
-        PlatformConnectionService,
-        PlatformAPIGatewayService,
         DataGatewayService,
-        RepositoryService,
+        DomEventService,
+        FormBuilder,
+        GuidService,
+        IpcService,
         LocalProfileService,
-        PlatformUserProfileService,
+        LocalRepositoryService,
+        ModalService,
         OldAuthService,
+        PlatformAPIGatewayService,
+        PlatformConnectionService,
+        PlatformRepositoryService,
+        PlatformUserProfileService,
+        SettingsService,
+        UserPreferencesService,
         {
             provide: CtHttp,
             useFactory: ctHttpFactory,

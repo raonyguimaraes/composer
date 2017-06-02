@@ -3,11 +3,12 @@ import {LocalRepository} from "./types/local-repository";
 import {UserRepository} from "./types/user-repository";
 import {RepositoryType} from "./types/repository-type";
 import {childOfKind} from "tslint";
+import {Local} from "protractor/built/driverProviders";
 
 export class DataRepository {
 
     user: UserRepository;
-    local: LocalRepository;
+    local?: LocalRepository;
 
     private listeners = {};
 
@@ -44,6 +45,39 @@ export class DataRepository {
                 callback();
             });
         });
+    }
+
+
+    activateUser(credentialsID?: string, callback?: (err?: Error) => void) {
+
+        // By default, set the update to be deactivation, then check if we need to activate a user
+        const patch = {activeCredentials: null} as Partial<LocalRepository>;
+
+        // If we received credentials ID, try to match it to a credentials entry and set that entry as the active one
+        if (credentialsID) {
+            const credentialsEntryWithGivenID = this.local.credentials.find(entry => entry.id === credentialsID);
+
+            if (credentialsEntryWithGivenID) {
+                patch.activeCredentials = credentialsEntryWithGivenID;
+            }
+        }
+
+        this.updateLocal(patch, (err) => {
+            if (err) return callback(err);
+
+            if (patch.activeCredentials === null) {
+                this.user = undefined;
+                return callback();
+            }
+
+            this.loadProfile(patch.activeCredentials.id, new UserRepository(), (err) => {
+                if (err) return callback(err);
+
+                callback();
+            });
+        });
+
+
     }
 
     private update<T extends RepositoryType>(profile: string, data: Partial<T>, callback?: (err?: Error, data?: T) => void) {

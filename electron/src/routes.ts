@@ -88,6 +88,8 @@ module.exports = {
     },
 
     getLocalRepository: (data: { key?: string } = {}, callback) => {
+
+
         repositoryLoad.then((repoData) => {
             const repositoryData = data.key ? repository.local[data.key] : repository.local;
 
@@ -96,6 +98,29 @@ module.exports = {
             callback(err)
         });
     },
+
+    watchLocalRepository: (data: { key: string }, callback) => {
+
+        repositoryLoad.then((repoData) => {
+
+            if (repository.local && repository.local.hasOwnProperty(data.key)) {
+                callback(null, repository.local[data.key]);
+
+                repository.on(`update.local.${data.key}`, (value) => {
+                    callback(null, value);
+                });
+            } else {
+                const keyList = Object.keys(repository.local).map(k => `“${k}”`).join(", ");
+                callback(new Error(`
+                    Key “${data.key}” does not exist in the local storage. 
+                    Available keys: ${keyList}
+                `));
+            }
+        }, err => {
+            callback(err)
+        });
+    },
+
 
     patchLocalRepository: (patch: Partial<LocalRepository>, callback) => {
         repositoryLoad.then(() => {
@@ -112,9 +137,32 @@ module.exports = {
         }, err => callback(err));
     },
 
+    watchUserRepository: (data: { key: string }, callback) => {
+        repositoryLoad.then(() => {
+
+            if (repository.user && repository.user.hasOwnProperty(data.key)) {
+                callback(null, repository.user[data.key]);
+
+                repository.on(`update.user.${data.key}`, (value) => {
+                    callback(null, value);
+                });
+            } else {
+                const keyList = Object.keys(repository.local).map(k => `“${k}”`).join(", ");
+                callback(new Error(`Key “${data.key}” does not exist in the local storage. Available keys: ${keyList}`));
+            }
+
+        }, err => callback(err));
+    },
+
     patchUserRepository: (patch: Partial<UserRepository>, callback) => {
         repositoryLoad.then(() => {
             repository.updateUser(patch, callback);
         }, err => callback(err));
     },
+
+    activateUser: (credentialsID: string, callback) => {
+        repositoryLoad.then(() => {
+            repository.activateUser(credentialsID, callback);
+        }, err => callback(err));
+    }
 };

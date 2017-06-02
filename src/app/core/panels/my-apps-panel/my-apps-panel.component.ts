@@ -15,7 +15,6 @@ import "rxjs/add/operator/map";
 import {Observable} from "rxjs/Observable";
 import {App} from "../../../../../electron/src/sbg-api-client/interfaces/app";
 import {AuthService} from "../../../auth/auth.service";
-import {RepositoryService} from "../../../repository/repository.service";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ContextService} from "../../../ui/context/context.service";
 import {MenuItem} from "../../../ui/menu/menu-item";
@@ -32,6 +31,7 @@ import {CreateLocalFolderModalComponent} from "../../modals/create-local-folder-
 import {WorkboxService} from "../../workbox/workbox.service";
 import {NavSearchResultComponent} from "../nav-search-result/nav-search-result.component";
 import {MyAppsPanelService} from "./my-apps-panel.service";
+import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
 
 @Component({
     selector: "ct-my-apps-panel",
@@ -60,7 +60,7 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
                 private workbox: WorkboxService,
                 private auth: AuthService,
                 private modal: ModalService,
-                private repository: RepositoryService,
+                private repository: PlatformRepositoryService,
                 private dataGateway: DataGatewayService,
                 private service: MyAppsPanelService,
                 private context: ContextService) {

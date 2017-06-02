@@ -61,8 +61,33 @@ export class AuthCredentials implements UserPlatformIdentifier {
         }
     }
 
-    static from(obj: UserPlatformIdentifier) {
+    static from(obj?: UserPlatformIdentifier): AuthCredentials | undefined {
+        if (!obj) {
+            return undefined;
+        }
         return new AuthCredentials(obj.url, obj.token, obj.user);
+    }
+
+    /**
+     * Checks whether a pair of credentials contain the same user.
+     * It differs from the {@link AuthCredentials.equals} method in that x and y can be undefined.
+     *
+     * @see {@link AuthCredentials.equals} Instance method for comparing equality to another instance
+     */
+    static isSimilar(x?: AuthCredentials, y?: AuthCredentials): boolean {
+        const onlyXExists  = x !== undefined && y === undefined;
+        const onlyYExists  = y !== undefined && x === undefined;
+        const neitherExist = x === undefined && y === undefined;
+
+        if (onlyXExists || onlyYExists) {
+            return false;
+        }
+
+        if (neitherExist) {
+            return true;
+        }
+
+        return x.equals(y);
     }
 
     getHash(): string {
@@ -70,11 +95,21 @@ export class AuthCredentials implements UserPlatformIdentifier {
         return `${subdomain}_${this.user.username}`;
     }
 
+    /**
+     * Checks whether given credentials are considered equal to this one.
+     * Equality is based on API endpoint and username associated with the token.
+     *
+     * @see {@link AuthCredentials.isSimilar} Static function for pair comparison
+     */
     equals(credentials: AuthCredentials): boolean {
+        if (!credentials) {
+            return false;
+        }
+
         return this.getHash() === credentials.getHash();
     }
 
-    updateToMatch(credentials: AuthCredentials) {
+    updateToMatch(credentials: AuthCredentials): void {
         this.url   = credentials.url;
         this.token = credentials.token;
         this.user  = credentials.user;
