@@ -1,17 +1,18 @@
 import {Component, ViewContainerRef, ViewEncapsulation} from "@angular/core";
-import {Observable} from "rxjs/Rx";
-import {OldAuthService} from "../../auth/auth/auth.service";
-import {DataGatewayService} from "../../core/data-gateway/data-gateway.service";
 import {StatusBarService} from "../../layout/status-bar/status-bar.service";
 import {SystemService} from "../../platform-providers/system.service";
 import {PlatformAPI} from "../../services/api/platforms/platform-api.service";
 import {GuidService} from "../../services/guid.service";
-import {IpcService} from "../../services/ipc.service";
-import {JavascriptEvalService} from "../../services/javascript-eval/javascript-eval.service";
 import {ContextService} from "../../ui/context/context.service";
 import {MarkdownService} from "../../ui/markdown/markdown.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import {UrlValidator} from "../../validators/url.validator";
+import {Observable} from "rxjs/Observable";
+import "rxjs/add/observable/fromEvent";
+import "rxjs/add/operator/concat";
+import "rxjs/add/operator/delay";
+import "rxjs/add/operator/bufferCount";
+import "rxjs/add/operator/concatAll";
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -40,19 +41,9 @@ export class MainComponent {
 
     constructor(modal: ModalService,
                 system: SystemService,
-                data: DataGatewayService,
-                vcRef: ViewContainerRef,
-                ipc: IpcService,
-                auth: OldAuthService,
-                js: JavascriptEvalService) {
+                vcRef: ViewContainerRef) {
 
         system.boot();
-
-        console.log("Should load preferences");
-        ipc.request("getLocalRepository").subscribe(prefs => {
-            console.log("Got local preferences", prefs);
-
-        });
 
         /**
          * Hack for angular's inability to provide the vcRef to a service with DI.

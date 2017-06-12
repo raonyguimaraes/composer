@@ -4,7 +4,6 @@ import {CommandLineToolFactory} from "cwlts/models/generic/CommandLineToolFactor
 import {CommandLinePart} from "cwlts/models/helpers/CommandLinePart";
 import * as Yaml from "js-yaml";
 import {Observable} from "rxjs/Observable";
-import {ReplaySubject, Subject} from "rxjs/Rx";
 import {OldAuthService} from "../auth/auth/auth.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
@@ -22,7 +21,10 @@ import {CredentialsEntry} from "../services/storage/user-preferences-types";
 import {ModalService} from "../ui/modal/modal.service";
 import {DirectiveBase} from "../util/directive-base/directive-base";
 import LoadOptions = jsyaml.LoadOptions;
+import {Subject} from "rxjs/Subject";
+import {ReplaySubject} from "rxjs/ReplaySubject";
 
+import "rxjs/add/observable/combineLatest";
 @Component({
     selector: "ct-tool-editor",
     styleUrls: ["./tool-editor.component.scss"],

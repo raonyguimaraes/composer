@@ -7,4 +7,12 @@ export class UserRepository extends RepositoryType {
     projects: Project[] = [];
 
     apps: App[] = [];
+
+    publicApps: App[] = [];
+
+    openProjects: string[] = [];
+
+    projectFetchTimestamp = 0;
+
+    appFetchTimestamp = 0;
 }

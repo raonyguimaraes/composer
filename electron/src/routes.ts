@@ -144,11 +144,12 @@ module.exports = {
                 callback(null, repository.user[data.key]);
 
                 repository.on(`update.user.${data.key}`, (value) => {
+                    console.log("Received user update of", data.key);
                     callback(null, value);
                 });
             } else {
-                const keyList = Object.keys(repository.local).map(k => `“${k}”`).join(", ");
-                callback(new Error(`Key “${data.key}” does not exist in the local storage. Available keys: ${keyList}`));
+                const keyList = Object.keys(repository.user).map(k => `“${k}”`).join(", ");
+                callback(new Error(`Key “${data.key}” does not exist in the user storage. Available keys: ${keyList}`));
             }
 
         }, err => callback(err));
@@ -163,6 +164,44 @@ module.exports = {
     activateUser: (credentialsID: string, callback) => {
         repositoryLoad.then(() => {
             repository.activateUser(credentialsID, callback);
+        }, err => callback(err));
+    },
+
+    fetchPlatformData: (data = {}, callback) => {
+        repositoryLoad.then(() => {
+
+            if (!repository.local.activeCredentials) {
+                return callback(new Error("Cannot fetch platform data when there is no active user."));
+            }
+
+            const {url, token} = repository.local.activeCredentials;
+
+            const client     = SBGClient.create(url, token);
+            const projects   = client.projects.all();
+            const apps       = client.apps.private();
+            const publicApps = client.apps.public();
+
+            Promise.all([projects, apps, publicApps]).then(results => {
+                console.log("Fetched all data");
+                const [projects, apps, publicApps] = results;
+
+                const timestamp = Date.now();
+
+                repository.updateUser({
+                    apps,
+                    projects,
+                    publicApps,
+                    appFetchTimestamp: timestamp,
+                    projectFetchTimestamp: timestamp
+                }, (err, data) => {
+                    console.log("Update user callback", err, data);
+                    if (err) return callback(err);
+
+                    callback(null, "success");
+                });
+            }, err => callback(err));
+
+
         }, err => callback(err));
     }
 };

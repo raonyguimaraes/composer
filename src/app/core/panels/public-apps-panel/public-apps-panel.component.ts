@@ -2,6 +2,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, QueryList, View
 import {FormControl} from "@angular/forms";
 
 import "rxjs/add/operator/map";
+import "rxjs/add/operator/do";
 
 import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
@@ -267,43 +268,43 @@ export class PublicAppsPanelComponent extends DirectiveBase implements AfterView
     private attachSearchObserver() {
 
 
-        const search = (term) => {
-
-
-            const reversedTerm = term.split("").reverse().join("");
-            return this.treeNodes.reduce((acc, node) => {
-                return acc.concat(node.children.map(child => Object.assign(child, {parentLabel: node.label})));
-            }, []).map((child) => {
-                const fuzziness = DataGatewayService.fuzzyMatch(reversedTerm, child.id.split("").reverse().join(""));
-                return {
-                    id: child.id,
-                    title: child.label,
-                    label: [child["parentLabel"], child.data["sbg:toolkit"], (child.data["sbg:categories"] || []).join(", ")].join("/"),
-                    icon: child.data.class === "Workflow" ? "fa-share-alt" : "fa-terminal",
-
-                    dragEnabled: true,
-                    dragTransferData: child.id,
-                    dragLabel: child.label,
-                    dragImageClass: child.data["class"] === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
-                    dragDropZones: ["zone1"],
-
-                    fuzziness
-                };
-            }).filter(child => child.fuzziness > 0.01)
-                .sort((a, b) => b.fuzziness - a.fuzziness)
-                .slice(0, 20);
-        };
-
-        this.searchContent.valueChanges
-            .do(term => this.searchResults = undefined)
-            .debounceTime(250)
-            .distinctUntilChanged()
-            .filter(term => term.trim().length !== 0)
-            .switchMap(term => Observable.of(search(term)))
-            .subscribe(results => {
-                this.searchResults = results;
-                this.cdr.markForCheck();
-            });
+        // const search = (term) => {
+        //
+        //
+        //     const reversedTerm = term.split("").reverse().join("");
+        //     return this.treeNodes.reduce((acc, node) => {
+        //         return acc.concat(node.children.map(child => Object.assign(child, {parentLabel: node.label})));
+        //     }, []).map((child) => {
+        //         const fuzziness = DataGatewayService.fuzzyMatch(reversedTerm, child.id.split("").reverse().join(""));
+        //         return {
+        //             id: child.id,
+        //             title: child.label,
+        //             label: [child["parentLabel"], child.data["sbg:toolkit"], (child.data["sbg:categories"] || []).join(", ")].join("/"),
+        //             icon: child.data.class === "Workflow" ? "fa-share-alt" : "fa-terminal",
+        //
+        //             dragEnabled: true,
+        //             dragTransferData: child.id,
+        //             dragLabel: child.label,
+        //             dragImageClass: child.data["class"] === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
+        //             dragDropZones: ["zone1"],
+        //
+        //             fuzziness
+        //         };
+        //     }).filter(child => child.fuzziness > 0.01)
+        //         .sort((a, b) => b.fuzziness - a.fuzziness)
+        //         .slice(0, 20);
+        // };
+        //
+        // this.searchContent.valueChanges
+        //     .do(term => this.searchResults = undefined)
+        //     .debounceTime(250)
+        //     .distinctUntilChanged()
+        //     .filter(term => term.trim().length !== 0)
+        //     .switchMap(term => Observable.of(search(term)))
+        //     .subscribe(results => {
+        //         this.searchResults = results;
+        //         this.cdr.markForCheck();
+        //     });
     }
 
     private attachExpansionStateSaving() {

@@ -14,17 +14,18 @@ export type IPCRoute =
     | "createDirectory"
     | "createFile"
     | "deletePath"
-    | "getSetting"
-    | "getProjects"
+    | "fetchPlatformData"
     | "getApps"
+    | "getLocalRepository"
+    | "getProjects"
+    | "getSetting"
+    | "getUserByToken"
+    | "getUserRepository"
     | "hasDataCache"
+    | "patchLocalRepository"
+    | "patchUserRepository"
     | "pathExists"
     | "putSetting"
-    | "getUserByToken"
-    | "getLocalRepository"
-    | "patchLocalRepository"
-    | "getUserRepository"
-    | "patchUserRepository"
     | "readDirectory"
     | "readFileContent"
     | "resolve"
@@ -58,7 +59,7 @@ export class IpcService {
             // console.debug("Data reply received", response.id, response);
 
             if (!this.pendingRequests[response.id]) {
-                console.warn("Missing ipc request stream", response.id);
+                // console.warn("Missing ipc request stream", response.id);
                 return;
             }
             const {stream, type, zone} = this.pendingRequests[response.id];
@@ -69,6 +70,7 @@ export class IpcService {
                     console.warn("Error on IPC Channel:", response.error, response.id);
                     stream.error(response.error);
                 }
+
                 stream.next(response.data);
 
                 if (type === RequestType.Once) {

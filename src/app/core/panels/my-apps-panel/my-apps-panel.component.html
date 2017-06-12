@@ -26,12 +26,10 @@
         </ct-nav-search-result>
 
     </div>
-    <ct-line-loader class="m-1"
-                    *ngIf="searchContent.value
-                             && !searchResults"></ct-line-loader>
 
-    <div *ngIf="searchContent.value
-                        && (searchResults && searchResults.length === 0)"
+    <ct-line-loader class="m-1" *ngIf="searchContent.value && !searchResults"></ct-line-loader>
+
+    <div *ngIf="searchContent.value && (searchResults && searchResults.length === 0)"
          class="no-results m-1">
         <p class="explanation">
             No search results for “{{ searchContent.value }}.”
@@ -39,6 +37,8 @@
         <i class="icon fa-4x fa fa-search"></i>
     </div>
 
-    <ct-tree-view #tree [class.hidden]="searchContent?.value" [nodes]="service.rootFolders | async"
+    <ct-tree-view #tree
+                  [class.hidden]="searchContent?.value"
+                  [nodes]="rootFolders"
                   [level]="1"></ct-tree-view>
 </div>

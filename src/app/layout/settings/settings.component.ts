@@ -64,7 +64,6 @@ type ViewMode = "auth" | "keyBindings" | "cache";
                 </div>
             </div>
         </ct-form-panel>
-
     `
 })
 export class SettingsComponent extends DirectiveBase {

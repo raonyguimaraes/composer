@@ -5,6 +5,7 @@ import {User} from "../../../electron/src/sbg-api-client/interfaces/user";
 import {LocalRepositoryService} from "../repository/local-repository.service";
 import {AuthCredentials} from "./model/auth-credentials";
 
+
 @Injectable()
 export class AuthService {
 
@@ -14,7 +15,7 @@ export class AuthService {
 
     constructor(private repository: LocalRepositoryService) {
 
-        // Proxy all credentials from the repository
+        // Proxy all credentials rom the repository
         this.repository.getCredentials().subscribe(c => this.credentials.next(c));
 
         // Proxy active credentials from the repository
@@ -44,7 +45,7 @@ export class AuthService {
 
         if (!credentials) {
             return this.repository.setActiveCredentials(undefined);
-        }
+    }
 
         const c = this.credentials.getValue().find(c => c.equals(credentials));
         if (!c) {

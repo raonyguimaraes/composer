@@ -3,6 +3,7 @@ import {SystemService} from "../../../platform-providers/system.service";
 import {SettingsService} from "../../../services/settings/settings.service";
 import {StepModel} from "cwlts/models";
 import {ModalService} from "../../../ui/modal/modal.service";
+import "rxjs/add/operator/first";
 
 @Component({
     encapsulation: ViewEncapsulation.None,

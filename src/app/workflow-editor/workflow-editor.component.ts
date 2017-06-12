@@ -2,7 +2,6 @@ import {Component, Input, OnDestroy, OnInit, TemplateRef, ViewChild, ViewContain
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {WorkflowFactory, WorkflowModel} from "cwlts/models";
 import * as Yaml from "js-yaml";
-import {Observable, Subject} from "rxjs/Rx";
 import {OldAuthService} from "../auth/auth/auth.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
@@ -24,6 +23,11 @@ import {WorkflowGraphEditorComponent} from "./graph-editor/graph-editor/workflow
 import {WorkflowEditorService} from "./workflow-editor.service";
 
 import LoadOptions = jsyaml.LoadOptions;
+import {Subject} from "rxjs/Subject";
+import "rxjs/add/operator/debounceTime";
+import "rxjs/add/operator/merge";
+import "rxjs/add/operator/switchMap";
+import {Observable} from "rxjs/Observable";
 
 
 @Component({

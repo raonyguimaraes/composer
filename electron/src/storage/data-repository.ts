@@ -1,23 +1,19 @@
 import * as storage from "electron-storage";
 import {LocalRepository} from "./types/local-repository";
-import {UserRepository} from "./types/user-repository";
 import {RepositoryType} from "./types/repository-type";
-import {childOfKind} from "tslint";
-import {Local} from "protractor/built/driverProviders";
+import {UserRepository} from "./types/user-repository";
 
 export class DataRepository {
 
     user: UserRepository;
-    local?: LocalRepository;
+    local: LocalRepository;
 
     private listeners = {};
 
     constructor() {
         this.on("update.local.activeCredentials", (activeCredentials: any) => {
             if (activeCredentials) {
-                console.log("Switch active user");
                 this.loadProfile(activeCredentials.id, new UserRepository(), () => {
-
                 });
             }
 
@@ -98,7 +94,10 @@ export class DataRepository {
 
         for (let key in data) {
             this.trigger(["update", profile, key].join("."), data[key]);
-            this.trigger(["update", "user", key].join("."), data[key]);
+
+            if (profile !== "local") {
+                this.trigger(["update", "user", key].join("."), data[key]);
+            }
         }
     }
 
@@ -141,7 +140,15 @@ export class DataRepository {
                 return;
             }
 
-            storage.get(filePath, callback);
+            storage.get(filePath, (err, storageContent: T) => {
+                if (err) return callback(err);
+                for (let prop in defaultData) {
+                    if (!storageContent.hasOwnProperty(prop)) {
+                        storageContent[prop] = defaultData[prop];
+                    }
+                }
+                callback(null, storageContent);
+            });
 
         });
     }

@@ -99,7 +99,7 @@ export class AddSourceModalComponent extends DirectiveBase {
 
         super();
 
-        const projects          = this.repository.projects;
+        const projects          = this.repository.getProjects();
         const openProjects      = this.preferences.getOpenProjects();
         const activeCredentials = this.auth.active;
 

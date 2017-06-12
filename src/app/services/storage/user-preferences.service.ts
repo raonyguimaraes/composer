@@ -1,4 +1,5 @@
 import {Injectable} from "@angular/core";
+import "rxjs/add/observable/of";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/take";
 import {Observable} from "rxjs/Observable";
@@ -83,7 +84,7 @@ export class UserPreferencesService {
      * @deprecated This doesn't use multiple sources, split it into multiple profile services
      */
     getExpandedNodes() {
-        return this.get("expandedNodes", []).do(data => console.log("Giving expanded nodes", data));
+        return this.get("expandedNodes", []);
     }
 
     getSidebarHidden() {

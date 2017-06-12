@@ -6,6 +6,8 @@ import {PlatformProjectEntry} from "../../core/data-gateway/data-types/platform-
 import {PlatformAppEntry} from "../../services/api/platforms/platform-api.types";
 import {CtHttp} from "../../http/ct-http.service";
 
+import "rxjs/add/operator/retryWhen";
+
 export class PlatformAPI {
 
     readonly sessionID = new ReplaySubject<string>(1);

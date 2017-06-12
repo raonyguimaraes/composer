@@ -1,12 +1,13 @@
 import {Injectable, Optional} from "@angular/core";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
-import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 
 import {ErrorBarService} from "../../layout/error-bar/error-bar.service";
 import {ConnectionState, CredentialsEntry} from "../../services/storage/user-preferences-types";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {PlatformAPIGatewayService} from "../api/platform-api-gateway.service";
+
+import "rxjs/add/operator/mergeMap";
 
 @Injectable()
 export class OldAuthService {

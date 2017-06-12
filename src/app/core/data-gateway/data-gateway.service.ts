@@ -2,6 +2,14 @@ import {Injectable} from "@angular/core";
 import {FormControl} from "@angular/forms";
 import {Http} from "@angular/http";
 import * as YAML from "js-yaml";
+import "rxjs/add/observable/empty";
+import "rxjs/add/observable/fromPromise";
+import "rxjs/add/observable/merge";
+import "rxjs/add/observable/zip";
+import "rxjs/add/operator/catch";
+
+import "rxjs/add/operator/mergeMap";
+import "rxjs/add/operator/publishReplay";
 import {AsyncSubject} from "rxjs/AsyncSubject";
 import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
@@ -54,7 +62,7 @@ export class DataGatewayService {
         const call = this.auth.active.switchMap(connection => {
             const {url, token} = connection;
             return this.ipc.request("getProjects", {url, token});
-        }).do(data => console.log("Getting all the proijects", data));
+        });
 
         return this.throughCache(`getPlatformListing`, call);
     }
@@ -68,7 +76,8 @@ export class DataGatewayService {
     }
 
     createLocalFolder(folderPath) {
-        return this.ipc.request("createDirectory", folderPath);;
+        return this.ipc.request("createDirectory", folderPath);
+        ;
     }
 
     getFolderListing(folder) {
@@ -77,10 +86,6 @@ export class DataGatewayService {
 
     invalidateFolderListing(folder) {
         this.cacheInvalidation.next(`readDirectory.${folder}`);
-    }
-
-    getLocalListing() {
-        return this.preferences.get("localFolders", []);
     }
 
     searchLocalProjects(term, limit = 20) {
@@ -324,5 +329,4 @@ export class DataGatewayService {
         return this.ipc.request("getApps", {url, token, query}) as AsyncSubject<App[]>;
     }
 
-    loadUser
 }

@@ -1,8 +1,7 @@
 import {AfterViewInit, Component, Input, OnInit, Output} from "@angular/core";
 import {FormControl, FormGroup} from "@angular/forms";
-import {Subject} from "rxjs/Subject";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
-import {AsyncSubject} from "rxjs";
+import {AsyncSubject} from "rxjs/AsyncSubject";
 
 @Component({
     styleUrls: ["prompt.component.scss"],

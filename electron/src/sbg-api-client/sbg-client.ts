@@ -56,7 +56,7 @@ export class SBGClient {
 
     get apps() {
         return {
-            private: (query: AppQueryParams) => this.fetchAll<App>("apps", query),
+            private: (query: AppQueryParams = {fields: "id,name,project,raw.class"}) => this.fetchAll<App>("apps", query),
             public: () => this.fetchAll<App>("apps?visibility=public")
         }
     }
