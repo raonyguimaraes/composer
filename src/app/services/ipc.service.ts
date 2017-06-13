@@ -1,8 +1,8 @@
 import {Injectable, NgZone, Optional} from "@angular/core";
 import {AsyncSubject} from "rxjs/AsyncSubject";
+import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {GuidService} from "./guid.service";
-import {Observable} from "rxjs/Observable";
 
 enum RequestType {
     Once,
@@ -15,6 +15,8 @@ export type IPCRoute =
     | "createFile"
     | "deletePath"
     | "fetchPlatformData"
+    | "patchSwap"
+    | "getPlatformApp"
     | "getApps"
     | "getLocalRepository"
     | "getProjects"

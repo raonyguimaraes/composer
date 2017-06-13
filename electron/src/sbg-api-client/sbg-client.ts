@@ -3,7 +3,7 @@ import {reject} from "q";
 import {RequestAPI} from "request";
 import * as requestPromise from "request-promise-native";
 import {RequestError, StatusCodeError, TransformError} from "request-promise-native/errors";
-import {User, Project} from "./interfaces";
+import {Project, User} from "./interfaces";
 import {App} from "./interfaces/app";
 import {AppQueryParams, QueryParams} from "./interfaces/queries";
 
@@ -56,8 +56,15 @@ export class SBGClient {
 
     get apps() {
         return {
-            private: (query: AppQueryParams = {fields: "id,name,project,raw.class"}) => this.fetchAll<App>("apps", query),
-            public: () => this.fetchAll<App>("apps?visibility=public")
+            private: (query: AppQueryParams = {fields: "id,name,project,raw.class"}) => {
+                return this.fetchAll<App>("apps", query);
+            },
+            get: (appID: string) => {
+                return this.apiRequest(`apps/${appID}`);
+            },
+            public: () => {
+                return this.fetchAll<App>("apps?visibility=public");
+            }
         }
     }
 

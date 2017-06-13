@@ -3,7 +3,13 @@ import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {CommandLineToolFactory} from "cwlts/models/generic/CommandLineToolFactory";
 import {CommandLinePart} from "cwlts/models/helpers/CommandLinePart";
 import * as Yaml from "js-yaml";
+
+import "rxjs/add/observable/combineLatest";
+import "rxjs/add/operator/skip";
+import "rxjs/add/operator/take";
 import {Observable} from "rxjs/Observable";
+import {ReplaySubject} from "rxjs/ReplaySubject";
+import {Subject} from "rxjs/Subject";
 import {OldAuthService} from "../auth/auth/auth.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
@@ -20,15 +26,14 @@ import {SystemService} from "../platform-providers/system.service";
 import {CredentialsEntry} from "../services/storage/user-preferences-types";
 import {ModalService} from "../ui/modal/modal.service";
 import {DirectiveBase} from "../util/directive-base/directive-base";
-import LoadOptions = jsyaml.LoadOptions;
-import {Subject} from "rxjs/Subject";
-import {ReplaySubject} from "rxjs/ReplaySubject";
 
-import "rxjs/add/observable/combineLatest";
+import {ToolEditorService} from "./tool-editor.service";
+import LoadOptions = jsyaml.LoadOptions;
+
 @Component({
     selector: "ct-tool-editor",
     styleUrls: ["./tool-editor.component.scss"],
-    providers: [EditorInspectorService, ErrorBarService],
+    providers: [EditorInspectorService, ErrorBarService, ToolEditorService],
     templateUrl: "./tool-editor.component.html"
 })
 export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDestroy, WorkboxTab, AfterViewInit {
@@ -88,6 +93,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
                 private modal: ModalService,
                 private system: SystemService,
                 private auth: OldAuthService,
+                private service: ToolEditorService,
                 private errorBarService: ErrorBarService) {
 
         super();
@@ -103,6 +109,18 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
     }
 
     ngOnInit(): void {
+
+        this.service.appID = this.data.id;
+
+        this.codeEditorContent.valueChanges.take(1).subscribe(content => {
+            console.log("Pushing first content,", content.length);
+            this.service.originalCodeContent.next(content);
+            this.service.codeContent.next(content);
+        });
+        this.codeEditorContent.valueChanges.skip(1).subscribe(content => {
+            console.log("Pushing after content", content.length);
+            this.service.codeContent.next(content)
+        });
 
         this.tracked = Observable.combineLatest(
             this.codeEditorContent.valueChanges.map(() => this.codeEditorContent.dirty),
@@ -283,7 +301,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
         const fileWithoutRevision = this.data.id.split("/");
 
         // In the case when id is without revision number
-        if (!isNaN(+fileWithoutRevision[fileWithoutRevision.length -1])) {
+        if (!isNaN(+fileWithoutRevision[fileWithoutRevision.length - 1])) {
             fileWithoutRevision.pop();
         }
 

@@ -1,8 +1,8 @@
 import {Injectable} from "@angular/core";
 import * as YAML from "js-yaml";
-import {Subject} from "rxjs/Subject";
-import {Observable} from "rxjs/Observable";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
+import {Observable} from "rxjs/Observable";
+import {Subject} from "rxjs/Subject";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {DataGatewayService} from "../data-gateway/data-gateway.service";
 import {AppTabData} from "./app-tab-data";
@@ -95,9 +95,15 @@ export class WorkboxService {
             tab = this.extractValues().activeTab;
         }
 
+        if (tab.data && tab.data.id && !tab.data.id.startsWith("?")) {
+            console.log("Patching swap for", tab.data.id);
+            this.dataGateway.updateSwap(tab.data.id, null);
+        }
+
         const currentlyOpenTabs = this.tabs.getValue();
-        const tabToRemove = currentlyOpenTabs.find(t => t.id === tab.id);
-        const newTabList = currentlyOpenTabs.filter(t => t !== tabToRemove);
+        const tabToRemove       = currentlyOpenTabs.find(t => t.id === tab.id);
+        const newTabList        = currentlyOpenTabs.filter(t => t !== tabToRemove);
+
 
         this.tabs.next(newTabList);
         this.ensureActiveTab();
@@ -114,16 +120,16 @@ export class WorkboxService {
 
     public activateNext() {
         const {tabs, activeTab} = this.extractValues();
-        const index = tabs.indexOf(activeTab);
-        const newActiveTab = index === (tabs.length - 1) ? tabs[0] : tabs[index + 1];
+        const index             = tabs.indexOf(activeTab);
+        const newActiveTab      = index === (tabs.length - 1) ? tabs[0] : tabs[index + 1];
 
         this.activateTab(newActiveTab);
     }
 
     public activatePrevious() {
         const {tabs, activeTab} = this.extractValues();
-        const index = tabs.indexOf(activeTab);
-        const newActiveTab = index ? tabs[index - 1] : tabs[tabs.length - 1];
+        const index             = tabs.indexOf(activeTab);
+        const newActiveTab      = index ? tabs[index - 1] : tabs[tabs.length - 1];
 
         this.activateTab(newActiveTab);
     }
@@ -157,6 +163,7 @@ export class WorkboxService {
     public getOrCreateFileTab(fileID): Observable<TabData<AppTabData>> {
 
         const currentTab = this.tabs.getValue().find(tab => tab.id === fileID);
+
         if (currentTab) {
             return Observable.of(currentTab);
         }
@@ -202,7 +209,7 @@ export class WorkboxService {
 
 
                 tab.label = parsed.label || fileID;
-                tab.type = parsed.class || "Code";
+                tab.type  = parsed.class || "Code";
             } catch (ex) {
                 console.warn("Could not parse app", ex);
             }

@@ -5,6 +5,7 @@ import * as YAML from "js-yaml";
 import "rxjs/add/observable/empty";
 import "rxjs/add/observable/fromPromise";
 import "rxjs/add/observable/merge";
+import "rxjs/add/observable/throw";
 import "rxjs/add/observable/zip";
 import "rxjs/add/operator/catch";
 
@@ -128,6 +129,8 @@ export class DataGatewayService {
 
     fetchFileContent(almostID: string, parse = false) {
 
+        console.log("Fetching file content", almostID, parse);
+
         const source = DataGatewayService.getFileSource(almostID);
         console.log("File source is", source, "for", almostID);
 
@@ -149,23 +152,21 @@ export class DataGatewayService {
 
         if (source === "app") {
             // ID example, all concatenated:
-            // default_1b2a8fed50d9402593a57acddc7d7cfe/ivanbatic+admin/
-            // dfghhm/ivanbatic+admin/dfghhm/
-            // whole-genome-analysis-bwa-gatk-2-3-9-lite/2
-            const [h, , , ownerSlug, projectSlug, appSlug, revision] = almostID.split("/");
+            // default_1b2a8fed50d9402593a57acddc7d7cfe/ivanbatic+admin/dfghhm/ivanbatic+admin/dfghhm/whole-genome-analysis-bwa-gatk-2-3-9-lite/2
 
-            const [hash] = h.split("?");
+            const [owner, projectSlug, appSlug, revision] = almostID.split("/");
+            const appID                                   = [owner, projectSlug, appSlug].join("/");
 
-            const platform = this.apiGateway.forHash(hash);
-
-            const fetch = platform ? platform.getApp(ownerSlug, projectSlug, appSlug, revision)
-                : Observable.throw(
-                    new Error("Cannot open the app because you are not connected to the necessary platform."));
+            const fetch = Observable.empty().concat(this.ipc.request("getPlatformApp", {
+                id: appID
+            }));
 
             if (parse) {
-                return fetch;
+                return fetch.map(content => JSON.parse(content));
             }
-            return fetch.map(app => JSON.stringify(app, null, 4));
+            return fetch;
+
+
         }
 
         if (source === "public") {
@@ -327,6 +328,21 @@ export class DataGatewayService {
         fields: "id,name,project,raw.class"
     }): AsyncSubject<App[]> {
         return this.ipc.request("getApps", {url, token, query}) as AsyncSubject<App[]>;
+    }
+
+    updateSwap(fileID, content): Observable<any> {
+        const isLocal = fileID.startsWith("/");
+
+        let swapID = fileID;
+        if (!isLocal) {
+            swapID = fileID.split("/").slice(0, 3).join("/");
+        }
+
+        return this.ipc.request("patchSwap", {
+            local: isLocal,
+            swapID: swapID,
+            swapContent: content
+        });
     }
 
 }

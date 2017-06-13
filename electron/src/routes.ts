@@ -176,12 +176,12 @@ module.exports = {
 
             const {url, token} = repository.local.activeCredentials;
 
-            const client     = SBGClient.create(url, token);
-            const projects   = client.projects.all();
-            const apps       = client.apps.private();
-            const publicApps = client.apps.public();
+            const client            = SBGClient.create(url, token);
+            const projectsPromise   = client.projects.all();
+            const appsPromise       = client.apps.private();
+            const publicAppsPromise = client.apps.public();
 
-            Promise.all([projects, apps, publicApps]).then(results => {
+            Promise.all([projectsPromise, appsPromise, publicAppsPromise]).then(results => {
                 console.log("Fetched all data");
                 const [projects, apps, publicApps] = results;
 
@@ -201,6 +201,73 @@ module.exports = {
                 });
             }, err => callback(err));
 
+
+        }, err => callback(err));
+    },
+
+    /**
+     * Retrive platform app content.
+     * Checks for a swap data first, then falls back to fetching it from the API.
+     */
+    getPlatformApp: (data: { id: string }, callback) => {
+
+        repositoryLoad.then(() => {
+
+            const credentials    = repository.local.activeCredentials;
+            const userRepository = repository.user;
+
+            if (!credentials || !userRepository) {
+                callback(new Error("Cannot fetch an app, you are not connected to any platform."));
+            }
+
+
+            if (userRepository.swap && userRepository.swap[data.id]) {
+                callback(null, repository.user.swap[data.id]);
+                return;
+            }
+
+            const api = new SBGClient(credentials.url, credentials.token);
+            api.apps.get(data.id).then(response => {
+                console.log("Got app response", response);
+                callback(null, JSON.stringify(response.raw, null, 4));
+            }, err => callback(err));
+
+
+        }, err => callback(err));
+    },
+
+    patchSwap: (data: { local: boolean, swapID: string, swapContent?: string }, callback) => {
+        repositoryLoad.then(() => {
+
+            if (data.local) {
+                if (typeof data.swapContent !== "string") {
+                    delete repository.local.swap[data.swapID];
+                } else {
+                    repository.local.swap[data.swapID] =  data.swapContent;
+                }
+
+                repository.updateLocal({
+                    swap: repository.local.swap
+                }, callback);
+
+                return;
+            }
+
+            if (!repository.user) {
+                callback(new Error("Cannot save a swap file for a non-connected user."));
+            }
+
+            if (typeof data.swapContent !== "string") {
+                delete repository.user.swap[data.swapID];
+            } else {
+                repository.user.swap[data.swapID] = data.swapContent;
+            }
+
+            repository.updateUser({
+                swap: repository.user.swap
+            }, callback);
+
+            return;
 
         }, err => callback(err));
     }
