@@ -1,11 +1,14 @@
 import {Injectable, TemplateRef} from "@angular/core";
-import {StatusBarComponent} from "./status-bar.component";
-import {noop} from "../../lib/utils.lib";
-import {GuidService} from "../../services/guid.service";
+
+import "rxjs/add/observable/concat";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
 import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Subject} from "rxjs/Subject";
+import {noop} from "../../lib/utils.lib";
+import {GuidService} from "../../services/guid.service";
+import {StatusBarComponent} from "./status-bar.component";
+
 
 @Injectable()
 export class StatusBarService {

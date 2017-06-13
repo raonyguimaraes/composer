@@ -59,7 +59,6 @@ export class PlatformRepositoryService {
         });
 
         this.listen("expandedNodes").subscribe(list => {
-            console.log("Event from 'expandedNodes' of platform repository", list);
             this.expandedNodes.next(list);
         })
 

@@ -81,8 +81,7 @@ export class MyAppsPanelService {
 
         return Observable
             .combineLatest(localFolder, platformEntry)
-            .map(list => list.filter(v => v))
-            .do(data => console.log("Passing Root folders", data));
+            .map(list => list.filter(v => v));
     }
 
     getLocalNodes(): Observable<TreeNode<string>[]> {

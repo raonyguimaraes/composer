@@ -54,7 +54,7 @@ import "rxjs/add/operator/toPromise";
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-secondary" type="button" (click)="modal.close()">Cancel</button>
+                <button class="btn btn-secondary" type="button" (click)="close()">Cancel</button>
                 <button class="btn btn-primary" type="submit" [class.btn-loader]="form.pending" [disabled]="!form.valid">
                     <ng-container *ngIf="!form.pending">Apply</ng-container>
                     <ct-circular-loader *ngIf="form.pending"></ct-circular-loader>
@@ -181,6 +181,10 @@ export class PlatformCredentialsModalComponent implements OnInit {
         }
         const url = `https://${platformSubdomain}.sbgenomics.com/developer#token`;
         this.system.openLink(url);
+    }
+
+    close(){
+        this.modal.close();
     }
 }
 

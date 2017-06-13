@@ -26,7 +26,6 @@ export class LocalRepositoryService {
         this.listen("localFolders").subscribe(this.localFolders);
 
         this.listen("expandedNodes").subscribe(list => {
-            console.log("Getting local expanded nodes");
             this.expandedFolders.next(list)
         });
 

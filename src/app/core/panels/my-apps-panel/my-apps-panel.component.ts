@@ -172,6 +172,10 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
             });
     }
 
+    /**
+     * Attaches an expansion state listener to the tree and dispatches state updates to
+     * a service for saving.
+     */
     private attachExpansionStateSaving(): void {
 
         this.tree.expansionChanges.subscribe(node => {
