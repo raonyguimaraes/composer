@@ -32,7 +32,7 @@ import {DirectiveBase} from "../../../util/directive-base/directive-base";
                     container. These files will be created in the tool’s working directory from the text content you specify here.
                 </ct-blank-tool-state>
 
-                <div *ngIf="readonly && !model.listing?.length" class="text-xs-center h5">
+                <div *ngIf="readonly && !model.listing?.length" class="text-xs-center ">
                     This tool doesn't create any files
                 </div>
 
@@ -145,12 +145,7 @@ export class FileDefListComponent extends DirectiveBase {
     }
 
     removeEntry(index) {
-        this.modal.confirm({
-            title: "Really Remove?",
-            content: `Are you sure that you want to remove this file?`,
-            cancellationLabel: "No, keep it",
-            confirmationLabel: "Yes, remove it"
-        }).then(() => {
+        this.modal.delete("file").then(() => {
             if (this.inspector.isInspecting(this.model.listing[index].loc)) {
                 this.inspector.hide();
             }
@@ -158,7 +153,7 @@ export class FileDefListComponent extends DirectiveBase {
             const {entry, entryName} = this.model.listing[index];
             entry.cleanValidity();
             entryName.cleanValidity();
-            
+
             this.model.listing = this.model.listing.slice(0, index).concat(this.model.listing.slice(index + 1));
             this.update.next(this.model.listing);
         }, err => console.warn);

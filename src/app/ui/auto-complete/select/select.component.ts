@@ -1,7 +1,4 @@
-import {
-    Component, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit, Input,
-    OnDestroy, ChangeDetectorRef
-} from "@angular/core";
+import {AfterViewInit, Component, ElementRef, Input, NgZone, OnDestroy, ViewChild} from "@angular/core";
 import * as jQuery from "jquery";
 import "selectize";
 import {ObjectHelper} from "../../../helpers/object.helper";
@@ -132,8 +129,7 @@ export class SelectComponent implements AfterViewInit, OnDestroy {
 
     protected component = null;
 
-    constructor(private cdr: ChangeDetectorRef){
-
+    constructor(private zone: NgZone) {
     }
 
     protected updateOptions(items?: any []) {
@@ -176,36 +172,41 @@ export class SelectComponent implements AfterViewInit, OnDestroy {
 
     ngAfterViewInit() {
 
-        this.component = jQuery(this.el.nativeElement).selectize({
-            // Add remove button only if its not a mono-selection (suggested input)
-            plugins: this.maxItems !== 1 ? ["remove_button"] : [],
-            delimiter: this.delimiter,
-            create: this.create,
-            createOnBlur: this.createOnBlur,
-            createFilter: this.createFilter,
-            optgroups: this.optgroups,
-            optgroupValueField: this.optgroupValueField,
-            optgroupLabelField: this.optgroupLabelField,
-            optgroupField: this.optgroupField,
-            highlight: this.highlight,
-            persist: this.persist,
-            openOnFocus: this.openOnFocus,
-            maxItems: this.maxItems,
-            hideSelected: this.hideSelected,
-            allowEmptyOption: this.allowEmptyOptions,
-            addPrecedence: this.addPrecedence,
-            selectOnTab: this.selectOnTab,
-            valueField: this.valueField,
-            labelField: this.labelField,
-            sortField: this.sortField ? {
-                field: this.sortField,
-                direction: this.sortDirection || "asc"
-            } : undefined,
-            onChange: this.onChange.bind(this)
+        this.zone.runOutsideAngular(() => {
+            this.component = jQuery(this.el.nativeElement).selectize({
+                // Add remove button only if its not a mono-selection (suggested input)
+                plugins: this.maxItems !== 1 ? ["remove_button"] : [],
+                delimiter: this.delimiter,
+                create: this.create,
+                createOnBlur: this.createOnBlur,
+                createFilter: this.createFilter,
+                optgroups: this.optgroups,
+                optgroupValueField: this.optgroupValueField,
+                optgroupLabelField: this.optgroupLabelField,
+                optgroupField: this.optgroupField,
+                highlight: this.highlight,
+                persist: this.persist,
+                openOnFocus: this.openOnFocus,
+                maxItems: this.maxItems,
+                hideSelected: this.hideSelected,
+                allowEmptyOption: this.allowEmptyOptions,
+                addPrecedence: this.addPrecedence,
+                selectOnTab: this.selectOnTab,
+                valueField: this.valueField,
+                labelField: this.labelField,
+                sortField: this.sortField ? {
+                    field: this.sortField,
+                    direction: this.sortDirection || "asc"
+                } : undefined,
+                onChange: this.onChange.bind(this)
 
-        })[0].selectize;
+            })[0].selectize;
+        });
 
         setTimeout(() => {
+            if (!this.options.length) {
+                this.setOptions = !Array.isArray(this.items) ? [this.items] : this.items;
+            }
             this.updateOptions(this.items);
         });
     }

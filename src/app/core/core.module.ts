@@ -26,7 +26,8 @@ import {AppsPanelComponent} from "./panels/apps-panel/apps-panel.component";
 import {MyAppsPanelComponent} from "./panels/my-apps-panel/my-apps-panel.component";
 import {PublicAppsPanelComponent} from "./panels/public-apps-panel/public-apps-panel.component";
 import {NavSearchResultComponent} from "./panels/nav-search-result/nav-search-result.component";
-import {WorkboxComponent} from "./workbox/workbox.component";
+import {WorkBoxComponent} from "./workbox/workbox.component";
+import {WorkBoxTabComponent} from "./workbox/workbox-tab.component";
 import {PanelContainerComponent} from "./panels/panel-container/panel-container.component";
 import {SendFeedbackModalComponent} from "./modals/send-feedback-modal/send-feedback.modal.component";
 import {CreateAppModalComponent} from "./modals/create-app-modal/create-app-modal.component";
@@ -50,7 +51,8 @@ import {WorkflowEditorModule} from "../workflow-editor/workflow-editor.module";
         LayoutComponent,
         LogoComponent,
         LayoutTabContentComponent,
-        WorkboxComponent,
+        WorkBoxComponent,
+        WorkBoxTabComponent,
         SettingsButtonComponent,
         AppsPanelComponent,
         PanelContainerComponent,

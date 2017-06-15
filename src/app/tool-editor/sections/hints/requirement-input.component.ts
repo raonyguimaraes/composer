@@ -55,8 +55,7 @@ import {DirectiveBase} from "../../../util/directive-base/directive-base";
         </div>
 
     `,
-    styleUrls: ["./requirement-input.component.scss"],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ["./requirement-input.component.scss"]
 })
 export class RequirementInputComponent extends DirectiveBase implements ControlValueAccessor {
 
@@ -94,7 +93,13 @@ export class RequirementInputComponent extends DirectiveBase implements ControlV
             if (this.readonly) {
                 this.form.controls["class"].disable();
             }
-            this.form.controls["value"].setValue(obj.value, {onlySelf: true});
+
+            if (obj.value instanceof ExpressionModel) {
+                this.form.controls["value"].setValue(obj.value, {onlySelf: true});
+            } else {
+                this.editType = "half";
+                this.value = JSON.stringify(obj.value);
+            }
 
         } else if (obj.class !== undefined && obj.value === undefined) {
             this.editType = "half";

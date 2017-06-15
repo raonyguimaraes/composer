@@ -78,7 +78,6 @@ export class DataGatewayService {
 
     createLocalFolder(folderPath) {
         return this.ipc.request("createDirectory", folderPath);
-        ;
     }
 
     getFolderListing(folder) {

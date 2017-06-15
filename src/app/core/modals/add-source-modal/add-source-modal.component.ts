@@ -5,6 +5,7 @@ import {UserPreferencesService} from "../../../services/storage/user-preferences
 import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {DataGatewayService} from "../../data-gateway/data-gateway.service";
+import {WorkboxService} from "../../workbox/workbox.service";
 import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/project";
 import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
 
@@ -28,6 +29,19 @@ const {app, dialog} = window["require"]("electron").remote;
                 <p>Add one or more folders from your computer to the workspace.</p>
                 <p>
                     <button class="btn btn-secondary" (click)="selectLocalFolders()">Select a Folder...</button>
+                </div>
+            </div>
+
+            <div class="dialog-centered dialog-content" *ngIf="activeTab === 'platform' && !isConnected && !connecting">
+                
+                <p>
+                    Connect to the Seven Bridges Platform
+                </p>
+
+                <!--<ct-credentials-form #credsForm [removable]="false"></ct-credentials-form>-->
+                <p>
+                    <!--<button type="button" class="btn btn-primary" (click)="credsForm.applyValues(); connecting = true;">Connect</button>-->
+                    <button type="button" class="btn btn-secondary" (click)="openSettingsTab()">Connect</button>
                 </p>
             </div>
 
@@ -95,7 +109,8 @@ export class AddSourceModalComponent extends DirectiveBase {
                 public modal: ModalService,
                 private repository: PlatformRepositoryService,
                 public auth: AuthService,
-                private preferences: UserPreferencesService) {
+                private preferences: UserPreferencesService,
+                private workbox: WorkboxService) {
 
         super();
 
@@ -156,5 +171,8 @@ export class AddSourceModalComponent extends DirectiveBase {
         });
     }
 
-
+    openSettingsTab() {
+       this.workbox.openSettingsTab();
+       this.modal.close();
+    }
 }

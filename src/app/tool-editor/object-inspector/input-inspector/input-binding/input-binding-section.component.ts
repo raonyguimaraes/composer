@@ -141,7 +141,7 @@ export class InputBindingSectionComponent extends DirectiveBase implements Contr
             separate: [input.inputBinding.separate !== false],
             itemSeparator: [!!input.inputBinding.itemSeparator ? input.inputBinding.itemSeparator : null],
             shellQuote: [input.inputBinding.shellQuote]
-        });
+        }, {onlySelf: true});
 
         if (!this.readonly) {
             this.listenToInputBindingFormChanges();
@@ -154,13 +154,16 @@ export class InputBindingSectionComponent extends DirectiveBase implements Contr
             .debounceTime(300)
             .subscribe(form => {
                 if (form.position !== undefined) {
-                    this.input.inputBinding.position = form.position || 0;
+                    this.input.inputBinding.position = parseInt(form.position, 10) || 0;
                 }
 
                 if (form.prefix !== undefined) {
                     this.input.inputBinding.prefix = form.prefix;
                 }
 
+                if (form.separate !== undefined) {
+                    this.input.inputBinding.separate = form.separate;
+                }
 
                 if (form.itemSeparator !== undefined) {
                     this.input.inputBinding.itemSeparator = form.itemSeparator;

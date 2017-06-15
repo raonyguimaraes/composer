@@ -19,7 +19,7 @@ import {ModalService} from "../../../../ui/modal/modal.service";
                 parameters and options in the command line), or these can be set as arguments below.
             </ct-blank-tool-state>
 
-            <div *ngIf="readonly && !baseCommand.length" class="text-xs-center h5">
+            <div *ngIf="readonly && !baseCommand.length" class="text-xs-center">
                 This tool doesn't specify any baseCommands
             </div>
 
@@ -86,12 +86,7 @@ export class BaseCommandListComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     public removeBaseCommand(i: number) {
-        this.modal.confirm({
-            title: "Really Remove?",
-            content: `Are you sure that you want to remove this base command?`,
-            cancellationLabel: "No, keep it",
-            confirmationLabel: "Yes, remove it"
-        }).then(() => {
+        this.modal.delete("base command").then(() => {
             // reset the expression's validity
             this.baseCommand[i].cleanValidity();
             (this.form.get("list") as FormArray).removeAt(i);

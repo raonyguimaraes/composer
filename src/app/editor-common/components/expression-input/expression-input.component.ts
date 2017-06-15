@@ -42,7 +42,7 @@ import {ModalService} from "../../../ui/modal/modal.service";
 
                 <span class="input-group-btn" *ngIf="!readonly">
                         <button type="button"
-                                class="btn btn-secondary"
+                                class="btn btn-secondary btn-icon"
                                 (click)="editExpr(isExpr ? 'clear' : 'edit', $event)">
                             <i class="fa"
                                [ngClass]="{'fa-times': isExpr,
@@ -140,6 +140,7 @@ export class ExpressionInputComponent extends DirectiveBase implements ControlVa
             str = Number(str);
         }
 
+        this.model.cleanValidity();
         this.model.setValue(str, this.type);
         this.onChange(this.model);
     }
@@ -189,12 +190,7 @@ export class ExpressionInputComponent extends DirectiveBase implements ControlVa
         }
 
         if (action === "clear") {
-            this.modal.confirm({
-                title: "Really Remove?",
-                content: `Are you sure that you want to remove this expression?`,
-                cancellationLabel: "No, keep it",
-                confirmationLabel: "Yes, delete it"
-            }).then(() => {
+            this.modal.delete("expression").then(() => {
                 this.model.cleanValidity();
                 this.model.setValue("", this.type);
                 this.model.result = null;

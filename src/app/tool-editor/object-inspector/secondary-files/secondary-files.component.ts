@@ -19,7 +19,7 @@ import {ModalService} from "../../../ui/modal/modal.service";
                         No Secondary Files defined.
                     </ct-blank-tool-state>
 
-                    <div *ngIf="readonly && !secondaryFiles.length" class="text-xs-center h5">
+                    <div *ngIf="readonly && !secondaryFiles.length" class="text-xs-center">
                         No Secondary Files defined.
                     </div>
 
@@ -83,12 +83,7 @@ export class SecondaryFilesComponent extends DirectiveBase implements OnChanges,
     }
 
     removeFile(i) {
-        this.modal.confirm({
-            title: "Really Remove?",
-            content: `Are you sure that you want to remove this secondary file?`,
-            cancellationLabel: "No, keep it",
-            confirmationLabel: "Yes, remove it"
-        }).then(() => {
+        this.modal.delete("secondary file").then(() => {
             // reset the expression's validity
             this.secondaryFiles[i].cleanValidity();
             (this.form.get("list") as FormArray).removeAt(i);

@@ -1,12 +1,10 @@
-import {Component, Input, OnDestroy, OnInit, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
+import {Component, Input, NgZone, OnDestroy, OnInit, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {WorkflowFactory, WorkflowModel} from "cwlts/models";
 import * as Yaml from "js-yaml";
-import {OldAuthService} from "../auth/auth/auth.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
-import {WorkboxTab} from "../core/workbox/workbox-tab.interface";
 import {
     CwlSchemaValidationWorkerService,
     ValidationResponse
@@ -14,6 +12,7 @@ import {
 import {EditorInspectorService} from "../editor-common/inspector/editor-inspector.service";
 import {ErrorBarService} from "../layout/error-bar/error-bar.service";
 import {StatusBarService} from "../layout/status-bar/status-bar.service";
+import {noop} from "../lib/utils.lib";
 import {SystemService} from "../platform-providers/system.service";
 import {PlatformAPI} from "../services/api/platforms/platform-api.service";
 import {CredentialsEntry} from "../services/storage/user-preferences-types";
@@ -21,13 +20,14 @@ import {ModalService} from "../ui/modal/modal.service";
 import {DirectiveBase} from "../util/directive-base/directive-base";
 import {WorkflowGraphEditorComponent} from "./graph-editor/graph-editor/workflow-graph-editor.component";
 import {WorkflowEditorService} from "./workflow-editor.service";
-
 import LoadOptions = jsyaml.LoadOptions;
-import {Subject} from "rxjs/Subject";
 import "rxjs/add/operator/debounceTime";
 import "rxjs/add/operator/merge";
 import "rxjs/add/operator/switchMap";
+import {OldAuthService} from "../auth/auth/auth.service";
+import {PlatformAPIGatewayService} from "../auth/api/platform-api-gateway.service";
 import {Observable} from "rxjs/Observable";
+import {Subject} from "rxjs/Subject";
 
 
 @Component({
@@ -39,20 +39,31 @@ import {Observable} from "rxjs/Observable";
             <ct-tab-selector [distribute]="'auto'" [active]="viewMode"
                              (activeChange)="switchView($event)">
 
-                <ct-tab-selector-entry [disabled]="!isValidCWL"
+                <ct-tab-selector-entry [disabled]="!isValidCWL || isValidatingOrResolvingCWL()"
                                        [tabName]="'info'">App Info
                 </ct-tab-selector-entry>
 
-                <ct-tab-selector-entry [disabled]="!isValidCWL"
+                <ct-tab-selector-entry [disabled]="!isValidCWL || isValidatingOrResolvingCWL()"
                                        [tabName]="'graph'">Graph View
                 </ct-tab-selector-entry>
 
-                <ct-tab-selector-entry [disabled]="!viewMode"
+                <ct-tab-selector-entry [disabled]="!viewMode || isValidatingOrResolvingCWL()"
                                        [tabName]="'code'">Code
                 </ct-tab-selector-entry>
             </ct-tab-selector>
 
             <div class="document-controls">
+
+                <!--Resolve-->
+                <button class="btn"
+                        type="button"
+                        [disabled]="isValidatingOrResolvingCWL()"
+                        *ngIf="viewMode === 'code' && data.dataSource === 'local'"
+                        ct-tooltip="Resolve"
+                        tooltipPlacement="bottom"
+                        (click)="resolveButtonClick()">
+                    <i class="fa fa-refresh"></i>
+                </button>
 
                 <!--Go to app-->
                 <button class="btn"
@@ -65,7 +76,7 @@ import {Observable} from "rxjs/Observable";
                 </button>
 
                 <!--Save-->
-                <button [disabled]="!data.isWritable"
+                <button [disabled]="!data.isWritable || isValidatingCWL"
                         (click)="save()"
                         ct-tooltip="Save"
                         [tooltipPlacement]="'bottom'"
@@ -75,6 +86,7 @@ import {Observable} from "rxjs/Observable";
 
                 <!--Publish to Platform-->
                 <button class="btn"
+                        [disabled]="isValidatingOrResolvingCWL()"
                         *ngIf="data.dataSource === 'local'"
                         ct-tooltip="Publish to Platform"
                         tooltipPlacement="bottom"
@@ -102,7 +114,7 @@ import {Observable} from "rxjs/Observable";
             </div>
         </ct-action-bar>
 
-        <ct-error-bar>
+        <ct-error-bar [autoClose]="true" [fadeOutTime]="5000">
         </ct-error-bar>
 
         <div class="editor-layout">
@@ -117,6 +129,7 @@ import {Observable} from "rxjs/Observable";
             </ct-code-editor>
 
             <ct-workflow-graph-editor *ngIf="viewMode === 'graph' && !isLoading"
+                                      [appData]="data"
                                       [readonly]="!data.isWritable"
                                       [(model)]="workflowModel"
                                       class="editor-main">
@@ -143,6 +156,12 @@ import {Observable} from "rxjs/Observable";
         </div>
 
         <ng-template #statusControls>
+
+            <!--Perpetual spinner that indicates if CWL validation is in progress-->
+            <i *ngIf="isValidatingCWL"
+               class="fa fa-circle-o-notch fa-spin">
+            </i>
+
             <span class="tag tag-warning">{{ workflowModel.cwlVersion }}</span>
             <span class="btn-group">
             <button [disabled]="!validation"
@@ -150,26 +169,24 @@ import {Observable} from "rxjs/Observable";
                     (click)="toggleReport('validation')"
                     class="btn">
 
-            <span *ngIf="validation?.errors?.length">
-            <i class="fa fa-times-circle text-danger"></i> {{validation.errors.length}} Errors
-            </span>
-
-            <span *ngIf="validation?.warnings?.length" [class.pl-1]="validation?.errors?.length">
-            <i class="fa fa-exclamation-triangle text-warning"></i> {{validation.warnings.length}} Warnings
-            </span>
-
-            <span *ngIf="!validation?.errors?.length && !validation?.warnings?.length">
-            No Issues
-            </span>
-
+                <span *ngIf="validation?.errors?.length">
+                <i class="fa fa-times-circle text-danger"></i> {{validation.errors.length}} Errors
+                </span>
+    
+                <span *ngIf="validation?.warnings?.length" [class.pl-1]="validation?.errors?.length">
+                <i class="fa fa-exclamation-triangle text-warning"></i> {{validation.warnings.length}} Warnings
+                </span>
+    
+                <span *ngIf="!validation?.errors?.length && !validation?.warnings?.length">
+                No Issues
+                </span>
 
             </button>
             </span>
         </ng-template>
     `
 })
-export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy, OnInit, WorkboxTab {
-
+export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy, OnInit {
 
     @Input()
     data: AppTabData;
@@ -191,7 +208,11 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
     /** Flag for validity of CWL document */
     isValidCWL = false;
 
-    loadedModel = false;
+    /** Flag to indicate if CWL Validation is in progress */
+    isValidatingCWL = false;
+
+    /** Flag to indicate if resolving content is in progress */
+    isResolvingContent = false;
 
     /** Model that's recreated on document change */
     workflowModel: WorkflowModel = WorkflowFactory.from(null, "document");
@@ -217,6 +238,8 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
     @ViewChild("inspector", {read: ViewContainerRef})
     private inspectorHostView: ViewContainerRef;
 
+    /** Indicates if we are changing revision */
+    private changingRevision = false;
 
     constructor(private cwlValidatorService: CwlSchemaValidationWorkerService,
                 private formBuilder: FormBuilder,
@@ -227,7 +250,9 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 private system: SystemService,
                 private auth: OldAuthService,
                 private errorBarService: ErrorBarService,
-                private dataGateway: DataGatewayService) {
+                private apiGateway: PlatformAPIGatewayService,
+                private dataGateway: DataGatewayService,
+                private zone: NgZone) {
 
         super();
 
@@ -253,143 +278,225 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
         // Whenever the editor content is changed, validate it using a JSON Schema.
         this.tracked = this.codeEditorContent
             .valueChanges
-            .debounceTime(3000)
+            .debounceTime(100)
             .merge(this.priorityCodeUpdates)
-            .distinctUntilChanged()
-            .subscribe(latestContent => {
+            .do(() => {
+                this.isValidatingCWL = true;
+            })
+            .switchMap((latestContent) => Observable.fromPromise(this.cwlValidatorService.validate(latestContent))
+                .map((result) => {
+                        return {
+                            latestContent: latestContent,
+                            result: result
+                        };
+                    }
+                ))
+            .subscribe(r => {
 
-                this.cwlValidatorService.validate(latestContent).then(r => {
+                this.isValidatingCWL = false;
 
-                    if (!r.isValidCwl) {
+                // Wrap it in zone in order to see changes immediately in status bar (cwlValidatorService.validate is
+                // in world out of Angular)
+                this.zone.run(() => {
+
+                    this.isLoading = false;
+
+                    if (!r.result.isValidCwl) {
                         // turn off loader and load document as code
-                        this.validation = r;
-                        this.isLoading  = false;
-
                         this.viewMode = "code";
+                        this.isValidCWL = false;
 
+                        this.validation = r.result;
                         return r;
                     }
 
-                    // load JSON to generate model
-                    const json = Yaml.safeLoad(this.codeEditorContent.value, {
-                        json: true
-                    } as LoadOptions);
+                    this.isValidCWL = true;
 
-                    // should show prompt, but json is already reformatted
-                    if (this.showReformatPrompt && json["sbg:modified"]) {
-                        this.showReformatPrompt = false;
-                    }
-
-                    this.data.resolve(latestContent).subscribe(resolved => {
-                        console.log("latest content of type", typeof resolved);
-                        console.time("Workflow Model");
-                        this.workflowModel = WorkflowFactory.from(resolved as any, "document");
-                        console.timeEnd("Workflow Model");
-
-                        this.loadedModel = true;
-
-                        // update validation stream on model validation updates
-
-                        this.workflowModel.setValidationCallback((res) => {
-                            this.validation = {
-                                errors: this.workflowModel.errors,
-                                warnings: this.workflowModel.warnings,
-                                isValidatableCwl: true,
-                                isValidCwl: true,
-                                isValidJSON: true
-                            };
-                        });
-
-                        this.workflowModel.validate();
-
-                        const out       = {
-                            errors: this.workflowModel.errors,
-                            warnings: this.workflowModel.warnings,
+                    // If you are in mode other than Code mode or mode is undefined (opening app)
+                    // ChangingRevision is when you are in Code mode and you are changing revision to know to generate
+                    // a new toolModel
+                    if (this.viewMode !== "code" || this.changingRevision) {
+                        this.changingRevision = false;
+                        this.resolveContent(r.latestContent).then(noop, noop);
+                    } else {
+                        // In case when you are in Code mode just reset validations
+                        const v = {
+                            errors: [],
+                            warnings: [],
                             isValidatableCwl: true,
                             isValidCwl: true,
                             isValidJSON: true
                         };
-                        this.validation = out;
-                        this.isValidCWL = out.isValidCwl;
 
-
-                        // After wf is created get updates for steps
-                        this.getStepUpdates();
-
-                        if (!this.viewMode) {
-                            this.viewMode = "graph";
-                        }
-                        this.isLoading = false;
-
-                    }, (err) => {
-                        this.isLoading  = false;
-                        this.viewMode   = "code";
-                        this.isValidCWL = false;
-                        this.validation = {
-                            isValidatableCwl: true,
-                            isValidCwl: false,
-                            isValidJSON: true,
-                            warnings: [],
-                            errors: [{
-                                message: err.message,
-                                loc: "document",
-                                type: "error"
-                            }]
-                        };
-                    });
-
+                        this.validation = v;
+                    }
                 });
             });
 
         this.codeEditorContent.setValue(this.data.fileContent);
-
-
     }
+
+    /**
+     * Resolve content and create a new tool model
+     */
+    resolveContent(latestContent) {
+
+        this.isLoading = true;
+        this.isResolvingContent = true;
+
+        return new Promise((resolve, reject) => {
+
+            // Create ToolModel from json and set model validations
+            const createWorkflowModel = (json) => {
+                console.log("latest content of type", typeof json);
+                console.time("Workflow Model");
+                this.workflowModel = WorkflowFactory.from(json as any, "document");
+                console.timeEnd("Workflow Model");
+
+                // update validation stream on model validation updates
+
+                this.workflowModel.setValidationCallback((res) => {
+                    this.validation = {
+                        errors: this.workflowModel.errors,
+                        warnings: this.workflowModel.warnings,
+                        isValidatableCwl: true,
+                        isValidCwl: true,
+                        isValidJSON: true
+                    };
+                });
+
+                this.workflowModel.validate();
+
+                const out = {
+                    errors: this.workflowModel.errors,
+                    warnings: this.workflowModel.warnings,
+                    isValidatableCwl: true,
+                    isValidCwl: true,
+                    isValidJSON: true
+                };
+                this.validation = out;
+
+                // After wf is created get updates for steps
+                this.getStepUpdates();
+
+                if (!this.viewMode) {
+                    this.viewMode = "graph";
+                }
+                this.isLoading = false;
+            };
+
+            // If app is a local file
+            if (this.data.dataSource !== "local") {
+                // load JSON to generate model
+                const json = Yaml.safeLoad(latestContent, {
+                    json: true
+                } as LoadOptions);
+
+                createWorkflowModel(json);
+                this.isResolvingContent = false;
+                resolve();
+
+            } else {
+                this.data.resolve(latestContent).subscribe((resolved) => {
+
+                    createWorkflowModel(resolved);
+                    this.isResolvingContent = false;
+                    resolve();
+
+                }, (err) => {
+                    this.isLoading = false;
+                    this.isResolvingContent = false;
+                    this.viewMode = "code";
+                    this.validation = {
+                        isValidatableCwl: true,
+                        isValidCwl: false,
+                        isValidJSON: true,
+                        warnings: [],
+                        errors: [{
+                            message: err.message,
+                            loc: "document",
+                            type: "error"
+                        }]
+                    };
+
+                    reject();
+                });
+            }
+        });
+    }
+
+    /**
+     * When click on Resolve button (visible only if app is a local file and you are in Code mode)
+     */
+    resolveButtonClick() {
+        this.resolveContent(this.codeEditorContent.value).then(noop, noop);
+    }
+
 
     /**
      * Call updates service to get information about steps if they have updates and mark ones that can be updated
      */
     private getStepUpdates() {
-        Observable.of(1).switchMap(() =>
+
+        Observable.of(1).switchMap(() => {
+            console.log("Should check for updates", this);
             // Call service only if wf is in user projects
-            this.data.dataSource !== "local" && this.data.isWritable ?
-                this.platform.getUpdates(this.workflowModel.steps
+            if (this.data.dataSource !== "local" && this.data.isWritable) {
+
+                const [appHash] = this.data.id.split("/");
+                const api       = this.apiGateway.forHash(appHash);
+
+                return api.getUpdates(this.workflowModel.steps
                     .map(step => step.run ? step.run.customProps["sbg:id"] : null)
-                    .filter(s => !!s))
-                : Observable.of(undefined))
-            .subscribe((response) => {
+                    .filter(s => !!s));
 
-                if (response) {
-                    Object.keys(response).forEach(key => {
-                        if (response[key] === true) {
-                            this.workflowModel.steps
-                                .filter(step => step.run.customProps["sbg:id"] === key)
-                                .forEach(step => step.hasUpdate = true);
-                        }
-                    });
-                }
+                // return this.platform.getUpdates(this.workflowModel.steps
+                //     .map(step => step.run ? step.run.customProps["sbg:id"] : null)
+                //     .filter(s => !!s))
+            }
 
-                // load document in GUI and turn off loader, only if loader was active
-                if (this.isLoading) {
-                    this.isLoading = false;
-                }
+            return Observable.of(undefined);
+        }).subscribe((response) => {
 
-            });
+            if (response) {
+                Object.keys(response).forEach(key => {
+                    if (response[key] === true) {
+                        this.workflowModel.steps
+                            .filter(step => step.run.customProps["sbg:id"] === key)
+                            .forEach(step => step.hasUpdate = true);
+                    }
+                });
+            }
+
+            // load document in GUI and turn off loader, only if loader was active
+            if (this.isLoading) {
+                this.isLoading = false;
+            }
+
+        });
     }
 
     save() {
-        const proc = this.statusBar.startProcess(`Saving: ${this.originalTabLabel}`);
-        const text = this.getModelText(this.data.dataSource === "app");
 
-        this.dataGateway.saveFile(this.data.id, text).subscribe(save => {
-            console.log("Saved", save);
-            this.statusBar.stopProcess(proc, `Saved: ${this.originalTabLabel}`);
-            this.priorityCodeUpdates.next(save);
-        }, err => {
-            console.log("Not saved", err);
-            this.statusBar.stopProcess(proc, `Could not save ${this.originalTabLabel} (${err})`);
-            this.errorBarService.showError(`Unable to save Workflow: ${err.message || err}`);
-        });
+        if (this.data.dataSource === "local" || this.isValidCWL) {
+
+            const proc = this.statusBar.startProcess(`Saving: ${this.originalTabLabel}`);
+            const text = this.viewMode !== "code" ? this.getModelText(this.data.dataSource === "app")
+                : this.codeEditorContent.value;
+
+            this.dataGateway.saveFile(this.data.id, text).subscribe(save => {
+                console.log("Saved", save);
+                this.statusBar.stopProcess(proc, `Saved: ${this.originalTabLabel}`);
+                this.priorityCodeUpdates.next(save);
+                this.changingRevision = true;
+            }, err => {
+                console.log("Not saved", err);
+                this.statusBar.stopProcess(proc, `Could not save ${this.originalTabLabel}`);
+                this.errorBarService.showError(`Unable to save Workflow: ${err.message || err}`);
+            });
+        } else {
+            this.errorBarService.showError(`Unable to save Workflow because JSON Schema is invalid`);
+        }
     }
 
     /**
@@ -399,37 +506,40 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
      * @param mode
      * @param serialize
      */
-    switchView(mode): void {
+    switchView(tabName): void {
 
-        // if (mode === this.viewModeTypes.Gui && this.showReformatPrompt) {
-        //
-        //     this.modal.checkboxPrompt({
-        //         title: "Confirm GUI Formatting",
-        //         content: "Activating GUI mode might change the formatting of this document. Do you wish to continue?",
-        //         cancellationLabel: "Cancel",
-        //         confirmationLabel: "OK",
-        //         checkboxLabel: "Don't show this dialog again",
-        //     }).then(res => {
-        //         if (res) this.userPrefService.put("show_reformat_prompt", false);
-        //
-        //         this.showReformatPrompt = false;
-        //         this.viewMode           = mode;
-        //     }, noop);
-        //     return;
-        // }
+        if (!tabName) {
+            return;
+        }
 
         setTimeout(() => {
 
-            // @fixme should only serialize if form is dirty
-            if (mode === "code" && this.loadedModel) {
+            // If you are changing from other mode to a Code mode
+            if (this.viewMode !== "code" && tabName === "code") {
                 this.codeEditorContent.setValue(this.getModelText());
+                this.viewMode = tabName;
+                return;
             }
 
-            if (mode === "graph") {
+            // If you are changing from Code mode to another mode you have to resolve the content
+            if ((this.viewMode === "code" || !this.viewMode) && tabName !== "code") {
 
+                // Trick that will change reference for tabselector highlight line (to reset it to a Code if resolve fails)
+                this.viewMode = undefined;
+
+                // Resolve content
+                this.resolveContent(this.codeEditorContent.value).then(() => {
+                    this.viewMode = tabName;
+                }, () => {
+                    // If fails open Code mode
+                    this.viewMode = "code";
+                });
+
+
+            } else {
+                // If changing from/to mode that is not a Code mode, just switch
+                this.viewMode = tabName;
             }
-
-            this.viewMode = mode;
         });
     }
 
@@ -438,7 +548,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
      * the text has been formatted by the GUI editor
      */
     private getModelText(embed = false): string {
-        const wf          = embed ? this.workflowModel.serializeEmbedded() : this.workflowModel.serialize();
+        const wf = embed ? this.workflowModel.serializeEmbedded() : this.workflowModel.serialize();
         const modelObject = Object.assign(wf, {"sbg:modified": true});
 
         console.log("serialized workflow", modelObject);
@@ -455,7 +565,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
         const fileWithoutRevision = this.data.id.split("/");
 
         // In the case when id is without revision number
-        if (!isNaN(+fileWithoutRevision[fileWithoutRevision.length -1])) {
+        if (!isNaN(+fileWithoutRevision[fileWithoutRevision.length - 1])) {
             fileWithoutRevision.pop();
         }
 
@@ -465,6 +575,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
         this.dataGateway.fetchFileContent(fid).subscribe(txt => {
             this.priorityCodeUpdates.next(txt);
+            this.changingRevision = true;
         });
     }
 
@@ -477,11 +588,11 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
      * Open workflow in browser
      */
     goToApp() {
-        const urlApp     = this.workflowModel["sbgId"];
+        const urlApp = this.workflowModel["sbgId"];
         const urlProject = urlApp.split("/").splice(0, 2).join("/");
 
         this.auth.connections.take(1).subscribe((cred: CredentialsEntry[]) => {
-            const hash    = this.data.id.split("/")[0];
+            const hash = this.data.id.split("/")[0];
             const urlBase = cred.find(c => c.hash === hash);
             if (!urlBase) {
                 this.errorBarService.showError(`Could not externally open app "${urlApp}"`);
@@ -500,16 +611,28 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
     }
 
     publish() {
-        const component = this.modal.fromComponent(PublishModalComponent, {
-            title: "Publish an App",
-            backdrop: true
-        });
+        if (this.isValidCWL) {
+            // Before you publish a local file you have to resolve the content
+            this.resolveContent(this.codeEditorContent.value).then(() => {
+                const component = this.modal.fromComponent(PublishModalComponent, {
+                    title: "Publish an App",
+                    backdrop: true
+                });
 
-        component.appContent = this.workflowModel.serializeEmbedded();
+                component.appContent = this.workflowModel.serializeEmbedded();
+            }, () => {
+                this.errorBarService.showError(`Unable to Publish Workflow because Schema Salad Resolver failed`);
+            });
+        } else {
+            this.errorBarService.showError(`Unable to Publish Workflow because JSON Schema is invalid`);
+        }
     }
 
     registerOnTabLabelChange(update: (label: string) => void, originalLabel: string) {
         this.originalTabLabel = originalLabel;
     }
 
+    isValidatingOrResolvingCWL() {
+        return this.isValidatingCWL || this.isResolvingContent;
+    }
 }

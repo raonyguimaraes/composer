@@ -1,11 +1,11 @@
-import {Directive, ElementRef, Input} from "@angular/core";
+import {Directive, ElementRef, Input, OnInit} from "@angular/core";
 import {DomEventService} from "../../../services/dom/dom-event.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {Observable} from "rxjs/Observable";
 import "rxjs/add/operator/takeUntil";
 
 @Directive({selector: "[ct-drag-over]"})
-export class DragOverDirective extends DirectiveBase {
+export class DragOverDirective extends DirectiveBase implements OnInit {
 
     @Input("ct-drag-over") set d(enabled: boolean) {
         if (enabled) {

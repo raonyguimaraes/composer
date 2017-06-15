@@ -33,7 +33,7 @@ import {ModalService} from "../../../ui/modal/modal.service";
                         want to use a fixed name for an output file, so the output file name would be an argument not an input port.
                     </ct-blank-tool-state>
 
-                    <div *ngIf="readonly && !model.arguments.length" class="text-xs-center h5">
+                    <div *ngIf="readonly && !model.arguments.length" class="text-xs-center">
                         This tool doesn't specify any arguments
                     </div>
 
@@ -162,12 +162,7 @@ export class ArgumentListComponent extends DirectiveBase {
     }
 
     removeEntry(index) {
-        this.modal.confirm({
-            title: "Really Remove?",
-            content: `Are you sure that you want to remove this argument?`,
-            cancellationLabel: "No, keep it",
-            confirmationLabel: "Yes, remove it"
-        }).then(() => {
+        this.modal.delete("argument").then(() => {
 
             if (this.inspector.isInspecting(this.model.arguments[index].loc)) {
                 this.inspector.hide();

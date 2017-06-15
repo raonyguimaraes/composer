@@ -32,14 +32,14 @@ function start(config: { devTools: boolean, url: string }) {
     win = new BrowserWindow({
         show: false
     });
-
-    win.maximize();
     win.loadURL(config.url);
     win.once("ready-to-show", () => {
         setTimeout(() => {
-            splash.close();
+            splash.destroy();
+            splash = undefined;
+            win.maximize();
             win.show();
-        }, 100);
+        }, 300);
     });
 
     if (config.devTools) {

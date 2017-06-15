@@ -17,19 +17,16 @@ import {SystemService} from "../../../platform-providers/system.service";
             <div class="tc-body">
 
                 <!--Blank Tool Screen-->
-                <ct-blank-tool-state *ngIf="!readonly && !model.hints.length" [buttonText]="'Add a Hint'" (buttonClick)="addEntry()">
+                <ct-blank-tool-state *ngIf="!readonly && !model.hints.length" 
+                                     [buttonText]="'Add a Hint'"
+                                     [learnMoreURL]="'http://docs.sevenbridges.com/docs/list-of-execution-hints'"
+                                     (buttonClick)="addEntry()">
                     
                     Execution hints and their values, which specify execution requirements and suggestions, for example, the AWS instance
-                    type to use. For a list of execution hints you can set, see
-                    
-                    <a #link href="http://docs.sevenbridges.com/docs/list-of-execution-hints"
-                       (click)="$event.preventDefault(); system.openLink('http://docs.sevenbridges.com/docs/list-of-execution-hints')">
-                        http://docs.sevenbridges.com/docs/list-of-execution-hints.
-                    </a>
-                    
+                    type to use.
                 </ct-blank-tool-state>
 
-                <div *ngIf="readonly && !model.hints.length" class="text-xs-center h5">
+                <div *ngIf="readonly && !model.hints.length" class="text-xs-center">
                     This tool doesn't specify any hints
                 </div>
 
@@ -45,19 +42,18 @@ import {SystemService} from "../../../platform-providers/system.service";
 
                 <form [formGroup]="form" *ngIf="form">
                     <ul class="editor-list" formArrayName="hints">
-                        <li class="input-list-items"
-                            *ngFor="let control of form.controls['hints'].controls; let i = index">
-                            <div class="editor-list-item">
+                        <li *ngFor="let control of form.controls['hints'].controls; let i = index">
+                            <div class="flex-row">
                                 <ct-requirement-input [formControl]="control"
                                                       [context]="context"
-                                                      class="mr-1 ml-1"
+                                                      class="mr-1"
                                                       [formControlName]="i"
                                                       [classSuggest]="classSuggest"
                                                       [readonly]="readonly">
                                 </ct-requirement-input>
 
                                 <!--Actions Column-->
-                                <div *ngIf="!readonly" class="mr-1">
+                                <div *ngIf="!readonly" class="mr-1 mb-1">
                                     <i [ct-tooltip]="'Delete'"
                                        class="fa fa-trash text-hover-danger clickable"
                                        (click)="removeEntry(i)"></i>
@@ -77,8 +73,7 @@ import {SystemService} from "../../../platform-providers/system.service";
             </div>
         </ct-form-panel>
     `,
-    styleUrls: ["./hints.component.scss"],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ["./hints.component.scss"]
 })
 export class HintsComponent implements OnChanges {
 
@@ -130,12 +125,8 @@ export class HintsComponent implements OnChanges {
     }
 
     removeEntry(i: number) {
-        this.modal.confirm({
-            title: "Really Remove?",
-            content: `Are you sure that you want to remove this base command?`,
-            cancellationLabel: "No, keep it",
-            confirmationLabel: "Yes, remove it"
-        }).then(() => {
+        this.modal.delete("hint").then(() => {
+            this.model.hints[i].cleanValidity();
             this.model.hints.splice(i, 1);
             (this.form.get("hints") as FormArray).removeAt(i);
             this.update.emit(this.model.hints);

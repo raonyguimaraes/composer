@@ -10,7 +10,7 @@ import {DirectiveBase} from "../../../util/directive-base/directive-base";
     template: `
         <form [formGroup]="form">
             <div class="form-group">
-                <label>CommandLineBinding</label>
+                <label>Use command line binding</label>
                 <span class="pull-right">
                     <ct-toggle-slider [formControl]="form.controls['hasBinding']"></ct-toggle-slider>
                 </span>
@@ -120,7 +120,7 @@ export class ArgumentInspectorComponent extends DirectiveBase implements OnInit 
 
             if (this.argument.hasBinding) {
                 this.argument.updateBinding({
-                    position: form.position,
+                    position: form.position ? parseInt(form.position, 10) : 0,
                     separate: form.separate,
                     prefix: form.prefix,
                     shellQuote: form.shellQuote
