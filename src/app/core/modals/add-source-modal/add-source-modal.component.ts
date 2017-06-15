@@ -1,13 +1,13 @@
 import {Component} from "@angular/core";
 import {Observable} from "rxjs/Observable";
+import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/project";
 import {AuthService} from "../../../auth/auth.service";
+import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 import {WorkboxService} from "../../workbox/workbox.service";
-import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/project";
-import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
 
 const {app, dialog} = window["require"]("electron").remote;
 
@@ -29,11 +29,11 @@ const {app, dialog} = window["require"]("electron").remote;
                 <p>Add one or more folders from your computer to the workspace.</p>
                 <p>
                     <button class="btn btn-secondary" (click)="selectLocalFolders()">Select a Folder...</button>
-                </div>
+                </p>
             </div>
 
             <div class="dialog-centered dialog-content" *ngIf="activeTab === 'platform' && !isConnected && !connecting">
-                
+
                 <p>
                     Connect to the Seven Bridges Platform
                 </p>
@@ -172,7 +172,7 @@ export class AddSourceModalComponent extends DirectiveBase {
     }
 
     openSettingsTab() {
-       this.workbox.openSettingsTab();
-       this.modal.close();
+        this.workbox.openSettingsTab();
+        this.modal.close();
     }
 }

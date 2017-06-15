@@ -41,6 +41,11 @@ import {CheckboxPromptComponent} from "./modal/common/checkbox-prompt.component"
 import {PromptComponent} from "./modal/common/prompt.component";
 import {MultilangCodeEditorComponent} from "./code-editor/multilang-code-editor.component";
 import {InputComponent} from "./input/input.component";
+import {TrimValueAccessorModule} from "ng-trim-value-accessor";
+import {ProjectSelectionModal} from "./modal/custom/project-selection-modal.component";
+import {RadioButtonComponent} from "./radio-button/radio-button.component";
+import {RadioGroupComponent} from "./radio-button/radio-group.component";
+import {SelectComponent} from "./auto-complete/select/select.component";
 
 @NgModule({
     imports: [

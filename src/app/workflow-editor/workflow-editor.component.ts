@@ -2,6 +2,13 @@ import {Component, Input, NgZone, OnDestroy, OnInit, TemplateRef, ViewChild, Vie
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {WorkflowFactory, WorkflowModel} from "cwlts/models";
 import * as Yaml from "js-yaml";
+import "rxjs/add/operator/debounceTime";
+import "rxjs/add/operator/merge";
+import "rxjs/add/operator/switchMap";
+import {Observable} from "rxjs/Observable";
+import {Subject} from "rxjs/Subject";
+import {PlatformAPIGatewayService} from "../auth/api/platform-api-gateway.service";
+import {OldAuthService} from "../auth/auth/auth.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
@@ -21,13 +28,6 @@ import {DirectiveBase} from "../util/directive-base/directive-base";
 import {WorkflowGraphEditorComponent} from "./graph-editor/graph-editor/workflow-graph-editor.component";
 import {WorkflowEditorService} from "./workflow-editor.service";
 import LoadOptions = jsyaml.LoadOptions;
-import "rxjs/add/operator/debounceTime";
-import "rxjs/add/operator/merge";
-import "rxjs/add/operator/switchMap";
-import {OldAuthService} from "../auth/auth/auth.service";
-import {PlatformAPIGatewayService} from "../auth/api/platform-api-gateway.service";
-import {Observable} from "rxjs/Observable";
-import {Subject} from "rxjs/Subject";
 
 
 @Component({

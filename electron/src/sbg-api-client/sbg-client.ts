@@ -77,7 +77,7 @@ export class SBGClient {
         return new Promise((resolve, reject) => {
 
             load().then((result: IncomingMessage & { body: any }) => {
-                const total = result.headers["x-total-matching-query"];
+                const total = Number(result.headers["x-total-matching-query"]);
                 const items = result.body.items;
 
                 if (items.length === total) {
