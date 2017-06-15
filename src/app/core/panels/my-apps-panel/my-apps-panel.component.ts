@@ -191,11 +191,22 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
     }
 
     private listenForAppOpening() {
-        this.tree.open.filter(n => n.type === "app")
-            .flatMap(node => this.workbox.getOrCreateFileTab(node.id).catch(() => {
-                return Observable.empty();
-            }))
-            .subscribe(tab => this.workbox.openTab(tab));
+        this.tree.open.filter(n => n.type === "app").subscribe(node => {
+            console.log("Creating a tab for node", node);
+            const appID = node.data.id.split("/").slice(0,3).join("/");
+            const label = node.data.name;
+            const type = node.data.raw.class === "CommandLineTool" ? "CommandLineTool" : "Workflow";
+
+            const tab = this.workbox.getOrCreateAppTab({
+                id: appID,
+                type: type,
+                label: label,
+                isWritable: true,
+                language: "json",
+            });
+
+            this.workbox.openTab(tab);
+        });
 
         this.tree.open.filter(n => n.type === "file")
             .flatMap(node => this.workbox.getOrCreateFileTab(node.data.path).catch(() => {

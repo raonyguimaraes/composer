@@ -48,42 +48,42 @@ export class WorkboxService {
             return;
         }
 
-        if (persistToRecentApps) {
-            this.preferences.get("recentApps", []).take(1).subscribe((recentApps) => {
-
-                const tabIdSplit = tab.id.split("/");
-
-                // Persist an app without revision number so in recently opened apps we can have only one app (no multiple
-                // apps with different revisions)
-                const tabId = isNaN(Number([...tabIdSplit].pop())) ? tab.id : (() => {
-                    tabIdSplit.pop();
-                    return tabIdSplit.join("/");
-                })();
-
-                // Remove from the recent apps if tab is already in the list
-                const newArray = recentApps.filter((item) => item.id !== tabId);
-
-                // Maximum number of recent apps
-                if (newArray.length === 20) {
-                    newArray.shift();
-                }
-
-                const itemToAdd = {
-                    id: tabId,
-                    label: tab.data.dataSource === "local" ? (() => {
-                        const idSplit = tab.id.split("/");
-                        idSplit.pop();
-                        return idSplit.join("/");
-                    })() : tab.data.parsedContent["sbg:project"],
-                    title: tab.data.parsedContent.label || tab.label,
-                    type: tab.type
-                };
-
-                newArray.push(itemToAdd);
-
-                this.preferences.put("recentApps", newArray);
-            });
-        }
+        // if (persistToRecentApps) {
+        //     this.preferences.get("recentApps", []).take(1).subscribe((recentApps) => {
+        //
+        //         const tabIdSplit = tab.id.split("/");
+        //
+        //         // Persist an app without revision number so in recently opened apps we can have only one app (no multiple
+        //         // apps with different revisions)
+        //         const tabId = isNaN(Number([...tabIdSplit].pop())) ? tab.id : (() => {
+        //             tabIdSplit.pop();
+        //             return tabIdSplit.join("/");
+        //         })();
+        //
+        //         // Remove from the recent apps if tab is already in the list
+        //         const newArray = recentApps.filter((item) => item.id !== tabId);
+        //
+        //         // Maximum number of recent apps
+        //         if (newArray.length === 20) {
+        //             newArray.shift();
+        //         }
+        //
+        //         const itemToAdd = {
+        //             id: tabId,
+        //             label: tab.data.dataSource === "local" ? (() => {
+        //                 const idSplit = tab.id.split("/");
+        //                 idSplit.pop();
+        //                 return idSplit.join("/");
+        //             })() : tab.data.parsedContent["sbg:project"],
+        //             title: tab.data.parsedContent.label || tab.label,
+        //             type: tab.type
+        //         };
+        //
+        //         newArray.push(itemToAdd);
+        //
+        //         this.preferences.put("recentApps", newArray);
+        //     });
+        // }
 
         this.tabs.next(tabs.concat(tab));
         this.tabCreation.next(tab);
@@ -160,6 +160,56 @@ export class WorkboxService {
         this.getOrCreateFileTab(fileID).take(1).subscribe((tab) => this.openTab(tab));
     }
 
+    getOrCreateAppTab<T>(data: {
+        id: string;
+        data?: any;
+        type: string;
+        label?: string;
+        isWritable?: boolean;
+        language?: string;
+
+    }): TabData<T> {
+        const currentTab = this.tabs.getValue().find(existingTab => existingTab.id === tab.id);
+
+        if (currentTab) {
+            return currentTab;
+        }
+
+
+        const dataSource = DataGatewayService.getFileSource(data.id);
+
+        const id         = data.id;
+        const label      = data.id.split("/").pop();
+        const isWritable = dataSource !== "public";
+
+        const fileContent = Observable.empty().concat(this.dataGateway.fetchFileContent(id));
+        const resolve     = (fcontent: string) => this.dataGateway.resolveContent(fcontent, id);
+
+        const tab = Object.assign({
+            label,
+            isWritable,
+            data: {
+                id,
+                isWritable,
+                dataSource,
+                language: data.language || "yaml",
+                parsedContent: {},
+                fileContent,
+                resolve
+            }
+        }, data);
+
+        if (id.endsWith(".json")) {
+            tab.data.language = "json";
+        }
+
+        return tab;
+
+    }
+
+    /**
+     * @deprecated Use {@link getOrCreateAppTab} for synchronous tab opening version
+     */
     public getOrCreateFileTab(fileID): Observable<TabData<AppTabData>> {
 
         const currentTab = this.tabs.getValue().find(tab => tab.id === fileID);
