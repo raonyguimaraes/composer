@@ -21,18 +21,18 @@ import {ErrorBarService} from "../layout/error-bar/error-bar.service";
 import {StatusBarService} from "../layout/status-bar/status-bar.service";
 import {noop} from "../lib/utils.lib";
 import {SystemService} from "../platform-providers/system.service";
-import {PlatformAPI} from "../services/api/platforms/platform-api.service";
 import {CredentialsEntry} from "../services/storage/user-preferences-types";
 import {ModalService} from "../ui/modal/modal.service";
 import {DirectiveBase} from "../util/directive-base/directive-base";
 import {WorkflowGraphEditorComponent} from "./graph-editor/graph-editor/workflow-graph-editor.component";
 import {WorkflowEditorService} from "./workflow-editor.service";
 import LoadOptions = jsyaml.LoadOptions;
+import {CodeContentService} from "../core/code-content-service/code-content.service";
 
 
 @Component({
     selector: "ct-workflow-editor",
-    providers: [EditorInspectorService, ErrorBarService, WorkflowEditorService],
+    providers: [EditorInspectorService, ErrorBarService, WorkflowEditorService, CodeContentService],
     styleUrls: ["./workflow-editor.component.scss"],
     template: `
         <ct-action-bar>
@@ -243,7 +243,6 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
     constructor(private cwlValidatorService: CwlSchemaValidationWorkerService,
                 private formBuilder: FormBuilder,
-                private platform: PlatformAPI,
                 private inspector: EditorInspectorService,
                 private statusBar: StatusBarService,
                 private modal: ModalService,
@@ -252,6 +251,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 private errorBarService: ErrorBarService,
                 private apiGateway: PlatformAPIGatewayService,
                 private dataGateway: DataGatewayService,
+                private codeContent: CodeContentService,
                 private zone: NgZone) {
 
         super();
@@ -268,6 +268,19 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
     ngOnInit(): void {
 
+        console.log("App id wf", this.data.id);
+        this.codeContent.appID = this.data.id;
+
+        this.codeEditorContent.valueChanges.take(1).subscribe(content => {
+            console.log("Pushing first content,", content.length);
+            this.codeContent.originalCodeContent.next(content);
+            this.codeContent.codeContent.next(content);
+        });
+        this.codeEditorContent.valueChanges.skip(1).subscribe(content => {
+            console.log("Pushing after content", content.length);
+            this.codeContent.codeContent.next(content)
+        });
+
         this.statusBar.setControls(this.statusControls);
         this.inspector.setHostView(this.inspectorHostView);
 
@@ -276,21 +289,21 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
         }
 
         // Whenever the editor content is changed, validate it using a JSON Schema.
-        this.tracked = this.codeEditorContent
-            .valueChanges
+        this.tracked = this.codeEditorContent.valueChanges
             .debounceTime(100)
             .merge(this.priorityCodeUpdates)
             .do(() => {
                 this.isValidatingCWL = true;
             })
-            .switchMap((latestContent) => Observable.fromPromise(this.cwlValidatorService.validate(latestContent))
-                .map((result) => {
+            .switchMap(latestContent => {
+                return Observable.fromPromise(this.cwlValidatorService.validate(latestContent)).map((result) => {
                         return {
                             latestContent: latestContent,
                             result: result
                         };
                     }
-                ))
+                );
+            })
             .subscribe(r => {
 
                 this.isValidatingCWL = false;
@@ -299,11 +312,12 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 // in world out of Angular)
                 this.zone.run(() => {
 
+                    console.log("Switching off loader");
                     this.isLoading = false;
 
                     if (!r.result.isValidCwl) {
                         // turn off loader and load document as code
-                        this.viewMode = "code";
+                        this.viewMode   = "code";
                         this.isValidCWL = false;
 
                         this.validation = r.result;
@@ -333,15 +347,20 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 });
             });
 
-        this.codeEditorContent.setValue(this.data.fileContent);
+        this.tracked = this.data.fileContent.subscribe(txt => {
+            this.codeEditorContent.setValue(txt)
+        });
     }
 
     /**
      * Resolve content and create a new tool model
+     * @TODO: this became kinda spaghetti, make the code better organized
      */
     resolveContent(latestContent) {
 
-        this.isLoading = true;
+        console.log("Resolving content");
+
+        this.isLoading          = true;
         this.isResolvingContent = true;
 
         return new Promise((resolve, reject) => {
@@ -367,7 +386,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
                 this.workflowModel.validate();
 
-                const out = {
+                const out       = {
                     errors: this.workflowModel.errors,
                     warnings: this.workflowModel.warnings,
                     isValidatableCwl: true,
@@ -377,7 +396,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 this.validation = out;
 
                 // After wf is created get updates for steps
-                this.getStepUpdates();
+                // this.getStepUpdates();
 
                 if (!this.viewMode) {
                     this.viewMode = "graph";
@@ -404,10 +423,10 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                     resolve();
 
                 }, (err) => {
-                    this.isLoading = false;
+                    this.isLoading          = false;
                     this.isResolvingContent = false;
-                    this.viewMode = "code";
-                    this.validation = {
+                    this.viewMode           = "code";
+                    this.validation         = {
                         isValidatableCwl: true,
                         isValidCwl: false,
                         isValidJSON: true,
@@ -548,7 +567,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
      * the text has been formatted by the GUI editor
      */
     private getModelText(embed = false): string {
-        const wf = embed ? this.workflowModel.serializeEmbedded() : this.workflowModel.serialize();
+        const wf          = embed ? this.workflowModel.serializeEmbedded() : this.workflowModel.serialize();
         const modelObject = Object.assign(wf, {"sbg:modified": true});
 
         console.log("serialized workflow", modelObject);
@@ -588,11 +607,11 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
      * Open workflow in browser
      */
     goToApp() {
-        const urlApp = this.workflowModel["sbgId"];
+        const urlApp     = this.workflowModel["sbgId"];
         const urlProject = urlApp.split("/").splice(0, 2).join("/");
 
         this.auth.connections.take(1).subscribe((cred: CredentialsEntry[]) => {
-            const hash = this.data.id.split("/")[0];
+            const hash    = this.data.id.split("/")[0];
             const urlBase = cred.find(c => c.hash === hash);
             if (!urlBase) {
                 this.errorBarService.showError(`Could not externally open app "${urlApp}"`);

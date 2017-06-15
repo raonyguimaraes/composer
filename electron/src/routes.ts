@@ -144,7 +144,6 @@ module.exports = {
                 callback(null, repository.user[data.key]);
 
                 repository.on(`update.user.${data.key}`, (value) => {
-                    console.log("Received user update of", data.key);
                     callback(null, value);
                 });
             } else {
@@ -182,7 +181,6 @@ module.exports = {
             const publicAppsPromise = client.apps.public();
 
             Promise.all([projectsPromise, appsPromise, publicAppsPromise]).then(results => {
-                console.log("Fetched all data");
                 const [projects, apps, publicApps] = results;
 
                 const timestamp = Date.now();
@@ -194,7 +192,6 @@ module.exports = {
                     appFetchTimestamp: timestamp,
                     projectFetchTimestamp: timestamp
                 }, (err, data) => {
-                    console.log("Update user callback", err, data);
                     if (err) return callback(err);
 
                     callback(null, "success");
@@ -228,7 +225,6 @@ module.exports = {
 
             const api = new SBGClient(credentials.url, credentials.token);
             api.apps.get(data.id).then(response => {
-                console.log("Got app response", response);
                 callback(null, JSON.stringify(response.raw, null, 4));
             }, err => callback(err));
 
@@ -243,7 +239,7 @@ module.exports = {
                 if (typeof data.swapContent !== "string") {
                     delete repository.local.swap[data.swapID];
                 } else {
-                    repository.local.swap[data.swapID] =  data.swapContent;
+                    repository.local.swap[data.swapID] = data.swapContent;
                 }
 
                 repository.updateLocal({
@@ -270,5 +266,21 @@ module.exports = {
             return;
 
         }, err => callback(err));
+    },
+
+    getLocalFileContent: (path, callback) => {
+
+        repositoryLoad.then(() => {
+
+            const repo = repository.local;
+            if(repo && repo.swap && repo.swap[path]){
+                callback(null, repo.swap[path]);
+                return;
+            }
+
+            fsController.readFileContent(path, callback);
+
+        }, err => callback(err));
+
     }
 };

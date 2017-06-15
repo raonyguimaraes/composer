@@ -164,6 +164,10 @@ export class WorkboxService {
         this.activeTab.next(tab);
     }
 
+    /**
+     * @deprecated Do this same thing with {@link getOrCreateAppTab}
+     * @param fileID
+     */
     public getOrCreateFileTabAndOpenIt(fileID) {
         this.getOrCreateFileTab(fileID).take(1).subscribe((tab) => this.openTab(tab));
     }
@@ -177,7 +181,7 @@ export class WorkboxService {
         language?: string;
 
     }): TabData<T> {
-        const currentTab = this.tabs.getValue().find(existingTab => existingTab.id === tab.id);
+        const currentTab = this.tabs.getValue().find(existingTab => existingTab.id === data.id);
 
         if (currentTab) {
             return currentTab;

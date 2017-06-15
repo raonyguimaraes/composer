@@ -52,9 +52,11 @@ export class WorkBoxTabComponent implements OnChanges, WorkboxTab, AfterViewInit
         if (this.isTabViewInitialized) {
             // If tab is not active detach its change detector from the main change detector (significant performance boost)
             if (this.isActive) {
+                console.log("Reattached tab");
                 this.cdr.reattach();
                 this.cdr.markForCheck();
             } else {
+                console.log("Detached tab");
                 this.cdr.detach();
             }
         }

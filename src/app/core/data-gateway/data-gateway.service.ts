@@ -126,7 +126,7 @@ export class DataGatewayService {
             hash + ".getPublicApps", call);
     }
 
-    fetchFileContent(almostID: string, parse = false) {
+    fetchFileContent(almostID: string, parse = false): Observable<string> {
 
         console.log("Fetching file content", almostID, parse);
 
@@ -134,10 +134,11 @@ export class DataGatewayService {
         console.log("File source is", source, "for", almostID);
 
         if (source === "local") {
-            const request = this.ipc.request("readFileContent", almostID).take(1);
+
+            const fetch = Observable.empty().concat(this.ipc.request("getLocalFileContent", almostID)) as Observable<string>;
 
             if (parse) {
-                return request.map(content => {
+                return fetch.map(content => {
                     try {
                         return YAML.safeLoad(content, {json: true, onWarning: noop} as any);
                     } catch (err) {
@@ -146,7 +147,7 @@ export class DataGatewayService {
                 });
             }
 
-            return request;
+            return fetch;
         }
 
         if (source === "app") {

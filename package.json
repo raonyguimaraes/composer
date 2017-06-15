@@ -46,7 +46,7 @@
         "bootstrap": "4.0.0-alpha.5",
         "brace": "^0.10.0",
         "core-js": "^2.4.1",
-        "cwl-svg": "^0.0.33",
+        "cwl-svg": "0.0.35",
         "cwlts": "^1.13.15",
         "font-awesome": "^4.7.0",
         "jquery": "^3.2.1",
@@ -91,6 +91,6 @@
     },
     "engines": {
         "node": ">= 7.4.0",
-        "npm": ">= 3"
+        "npm": ">= 5"
     }
 }

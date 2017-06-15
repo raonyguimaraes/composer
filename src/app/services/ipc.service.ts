@@ -23,6 +23,7 @@ export type IPCRoute =
     | "getSetting"
     | "getUserByToken"
     | "getUserRepository"
+    | "getLocalFileContent"
     | "hasDataCache"
     | "patchLocalRepository"
     | "patchUserRepository"

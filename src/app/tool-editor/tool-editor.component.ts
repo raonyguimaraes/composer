@@ -35,14 +35,14 @@ import {CredentialsEntry} from "../services/storage/user-preferences-types";
 import {ModalService} from "../ui/modal/modal.service";
 import {DirectiveBase} from "../util/directive-base/directive-base";
 
-import {ToolEditorService} from "./tool-editor.service";
 import LoadOptions = jsyaml.LoadOptions;
 import {noop} from "../lib/utils.lib";
+import {CodeContentService} from "../core/code-content-service/code-content.service";
 
 @Component({
     selector: "ct-tool-editor",
     styleUrls: ["./tool-editor.component.scss"],
-    providers: [EditorInspectorService, ErrorBarService, ToolEditorService],
+    providers: [EditorInspectorService, ErrorBarService, CodeContentService],
     templateUrl: "./tool-editor.component.html"
 })
 export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDestroy, AfterViewInit {
@@ -110,7 +110,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
                 private modal: ModalService,
                 private system: SystemService,
                 private auth: OldAuthService,
-                private service: ToolEditorService,
+                private codeContentService: CodeContentService,
                 private zone: NgZone,
                 private errorBarService: ErrorBarService) {
 
@@ -128,16 +128,17 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
 
     ngOnInit(): void {
 
-        this.service.appID = this.data.id;
+        this.codeContentService.appID = this.data.id;
+        console.log("App id is", this.data.id);
 
         this.codeEditorContent.valueChanges.take(1).subscribe(content => {
             console.log("Pushing first content,", content.length);
-            this.service.originalCodeContent.next(content);
-            this.service.codeContent.next(content);
+            this.codeContentService.originalCodeContent.next(content);
+            this.codeContentService.codeContent.next(content);
         });
         this.codeEditorContent.valueChanges.skip(1).subscribe(content => {
             console.log("Pushing after content", content.length);
-            this.service.codeContent.next(content)
+            this.codeContentService.codeContent.next(content)
         });
 
         this.tracked = Observable.combineLatest(
@@ -213,7 +214,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
 
             });
 
-        this.codeEditorContent.setValue(this.data.fileContent);
+        this.tracked = this.data.fileContent.subscribe(txt => this.codeEditorContent.setValue(txt));
         this.tracked = this.priorityCodeUpdates.subscribe(txt => this.codeEditorContent.setValue(txt));
 
         this.statusBar.setControls(this.statusControls);

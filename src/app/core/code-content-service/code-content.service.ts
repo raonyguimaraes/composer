@@ -6,11 +6,11 @@ import "rxjs/add/operator/filter";
 import "rxjs/add/operator/map";
 import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
-import {IpcService} from "../services/ipc.service";
+import {IpcService} from "../../services/ipc.service";
 
 
 @Injectable()
-export class ToolEditorService {
+export class CodeContentService {
 
     originalCodeContent = new ReplaySubject<string>(1);
     codeContent         = new ReplaySubject<string>(1);
@@ -23,12 +23,9 @@ export class ToolEditorService {
             .filter(() => this.appID !== undefined)
             .subscribe(content => {
 
-                const [owner, projectSlug, appSlug, revision] = this.appID.split("/");
-                const revisionlessAppID                       = [owner, projectSlug, appSlug].join("/");
-
                 this.ipc.request("patchSwap", {
                     local: this.appID.startsWith("/") ? true : false,
-                    swapID: revisionlessAppID,
+                    swapID: this.appID,
                     swapContent: content
                 })
             });
