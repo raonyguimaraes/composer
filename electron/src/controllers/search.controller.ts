@@ -9,8 +9,6 @@ const relevanceThreshold = 0.1;
 
 export function searchLocalProjects(folders: string[] = [], term: string, limit = 10, callback) {
 
-    console.log("Searching through local folders", folders);
-
     if (searchProcess) {
         searchProcess.kill();
         searchProcess = undefined;

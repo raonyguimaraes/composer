@@ -45,7 +45,6 @@ export class PublicAPI {
             headers: {"X-SBG-Auth-Token": this.token}
         }, (err: RequestError, response: RequestResponse, body) => {
 
-            console.log("getUser response", response, err);
             if (err) {
                 return callback(PublicAPIError.fromSystemError(err));
             }

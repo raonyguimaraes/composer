@@ -10,11 +10,11 @@ import "rxjs/add/operator/take";
 import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Subject} from "rxjs/Subject";
-import {OldAuthService} from "../auth/auth/auth.service";
 import {CodeContentService} from "../core/code-content-service/code-content.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
+import {PlatformAppService} from "../editor-common/components/platform-app-common/platform-app.service";
 import {
     CwlSchemaValidationWorkerService,
     ValidationResponse
@@ -23,8 +23,6 @@ import {EditorInspectorService} from "../editor-common/inspector/editor-inspecto
 import {ErrorBarService} from "../layout/error-bar/error-bar.service";
 import {StatusBarService} from "../layout/status-bar/status-bar.service";
 import {noop} from "../lib/utils.lib";
-import {SystemService} from "../platform-providers/system.service";
-import {CredentialsEntry} from "../services/storage/user-preferences-types";
 import {ModalService} from "../ui/modal/modal.service";
 import {DirectiveBase} from "../util/directive-base/directive-base";
 import LoadOptions = jsyaml.LoadOptions;
@@ -32,7 +30,7 @@ import LoadOptions = jsyaml.LoadOptions;
 @Component({
     selector: "ct-tool-editor",
     styleUrls: ["./tool-editor.component.scss"],
-    providers: [EditorInspectorService, ErrorBarService, CodeContentService],
+    providers: [EditorInspectorService, ErrorBarService, CodeContentService, PlatformAppService],
     templateUrl: "./tool-editor.component.html"
 })
 export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDestroy, AfterViewInit {
@@ -98,8 +96,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
                 private statusBar: StatusBarService,
                 private dataGateway: DataGatewayService,
                 private modal: ModalService,
-                private system: SystemService,
-                private auth: OldAuthService,
+                public platformAppService: PlatformAppService,
                 private codeContentService: CodeContentService,
                 private zone: NgZone,
                 private errorBarService: ErrorBarService) {
@@ -119,23 +116,19 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
     ngOnInit(): void {
 
         this.codeContentService.appID = this.data.id;
-        console.log("App id is", this.data.id);
 
         this.codeEditorContent.valueChanges.take(1).subscribe(content => {
-            console.log("Pushing first content,", content.length);
             this.codeContentService.originalCodeContent.next(content);
             this.codeContentService.codeContent.next(content);
         });
         this.codeEditorContent.valueChanges.skip(1).subscribe(content => {
-            console.log("Pushing after content", content.length);
             this.codeContentService.codeContent.next(content)
         });
 
         this.tracked = Observable.combineLatest(
             this.codeEditorContent.valueChanges.map(() => this.codeEditorContent.dirty),
             (codeDirty) => codeDirty
-        ).debounceTime(250).subscribe(isDirty => {
-            console.log("Checking dirty state", isDirty);
+        ).debounceTime(300).subscribe(isDirty => {
             const newLabel = isDirty ? `${this.originalTabLabel}` : this.originalTabLabel;
             this.changeTabLabel(newLabel);
         });
@@ -147,7 +140,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
         // Whenever the editor content is changed, validate it using a JSON Schema.
         this.tracked = this.codeEditorContent
             .valueChanges
-            .debounceTime(100)
+            .debounceTime(300)
             .merge(this.priorityCodeUpdates)
             .do(() => {
                 this.isValidatingCWL = true;
@@ -390,26 +383,6 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
 
     resetJob() {
         this.toolModel.resetJobDefaults();
-    }
-
-    /**
-     * Open tool in browser
-     */
-    goToApp() {
-        const urlApp     = this.toolModel["sbgId"];
-        const urlProject = urlApp.split("/").splice(0, 2).join("/");
-
-        this.auth.connections.take(1).subscribe((cred: CredentialsEntry[]) => {
-            const hash    = this.data.id.split("/")[0];
-            const urlBase = cred.find(c => c.hash === hash);
-            if (!urlBase) {
-                this.errorBarService.showError(`Could not externally open app "${urlApp}"`);
-                return;
-            }
-            const url = urlBase.url;
-
-            this.system.openLink(`${url}/u/${urlProject}/apps/#${urlApp}`);
-        });
     }
 
     switchTab(tabName) {

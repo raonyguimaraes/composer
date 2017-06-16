@@ -18,10 +18,8 @@ describe("SBGClient", () => {
             const req = client.user.get();
 
             req.then(result => {
-                console.log("Result", result);
                 done();
             }, (fail: StatusCodeError | RequestError) => {
-                console.log("Fail", fail);
                 done()
             })
         });

@@ -8,11 +8,11 @@ import "rxjs/add/operator/switchMap";
 import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {PlatformAPIGatewayService} from "../auth/api/platform-api-gateway.service";
-import {OldAuthService} from "../auth/auth/auth.service";
 import {CodeContentService} from "../core/code-content-service/code-content.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
+import {PlatformAppService} from "../editor-common/components/platform-app-common/platform-app.service";
 import {
     CwlSchemaValidationWorkerService,
     ValidationResponse
@@ -21,8 +21,6 @@ import {EditorInspectorService} from "../editor-common/inspector/editor-inspecto
 import {ErrorBarService} from "../layout/error-bar/error-bar.service";
 import {StatusBarService} from "../layout/status-bar/status-bar.service";
 import {noop} from "../lib/utils.lib";
-import {SystemService} from "../platform-providers/system.service";
-import {CredentialsEntry} from "../services/storage/user-preferences-types";
 import {ModalService} from "../ui/modal/modal.service";
 import {DirectiveBase} from "../util/directive-base/directive-base";
 import {WorkflowGraphEditorComponent} from "./graph-editor/graph-editor/workflow-graph-editor.component";
@@ -32,7 +30,7 @@ import LoadOptions = jsyaml.LoadOptions;
 
 @Component({
     selector: "ct-workflow-editor",
-    providers: [EditorInspectorService, ErrorBarService, WorkflowEditorService, CodeContentService],
+    providers: [EditorInspectorService, ErrorBarService, WorkflowEditorService, CodeContentService, PlatformAppService],
     styleUrls: ["./workflow-editor.component.scss"],
     template: `
         <ct-action-bar>
@@ -68,7 +66,7 @@ import LoadOptions = jsyaml.LoadOptions;
                 <!--Go to app-->
                 <button class="btn"
                         type="button"
-                        (click)="goToApp()"
+                        (click)="platformAppService.openOnPlatform(workflowModel.sbgId)"
                         tooltipPlacement="bottom"
                         *ngIf="data.dataSource !== 'local'"
                         ct-tooltip="Open on Platform">
@@ -246,11 +244,10 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 private inspector: EditorInspectorService,
                 private statusBar: StatusBarService,
                 private modal: ModalService,
-                private system: SystemService,
-                private auth: OldAuthService,
                 private errorBarService: ErrorBarService,
                 private apiGateway: PlatformAPIGatewayService,
                 private dataGateway: DataGatewayService,
+                public platformAppService: PlatformAppService,
                 private codeService: CodeContentService,
                 private zone: NgZone) {
 
@@ -309,7 +306,6 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 // in world out of Angular)
                 this.zone.run(() => {
 
-                    console.log("Switching off loader");
                     this.isLoading = false;
 
                     if (!r.result.isValidCwl) {
@@ -355,7 +351,6 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
      */
     resolveContent(latestContent) {
 
-        console.log("Resolving content");
 
         this.isLoading          = true;
         this.isResolvingContent = true;
@@ -364,7 +359,6 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
             // Create ToolModel from json and set model validations
             const createWorkflowModel = (json) => {
-                console.log("latest content of type", typeof json);
                 console.time("Workflow Model");
                 this.workflowModel = WorkflowFactory.from(json as any, "document");
                 console.timeEnd("Workflow Model");
@@ -455,7 +449,6 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
     private getStepUpdates() {
 
         Observable.of(1).switchMap(() => {
-            console.log("Should check for updates", this);
             // Call service only if wf is in user projects
             if (this.data.dataSource !== "local" && this.data.isWritable) {
 
@@ -501,12 +494,10 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 : this.codeEditorContent.value;
 
             this.dataGateway.saveFile(this.data.id, text).subscribe(save => {
-                console.log("Saved", save);
                 this.statusBar.stopProcess(proc, `Saved: ${this.originalTabLabel}`);
                 this.priorityCodeUpdates.next(save);
                 this.changingRevision = true;
             }, err => {
-                console.log("Not saved", err);
                 this.statusBar.stopProcess(proc, `Could not save ${this.originalTabLabel}`);
                 this.errorBarService.showError(`Unable to save Workflow: ${err.message || err}`);
             });
@@ -567,8 +558,6 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
         const wf          = embed ? this.workflowModel.serializeEmbedded() : this.workflowModel.serialize();
         const modelObject = Object.assign(wf, {"sbg:modified": true});
 
-        console.log("serialized workflow", modelObject);
-
         return this.data.language === "json" || this.data.dataSource === "app" ?
             JSON.stringify(modelObject, null, 4) : Yaml.dump(modelObject);
     }
@@ -577,7 +566,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
         this.reportPanel = this.reportPanel === panel ? undefined : panel;
         // Force browser reflow
         setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
+            window.dispatchEvent(new Event("resize"));
         });
     }
 
@@ -588,7 +577,6 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
         this.dataGateway.fetchFileContent(fid).subscribe(txt => {
 
             this.codeService.discardSwapContent();
-            console.log("Got fid", txt);
             this.priorityCodeUpdates.next(txt);
             this.changingRevision = true;
         });
@@ -596,27 +584,6 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
     provideStatusControls() {
         return this.statusControls;
-    }
-
-
-    /**
-     * Open workflow in browser
-     */
-    goToApp() {
-        const urlApp     = this.workflowModel["sbgId"];
-        const urlProject = urlApp.split("/").splice(0, 2).join("/");
-
-        this.auth.connections.take(1).subscribe((cred: CredentialsEntry[]) => {
-            const hash    = this.data.id.split("/")[0];
-            const urlBase = cred.find(c => c.hash === hash);
-            if (!urlBase) {
-                this.errorBarService.showError(`Could not externally open app "${urlApp}"`);
-                return;
-            }
-            const url = urlBase.url;
-
-            this.system.openLink(`${url}/u/${urlProject}/apps/#${urlApp}`);
-        });
     }
 
     onTabActivation(): void {

@@ -81,7 +81,7 @@ import {WorkflowEditorModule} from "../workflow-editor/workflow-editor.module";
         ModalService,
         LayoutService,
         PlatformAPI,
-        {provide: ErrorHandler, useClass: ModalErrorHandler}
+        // {provide: ErrorHandler, useClass: ModalErrorHandler}
     ],
     imports: [
         BrowserModule,
