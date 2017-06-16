@@ -1,13 +1,4 @@
-import {
-    AfterViewInit,
-    Component,
-    Input, NgZone,
-    OnDestroy,
-    OnInit,
-    TemplateRef,
-    ViewChild,
-    ViewContainerRef
-} from "@angular/core";
+import {AfterViewInit, Component, Input, NgZone, OnDestroy, OnInit, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {CommandLineToolFactory} from "cwlts/models/generic/CommandLineToolFactory";
 import {CommandLinePart} from "cwlts/models/helpers/CommandLinePart";
@@ -20,6 +11,7 @@ import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Subject} from "rxjs/Subject";
 import {OldAuthService} from "../auth/auth/auth.service";
+import {CodeContentService} from "../core/code-content-service/code-content.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
@@ -30,14 +22,12 @@ import {
 import {EditorInspectorService} from "../editor-common/inspector/editor-inspector.service";
 import {ErrorBarService} from "../layout/error-bar/error-bar.service";
 import {StatusBarService} from "../layout/status-bar/status-bar.service";
+import {noop} from "../lib/utils.lib";
 import {SystemService} from "../platform-providers/system.service";
 import {CredentialsEntry} from "../services/storage/user-preferences-types";
 import {ModalService} from "../ui/modal/modal.service";
 import {DirectiveBase} from "../util/directive-base/directive-base";
-
 import LoadOptions = jsyaml.LoadOptions;
-import {noop} from "../lib/utils.lib";
-import {CodeContentService} from "../core/code-content-service/code-content.service";
 
 @Component({
     selector: "ct-tool-editor",
@@ -182,7 +172,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
 
                     if (!r.result.isValidCwl) {
                         // turn off loader and load document as code
-                        this.viewMode = "code";
+                        this.viewMode   = "code";
                         this.isValidCWL = false;
 
                         this.validation = r.result;
@@ -225,7 +215,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
      */
     resolveContent(latestContent) {
 
-        this.isLoading = true;
+        this.isLoading          = true;
         this.isResolvingContent = true;
 
         return new Promise((resolve, reject) => {
@@ -280,10 +270,10 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
 
                 }, (err) => {
 
-                    this.isLoading = false;
+                    this.isLoading          = false;
                     this.isResolvingContent = false;
-                    this.viewMode = "code";
-                    this.validation = {
+                    this.viewMode           = "code";
+                    this.validation         = {
                         isValidatableCwl: true,
                         isValidCwl: false,
                         isValidJSON: true,
@@ -309,8 +299,9 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
     }
 
     save() {
-if (this.data.dataSource === "local" || this.isValidCWL) {        const proc = this.statusBar.startProcess(`Saving: ${this.originalTabLabel}`);
-        const text = this.viewMode !== "code" ? this.getModelText() : this.codeEditorContent.value;
+        if (this.data.dataSource === "local" || this.isValidCWL) {
+            const proc = this.statusBar.startProcess(`Saving: ${this.originalTabLabel}`);
+            const text = this.viewMode !== "code" ? this.getModelText() : this.codeEditorContent.value;
 
             this.dataGateway.saveFile(this.data.id, text).subscribe(save => {
                 console.log("Saved", save);
@@ -372,20 +363,19 @@ if (this.data.dataSource === "local" || this.isValidCWL) {        const proc = t
 
     toggleReport(panel: "validation" | "commandLinePreview") {
         this.reportPanel = this.reportPanel === panel ? undefined : panel;
+        // Force browser reflow
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        });
     }
 
     openRevision(revisionNumber: number | string) {
-        const fileWithoutRevision = this.data.id.split("/");
 
-        // In the case when id is without revision number
-        if (!isNaN(+fileWithoutRevision[fileWithoutRevision.length - 1])) {
-            fileWithoutRevision.pop();
-        }
+        const fid = this.data.id.split("/").slice(0, 3).concat(revisionNumber.toString()).join("/");
 
-        fileWithoutRevision.push(revisionNumber.toString());
-        const fid = fileWithoutRevision.join("/");
         this.dataGateway.fetchFileContent(fid).subscribe(txt => {
             this.priorityCodeUpdates.next(txt);
+            this.codeContentService.discardSwapContent();
             this.toolGroup.reset();
             this.changingRevision = true;
         });
@@ -406,11 +396,11 @@ if (this.data.dataSource === "local" || this.isValidCWL) {        const proc = t
      * Open tool in browser
      */
     goToApp() {
-        const urlApp = this.toolModel["sbgId"];
+        const urlApp     = this.toolModel["sbgId"];
         const urlProject = urlApp.split("/").splice(0, 2).join("/");
 
         this.auth.connections.take(1).subscribe((cred: CredentialsEntry[]) => {
-            const hash = this.data.id.split("/")[0];
+            const hash    = this.data.id.split("/")[0];
             const urlBase = cred.find(c => c.hash === hash);
             if (!urlBase) {
                 this.errorBarService.showError(`Could not externally open app "${urlApp}"`);
@@ -492,7 +482,7 @@ if (this.data.dataSource === "local" || this.isValidCWL) {        const proc = t
     }
 
     registerOnTabLabelChange(update: (label: string) => void, originalLabel: string) {
-        this.changeTabLabel = update;
+        this.changeTabLabel   = update;
         this.originalTabLabel = originalLabel;
     }
 

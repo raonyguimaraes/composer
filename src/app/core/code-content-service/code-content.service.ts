@@ -22,12 +22,7 @@ export class CodeContentService {
         this.codeContent.debounceTime(500)
             .filter(() => this.appID !== undefined)
             .subscribe(content => {
-
-                this.ipc.request("patchSwap", {
-                    local: this.appID.startsWith("/") ? true : false,
-                    swapID: this.appID,
-                    swapContent: content
-                })
+                this.patchSwap(content);
             });
     }
 
@@ -43,5 +38,17 @@ export class CodeContentService {
         return Observable.combineLatest(this.originalCodeContent, this.codeContent)
             .map(pair => pair[0] === pair[1])
             .distinctUntilChanged();
+    }
+
+    discardSwapContent() {
+        this.patchSwap(null);
+    }
+
+    private patchSwap(content): void {
+        this.ipc.request("patchSwap", {
+            local: this.appID.startsWith("/"),
+            swapID: this.appID,
+            swapContent: content
+        });
     }
 }

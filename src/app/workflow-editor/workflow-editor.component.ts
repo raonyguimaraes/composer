@@ -9,6 +9,7 @@ import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {PlatformAPIGatewayService} from "../auth/api/platform-api-gateway.service";
 import {OldAuthService} from "../auth/auth/auth.service";
+import {CodeContentService} from "../core/code-content-service/code-content.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
@@ -27,7 +28,6 @@ import {DirectiveBase} from "../util/directive-base/directive-base";
 import {WorkflowGraphEditorComponent} from "./graph-editor/graph-editor/workflow-graph-editor.component";
 import {WorkflowEditorService} from "./workflow-editor.service";
 import LoadOptions = jsyaml.LoadOptions;
-import {CodeContentService} from "../core/code-content-service/code-content.service";
 
 
 @Component({
@@ -251,7 +251,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 private errorBarService: ErrorBarService,
                 private apiGateway: PlatformAPIGatewayService,
                 private dataGateway: DataGatewayService,
-                private codeContent: CodeContentService,
+                private codeService: CodeContentService,
                 private zone: NgZone) {
 
         super();
@@ -268,17 +268,14 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
     ngOnInit(): void {
 
-        console.log("App id wf", this.data.id);
-        this.codeContent.appID = this.data.id;
+        this.codeService.appID = this.data.id;
 
         this.codeEditorContent.valueChanges.take(1).subscribe(content => {
-            console.log("Pushing first content,", content.length);
-            this.codeContent.originalCodeContent.next(content);
-            this.codeContent.codeContent.next(content);
+            this.codeService.originalCodeContent.next(content);
+            this.codeService.codeContent.next(content);
         });
         this.codeEditorContent.valueChanges.skip(1).subscribe(content => {
-            console.log("Pushing after content", content.length);
-            this.codeContent.codeContent.next(content)
+            this.codeService.codeContent.next(content)
         });
 
         this.statusBar.setControls(this.statusControls);
@@ -290,7 +287,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
         // Whenever the editor content is changed, validate it using a JSON Schema.
         this.tracked = this.codeEditorContent.valueChanges
-            .debounceTime(100)
+            .debounceTime(300)
             .merge(this.priorityCodeUpdates)
             .do(() => {
                 this.isValidatingCWL = true;
@@ -578,21 +575,20 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
     toggleReport(panel: "validation") {
         this.reportPanel = this.reportPanel === panel ? undefined : panel;
+        // Force browser reflow
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        });
     }
 
-    openRevision(revisionNumber: number) {
-        const fileWithoutRevision = this.data.id.split("/");
+    openRevision(revisionNumber: number | string) {
 
-        // In the case when id is without revision number
-        if (!isNaN(+fileWithoutRevision[fileWithoutRevision.length - 1])) {
-            fileWithoutRevision.pop();
-        }
-
-        fileWithoutRevision.push(revisionNumber.toString());
-
-        const fid = fileWithoutRevision.join("/");
+        const fid = this.data.id.split("/").slice(0, 3).concat(revisionNumber.toString()).join("/");
 
         this.dataGateway.fetchFileContent(fid).subscribe(txt => {
+
+            this.codeService.discardSwapContent();
+            console.log("Got fid", txt);
             this.priorityCodeUpdates.next(txt);
             this.changingRevision = true;
         });

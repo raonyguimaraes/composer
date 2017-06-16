@@ -154,11 +154,8 @@ export class DataGatewayService {
             // ID example, all concatenated:
             // default_1b2a8fed50d9402593a57acddc7d7cfe/ivanbatic+admin/dfghhm/ivanbatic+admin/dfghhm/whole-genome-analysis-bwa-gatk-2-3-9-lite/2
 
-            const [owner, projectSlug, appSlug, revision] = almostID.split("/");
-            const appID                                   = [owner, projectSlug, appSlug].join("/");
-
             const fetch = Observable.empty().concat(this.ipc.request("getPlatformApp", {
-                id: appID
+                id: almostID
             }));
 
             if (parse) {
