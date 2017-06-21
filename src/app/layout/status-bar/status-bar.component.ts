@@ -28,6 +28,7 @@ import {StatusBarService} from "./status-bar.service";
         <!--Process-->
         <span class="status-item">
             <span *ngIf="queueSize">
+                <span class="loader"></span>
                 {{ statusBar.process | async }}
                 <span *ngIf="queueSize > 1">
                     and {{ queueSize - 1 }} more

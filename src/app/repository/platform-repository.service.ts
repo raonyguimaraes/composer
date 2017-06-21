@@ -6,7 +6,6 @@ import {Project} from "../../../electron/src/sbg-api-client/interfaces/project";
 import {AuthService} from "../auth/auth.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {IpcService} from "../services/ipc.service";
-import {BehaviorSubject} from "rxjs/BehaviorSubject";
 
 @Injectable()
 export class PlatformRepositoryService {
@@ -78,10 +77,10 @@ export class PlatformRepositoryService {
     }
 
     getOpenProjects() {
-        return this.projects
-            .withLatestFrom(this.openProjects, (all, open) => ({all, open}))
+        return Observable
+            .combineLatest(this.projects, this.openProjects)
             .map(data => {
-                const {all, open} = data;
+                const [all, open] = data;
                 if (open.length === 0) return [];
 
                 const mapped = all.reduce((acc, item) => ({...acc, [item.id]: item}), {});
@@ -100,27 +99,51 @@ export class PlatformRepositoryService {
     setNodeExpansion(id: string, isExpanded: boolean): void {
         this.expandedNodes.take(1)
             .subscribe(expandedNodes => {
-            const index = expandedNodes.indexOf(id);
+                const index = expandedNodes.indexOf(id);
 
-            const shouldBeAdded   = isExpanded && index === -1;
-            const shouldBeRemoved = !isExpanded && index !== -1;
+                const shouldBeAdded   = isExpanded && index === -1;
+                const shouldBeRemoved = !isExpanded && index !== -1;
 
-            const patch = expandedNodes.slice();
+                const patch = expandedNodes.slice();
 
-            if (shouldBeAdded) {
-                patch.push(id);
-            } else if (shouldBeRemoved) {
-                patch.splice(index, 1);
+                if (shouldBeAdded) {
+                    patch.push(id);
+                } else if (shouldBeRemoved) {
+                    patch.splice(index, 1);
+                }
+
+                if (shouldBeAdded || shouldBeRemoved) {
+                    this.patch({
+                        expandedNodes: patch
+                    });
+                }
+            });
+    }
+
+    addOpenProjects(...projectIDs: string[]) {
+        return this.openProjects.take(1).toPromise().then(openProjects => {
+
+            const missing = projectIDs.filter(id => openProjects.indexOf(id) === -1);
+
+            if (missing.length) {
+                return this.patch({openProjects: openProjects.concat(missing)}).toPromise();
             }
 
-            if (shouldBeAdded || shouldBeRemoved) {
-                this.patch({
-                    expandedNodes: patch
-                });
-            }
+            return Promise.resolve();
         });
+    }
 
+    removeOpenProjects(...projectIDs: string[]) {
+        return this.openProjects.take(1).toPromise().then(openProjects => {
 
+            const update = openProjects.filter(id => projectIDs.indexOf(id) === -1);
+
+            if (update.length !== openProjects.length) {
+                return this.patch({openProjects: update}).toPromise();
+            }
+
+            return Promise.resolve();
+        });
     }
 
     getExpandedNodes() {

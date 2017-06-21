@@ -6,8 +6,6 @@ import {PlatformRepositoryService} from "../../../repository/platform-repository
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
-import {DataGatewayService} from "../../data-gateway/data-gateway.service";
-import {WorkboxService} from "../../workbox/workbox.service";
 
 const {app, dialog} = window["require"]("electron").remote;
 
@@ -29,19 +27,6 @@ const {app, dialog} = window["require"]("electron").remote;
                 <p>Add one or more folders from your computer to the workspace.</p>
                 <p>
                     <button class="btn btn-secondary" (click)="selectLocalFolders()">Select a Folder...</button>
-                </p>
-            </div>
-
-            <div class="dialog-centered dialog-content" *ngIf="activeTab === 'platform' && !isConnected && !connecting">
-
-                <p>
-                    Connect to the Seven Bridges Platform
-                </p>
-
-                <!--<ct-credentials-form #credsForm [removable]="false"></ct-credentials-form>-->
-                <p>
-                    <!--<button type="button" class="btn btn-primary" (click)="credsForm.applyValues(); connecting = true;">Connect</button>-->
-                    <button type="button" class="btn btn-secondary" (click)="openSettingsTab()">Connect</button>
                 </p>
             </div>
 
@@ -100,31 +85,26 @@ const {app, dialog} = window["require"]("electron").remote;
 export class AddSourceModalComponent extends DirectiveBase {
 
     activeTab            = "local";
-    allProjects: Project[];
     selectedProjects     = [];
     localFoldersToAdd    = [];
     nonAddedUserProjects = [];
+    allProjects: Project[];
 
-    constructor(private data: DataGatewayService,
-                public modal: ModalService,
+    constructor(public modal: ModalService,
                 private repository: PlatformRepositoryService,
                 public auth: AuthService,
-                private preferences: UserPreferencesService,
-                private workbox: WorkboxService) {
+                private preferences: UserPreferencesService) {
 
         super();
 
         const projects          = this.repository.getProjects();
-        const openProjects      = this.preferences.getOpenProjects();
+        const openProjects      = this.repository.getOpenProjects();
         const activeCredentials = this.auth.active;
 
         this.tracked = Observable
-            .combineLatest(
-                projects, openProjects, activeCredentials,
-                (projects, openProjects, activeCredentials) => ({projects, openProjects, activeCredentials})
-            )
+            .combineLatest(projects, openProjects, activeCredentials)
             .subscribe(data => {
-                const {projects, openProjects, activeCredentials} = data;
+                const [projects, openProjects, activeCredentials] = data;
 
                 this.nonAddedUserProjects = projects.filter(project => {
                     const ID = [activeCredentials.getHash(), project.id].join("/");
@@ -145,12 +125,7 @@ export class AddSourceModalComponent extends DirectiveBase {
             throw new Error("Trying to open a project, but there is no active platform set.");
         }
 
-        const selectedProjectIDs = this.selectedProjects.map(id => [activePlatform.getHash(), id].join("/"));
-
-        this.preferences.getOpenProjects().take(1).subscribe(openProjects => {
-            const update = openProjects.concat(selectedProjectIDs).filter((v, i, a) => a.indexOf(v) === i);
-
-            this.preferences.setOpenProjects(update);
+        this.repository.addOpenProjects(...this.selectedProjects).then(() => {
             this.modal.close();
         });
 
@@ -169,10 +144,5 @@ export class AddSourceModalComponent extends DirectiveBase {
             this.preferences.addLocalFolders(paths);
             this.modal.close();
         });
-    }
-
-    openSettingsTab() {
-        this.workbox.openSettingsTab();
-        this.modal.close();
     }
 }

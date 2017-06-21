@@ -25,6 +25,7 @@ export type IPCRoute =
     | "getUserRepository"
     | "getLocalFileContent"
     | "hasDataCache"
+    | "saveAppRevision"
     | "patchLocalRepository"
     | "patchUserRepository"
     | "pathExists"

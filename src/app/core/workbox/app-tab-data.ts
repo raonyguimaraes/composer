@@ -6,7 +6,7 @@ export interface AppTabData {
     parsedContent: any;
     fileContent: Observable<string>;
     isWritable: boolean;
-    resolve: (content: string) => Observable<string>;
+    resolve: (content: string) => Observable<Object>;
     language: "json" | "yaml" | string;
 
 }

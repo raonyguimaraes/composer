@@ -15,7 +15,7 @@ import {RevisionListComponent} from "./components/revision-list/revision-list.co
 import {SymbolsComponent} from "./components/symbols/symbols.component";
 import {InputTypeSelectComponent} from "./components/type-select/type-select.component";
 import {ValidationClassDirective} from "./components/validation-preview/validation-class.directive";
-import {ValidationComponent} from "./components/validation-preview/validation-preview.component";
+import {ValidationPreviewComponent} from "./components/validation-preview/validation-preview.component";
 import {ValidationReportComponent} from "./components/validation-report/validation-report.component";
 import {CwlSchemaValidationWorkerService} from "./cwl-schema-validation-worker/cwl-schema-validation-worker.service";
 import {EditableDirective} from "./directives/editable.directive";
@@ -33,6 +33,7 @@ import {ValidationTextPipe} from "./pipes/validation-text.pipes";
 import {CWLModule} from "../cwl/cwl.module";
 import {EditorLayoutComponent} from "./editor-layout/editor-layout.component";
 import { EditorPanelComponent } from "./layout/editor-panel/editor-panel.component";
+import {AppValidatorService} from "./app-validator/app-validator.service";
 
 @NgModule({
     declarations: [
@@ -55,7 +56,7 @@ import { EditorPanelComponent } from "./layout/editor-panel/editor-panel.compone
         QuickPickComponent,
         RevisionListComponent,
         ValidationClassDirective,
-        ValidationComponent,
+        ValidationPreviewComponent,
         ValidationReportComponent,
         ValidationTextPipe,
         FileInputInspectorComponent,
@@ -64,7 +65,7 @@ import { EditorPanelComponent } from "./layout/editor-panel/editor-panel.compone
         InputTypeSelectComponent,
         AppInfoComponent,
         EditorLayoutComponent,
-        EditorPanelComponent
+        EditorPanelComponent,
     ],
     exports: [
         MapListComponent,
@@ -87,7 +88,7 @@ import { EditorPanelComponent } from "./layout/editor-panel/editor-panel.compone
         QuickPickComponent,
         RevisionListComponent,
         ValidationClassDirective,
-        ValidationComponent,
+        ValidationPreviewComponent,
         ValidationReportComponent,
         SymbolsComponent,
         InputTypeSelectComponent,
@@ -101,7 +102,8 @@ import { EditorPanelComponent } from "./layout/editor-panel/editor-panel.compone
         ModelExpressionEditorComponent,
     ],
     providers: [
-        CwlSchemaValidationWorkerService
+        CwlSchemaValidationWorkerService,
+        AppValidatorService,
     ],
     imports: [
         BrowserModule,

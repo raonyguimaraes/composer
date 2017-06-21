@@ -10,7 +10,7 @@ import {IpcService} from "../../services/ipc.service";
 
 
 @Injectable()
-export class CodeContentService {
+export class CodeSwapService {
 
     originalCodeContent = new ReplaySubject<string>(1);
     codeContent         = new ReplaySubject<string>(1);
@@ -24,6 +24,8 @@ export class CodeContentService {
             .subscribe(content => {
                 this.patchSwap(content);
             });
+
+        this.codeContent.take(1).subscribe(this.originalCodeContent);
     }
 
     getOriginalCodeContent(): Observable<string> {

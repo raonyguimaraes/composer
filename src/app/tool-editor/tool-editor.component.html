@@ -2,21 +2,19 @@
 <ct-action-bar>
     <ct-tab-selector [distribute]="'auto'" [active]="viewMode" (activeChange)="switchTab($event)">
 
-        <ct-tab-selector-entry [disabled]="!isValidCWL || isValidatingOrResolvingCWL()"
+        <ct-tab-selector-entry [disabled]="!validationState?.isValid"
                                [tabName]="'info'">App Info
         </ct-tab-selector-entry>
 
-        <ct-tab-selector-entry [disabled]="!isValidCWL || isValidatingOrResolvingCWL()"
+        <ct-tab-selector-entry [disabled]="!validationState?.isValid"
                                [tabName]="'gui'">Visual
         </ct-tab-selector-entry>
 
-        <ct-tab-selector-entry [disabled]="!isValidCWL || isValidatingOrResolvingCWL()"
+        <ct-tab-selector-entry [disabled]=" !validationState?.isValid"
                                [tabName]="'test'">Test
         </ct-tab-selector-entry>
 
-        <ct-tab-selector-entry [disabled]="!viewMode || isValidatingOrResolvingCWL()"
-                               [tabName]="'code'">Code
-        </ct-tab-selector-entry>
+        <ct-tab-selector-entry [tabName]="'code'">Code</ct-tab-selector-entry>
     </ct-tab-selector>
 
     <div class="document-controls">
@@ -24,7 +22,7 @@
         <!--Resolve-->
         <button class="btn"
                 type="button"
-                [disabled] = "isValidatingOrResolvingCWL()"
+                [disabled]="!validationState?.isValid"
                 *ngIf="viewMode === 'code' && data.dataSource === 'local'"
                 ct-tooltip="Resolve"
                 tooltipPlacement="bottom"
@@ -53,7 +51,7 @@
 
         <!--Publish to Platform-->
         <button class="btn"
-                [disabled]="isValidatingOrResolvingCWL()"
+                [disabled]="!validationState?.isValid"
                 *ngIf="data.dataSource === 'local'"
                 ct-tooltip="Publish to Platform"
                 tooltipPlacement="bottom"
@@ -127,35 +125,38 @@
 </div>
 
 <div *ngIf="reportPanel" class="app-report-panel layout-section">
+
     <ct-validation-report *ngIf="reportPanel === 'validation'"
-                          [issues]="validation"></ct-validation-report>
+                          [errors]="validationState.errors"
+                          [warnings]="validationState.warnings"></ct-validation-report>
+
     <ct-command-line-preview *ngIf="reportPanel === 'commandLinePreview'"
                              [commandLineParts]="commandLineParts | async"></ct-command-line-preview>
 </div>
 
 <ng-template #statusControls>
-                <!--Perpetual spinner that indicates if CWL validation is in progress-->
-                <i *ngIf= "isValidatingCWL"
-                   class="fa fa-circle-o-notch fa-spin">
-                </i>
+    <!--Perpetual spinner that indicates if CWL validation is in progress-->
+    <i *ngIf="isValidatingCWL"
+       class="fa fa-circle-o-notch fa-spin">
+    </i>
 
-                <span class="tag tag-warning">{{ toolModel.cwlVersion }}</span>
-                <span class="btn-group">
-                    <button [disabled]="!validation"
+    <span class="tag tag-warning">{{ toolModel.cwlVersion }}</span>
+    <span class="btn-group">
+                    <button [disabled]="!validationState"
                             [class.active]="reportPanel === 'validation'"
                             (click)="toggleReport('validation')"
                             class="btn">
 
-                        <span *ngIf="validation?.errors?.length">
-                            <i class="fa fa-times-circle text-danger"></i> {{validation.errors.length}} {{ validation.warnings.length === 1 ? "Error" : "Errors"}}
+                        <span *ngIf="validationState?.errors?.length">
+                            <i class="fa fa-times-circle text-danger"></i> {{validationState.errors.length}} {{ validationState.warnings.length === 1 ? "Error" : "Errors"}}
                         </span>
 
-                        <span *ngIf="validation?.warnings?.length"
-                              [class.pl-1]="validation?.errors?.length">
-                            <i class="fa fa-exclamation-triangle text-warning"></i> {{validation.warnings.length}} {{ validation.warnings.length === 1 ? "Warning" : "Warnings"}}
+                        <span *ngIf="validationState?.warnings?.length"
+                              [class.pl-1]="validationState?.errors?.length">
+                            <i class="fa fa-exclamation-triangle text-warning"></i> {{validationState.warnings.length}} {{ validationState.warnings.length === 1 ? "Warning" : "Warnings"}}
                         </span>
 
-                        <span *ngIf="!validation?.errors?.length && !validation?.warnings?.length">
+                        <span *ngIf="!validationState?.errors?.length && !validationState?.warnings?.length">
                             No Issues
                         </span>
 
@@ -163,7 +164,7 @@
                     </button>
 
                     <button [class.active]="reportPanel == 'commandLinePreview'"
-                            [disabled]="!isValidCWL || isValidatingOrResolvingCWL()"
+                            [disabled]="!validationState?.isValid"
                             (click)="toggleReport('commandLinePreview')"
                             class="btn">Command Line</button>
                 </span>

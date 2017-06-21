@@ -37,7 +37,8 @@ export class SBGClient {
             timeout: 60000,
             json: true,
             headers: {
-                "X-SBG-Auth-Token": token
+                "X-SBG-Auth-Token": token,
+                "Content-Type": "application/json"
             },
         });
     }
@@ -64,6 +65,24 @@ export class SBGClient {
             },
             public: () => {
                 return this.fetchAll<App>("apps?visibility=public");
+            },
+
+            save: (appID, content) => {
+                const revisionlessID = appID.split("/").slice(0, 3).join("/");
+
+                return this.apiRequest(`apps/${revisionlessID}`, {
+                    fields: "revision"
+                }).then(app => {
+
+                    const nextRevision = app.revision + 1;
+                    const url          = `apps/${revisionlessID}/${nextRevision}/raw`;
+
+                    return this.apiRequest.post(url, {
+                        body: content,
+                        json: false
+                    });
+
+                });
             }
         }
     }

@@ -8,7 +8,7 @@ import "rxjs/add/operator/switchMap";
 import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {PlatformAPIGatewayService} from "../auth/api/platform-api-gateway.service";
-import {CodeContentService} from "../core/code-content-service/code-content.service";
+import {CodeSwapService} from "../core/code-content-service/code-content.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
@@ -30,7 +30,7 @@ import LoadOptions = jsyaml.LoadOptions;
 
 @Component({
     selector: "ct-workflow-editor",
-    providers: [EditorInspectorService, ErrorBarService, WorkflowEditorService, CodeContentService, PlatformAppService],
+    providers: [EditorInspectorService, ErrorBarService, WorkflowEditorService, CodeSwapService, PlatformAppService],
     styleUrls: ["./workflow-editor.component.scss"],
     template: `
         <ct-action-bar>
@@ -149,8 +149,9 @@ import LoadOptions = jsyaml.LoadOptions;
 
 
         <div *ngIf="reportPanel" class="app-report-panel layout-section">
-            <ct-validation-report *ngIf="reportPanel === 'validation'"
-                                  [issues]="validation"></ct-validation-report>
+            <ct-validation-report *ngIf="reportPanel === 'validation'">
+                
+            </ct-validation-report>
         </div>
 
         <ng-template #statusControls>
@@ -239,6 +240,8 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
     /** Indicates if we are changing revision */
     private changingRevision = false;
 
+    // private appSavingService: AppSaver;
+
     constructor(private cwlValidatorService: CwlSchemaValidationWorkerService,
                 private formBuilder: FormBuilder,
                 private inspector: EditorInspectorService,
@@ -248,7 +251,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 private apiGateway: PlatformAPIGatewayService,
                 private dataGateway: DataGatewayService,
                 public platformAppService: PlatformAppService,
-                private codeService: CodeContentService,
+                private codeService: CodeSwapService,
                 private zone: NgZone) {
 
         super();
@@ -308,7 +311,7 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
 
                     this.isLoading = false;
 
-                    if (!r.result.isValidCwl) {
+                    if (!r.result.isValidCWL) {
                         // turn off loader and load document as code
                         this.viewMode   = "code";
                         this.isValidCWL = false;
@@ -330,8 +333,8 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                         const v = {
                             errors: [],
                             warnings: [],
-                            isValidatableCwl: true,
-                            isValidCwl: true,
+                            isValidatableCWL: true,
+                            isValidCWL: true,
                             isValidJSON: true
                         };
 
@@ -369,8 +372,8 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                     this.validation = {
                         errors: this.workflowModel.errors,
                         warnings: this.workflowModel.warnings,
-                        isValidatableCwl: true,
-                        isValidCwl: true,
+                        isValidatableCWL: true,
+                        isValidCWL: true,
                         isValidJSON: true
                     };
                 });
@@ -380,8 +383,8 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                 const out       = {
                     errors: this.workflowModel.errors,
                     warnings: this.workflowModel.warnings,
-                    isValidatableCwl: true,
-                    isValidCwl: true,
+                    isValidatableCWL: true,
+                    isValidCWL: true,
                     isValidJSON: true
                 };
                 this.validation = out;
@@ -418,8 +421,8 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
                     this.isResolvingContent = false;
                     this.viewMode           = "code";
                     this.validation         = {
-                        isValidatableCwl: true,
-                        isValidCwl: false,
+                        isValidatableCWL: true,
+                        isValidCWL: false,
                         isValidJSON: true,
                         warnings: [],
                         errors: [{

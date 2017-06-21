@@ -44,7 +44,7 @@ module.exports = {
         fsController.pathExists(path, callback);
     },
 
-    resolve: (path, callback) => {
+    resolve: (path, callback: (err?: Error, result?: Object) => void) => {
         resolver.resolve(path).then(result => {
             callback(null, result);
         }, err => {
@@ -273,7 +273,7 @@ module.exports = {
         repositoryLoad.then(() => {
 
             const repo = repository.local;
-            if(repo && repo.swap && repo.swap[path]){
+            if (repo && repo.swap && repo.swap[path]) {
                 callback(null, repo.swap[path]);
                 return;
             }
@@ -281,6 +281,26 @@ module.exports = {
             fsController.readFileContent(path, callback);
 
         }, err => callback(err));
+    },
 
+    saveAppRevision: (data: {
+        id: string
+        content: string,
+    }, callback) => {
+        repositoryLoad.then(() => {
+            const credentials    = repository.local.activeCredentials;
+            const userRepository = repository.user;
+
+            if (!credentials || !userRepository) {
+                callback(new Error("Cannot save an app, you are not connected to any platform."));
+            }
+
+            const api = new SBGClient(credentials.url, credentials.token);
+            api.apps.save(data.id, data.content).then(response => {
+                callback(null, response);
+            }, err => callback(err));
+
+
+        }, err => callback(err));
     }
 };

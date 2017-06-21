@@ -1,20 +1,20 @@
 import {Injectable} from "@angular/core";
-import {WebWorkerBuilderService} from "../../core/web-worker/web-worker-builder.service";
-import {WebWorker} from "../../core/web-worker/web-worker";
+import {Issue} from "cwlts/models/helpers/validation";
 
 import * as cwlSchemas from "cwlts/schemas";
-import {Issue} from "cwlts/models/helpers/validation";
+import {WebWorker} from "../../core/web-worker/web-worker";
+import {WebWorkerBuilderService} from "../../core/web-worker/web-worker-builder.service";
 
 declare const jsyaml;
 declare const Ajv;
 
 export interface ValidationResponse {
-    isValidatableCwl: boolean;
-    isValidCwl: boolean;
+    isValidatableCWL: boolean;
+    isValidCWL: boolean;
     isValidJSON: boolean;
     errors: Issue[];
     warnings: Issue[];
-    class?: string;
+    class?: string | "CommandLineTool" | "Workflow" | "ExpressionTool";
 }
 
 @Injectable()
@@ -40,7 +40,7 @@ export class CwlSchemaValidationWorkerService {
         });
     }
 
-    validate(content: string) {
+    validate(content: string): Promise<ValidationResponse> {
         return this.worker.request(content);
     }
 
@@ -53,8 +53,8 @@ export class CwlSchemaValidationWorkerService {
         let json;
         const schemas  = this.schemas;
         const response = {
-            isValidatableCwl: false,
-            isValidCwl: false,
+            isValidatableCWL: false,
+            isValidCWL: false,
             isValidJSON: false,
             errors: [{message: "Not valid file format", loc: "document"}],
             warnings: [],
@@ -100,7 +100,7 @@ export class CwlSchemaValidationWorkerService {
             });
         }
 
-        response.isValidatableCwl = true;
+        response.isValidatableCWL = true;
         response.class            = json.class;
 
         const cwlVersion = json.cwlVersion || "sbg:draft-2";
@@ -133,7 +133,7 @@ export class CwlSchemaValidationWorkerService {
         }
 
         return Object.assign(response, {
-            isValidCwl: validation,
+            isValidCWL: validation,
             warnings: warnings,
             errors: errors.map(err => {
                 let message = err.message;

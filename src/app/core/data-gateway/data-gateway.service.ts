@@ -128,23 +128,21 @@ export class DataGatewayService {
 
     fetchFileContent(almostID: string, parse = false): Observable<string> {
 
-        console.log("Fetching file content", almostID, parse);
-
         const source = DataGatewayService.getFileSource(almostID);
-        console.log("File source is", source, "for", almostID);
 
         if (source === "local") {
 
             const fetch = Observable.empty().concat(this.ipc.request("getLocalFileContent", almostID)) as Observable<string>;
 
             if (parse) {
-                return fetch.map(content => {
-                    try {
-                        return YAML.safeLoad(content, {json: true, onWarning: noop} as any);
-                    } catch (err) {
-                        return new Error(err);
-                    }
-                });
+                return fetch
+                    .map(content => {
+                        try {
+                            return YAML.safeLoad(content, {json: true, onWarning: noop} as any);
+                        } catch (err) {
+                            return new Error(err);
+                        }
+                    });
             }
 
             return fetch;
@@ -204,11 +202,6 @@ export class DataGatewayService {
         if (fileSource === "local") {
             return this.saveLocalFileContent(fileID, content).map(() => content);
         }
-
-        /**
-         * File ID sample:
-         * "default_1b2a8fed50d9402593a57acddc7d7cfe/ivanbatic+admin/dfghhm/ivanbatic+admin/dfghhm/sbg-flatten/0"
-         */
 
         const [hash] = fileID.split("/");
 

@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, Input, NgZone, OnDestroy, OnInit, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
+import {AfterViewInit, Component, Injector, Input, OnDestroy, OnInit, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
 import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {CommandLineToolFactory} from "cwlts/models/generic/CommandLineToolFactory";
 import {CommandLinePart} from "cwlts/models/helpers/CommandLinePart";
@@ -7,42 +7,64 @@ import * as Yaml from "js-yaml";
 import "rxjs/add/observable/combineLatest";
 import "rxjs/add/operator/skip";
 import "rxjs/add/operator/take";
+
 import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Subject} from "rxjs/Subject";
-import {CodeContentService} from "../core/code-content-service/code-content.service";
+import {CodeSwapService} from "../core/code-content-service/code-content.service";
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
+import {AppValidatorService, AppValidityState} from "../editor-common/app-validator/app-validator.service";
 import {PlatformAppService} from "../editor-common/components/platform-app-common/platform-app.service";
-import {
-    CwlSchemaValidationWorkerService,
-    ValidationResponse
-} from "../editor-common/cwl-schema-validation-worker/cwl-schema-validation-worker.service";
 import {EditorInspectorService} from "../editor-common/inspector/editor-inspector.service";
+import {APP_SAVER_TOKEN, AppSaver} from "../editor-common/services/app-saving/app-saver.interface";
+import {LocalFileSavingService} from "../editor-common/services/app-saving/local-file-saving.service";
+import {PlatformAppSavingService} from "../editor-common/services/app-saving/platform-app-saving.service";
 import {ErrorBarService} from "../layout/error-bar/error-bar.service";
 import {StatusBarService} from "../layout/status-bar/status-bar.service";
-import {noop} from "../lib/utils.lib";
+import {IpcService} from "../services/ipc.service";
 import {ModalService} from "../ui/modal/modal.service";
 import {DirectiveBase} from "../util/directive-base/directive-base";
+import "../util/rx-extensions/subscribe-tracked";
 import LoadOptions = jsyaml.LoadOptions;
 
 @Component({
     selector: "ct-tool-editor",
     styleUrls: ["./tool-editor.component.scss"],
-    providers: [EditorInspectorService, ErrorBarService, CodeContentService, PlatformAppService],
+    providers: [
+        EditorInspectorService,
+        ErrorBarService,
+        CodeSwapService,
+        PlatformAppService,
+        {
+            provide: APP_SAVER_TOKEN,
+            useFactory(comp: ToolEditorComponent, ipc: IpcService, modal: ModalService) {
+
+                if (comp.data.dataSource === "local") {
+                    return new LocalFileSavingService(ipc);
+                }
+
+                return new PlatformAppSavingService(ipc, modal);
+            },
+            deps: [ToolEditorComponent, IpcService, ModalService]
+        }
+    ],
     templateUrl: "./tool-editor.component.html"
 })
 export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDestroy, AfterViewInit {
+
     @Input()
     data: AppTabData;
-
-    /** ValidationResponse for current document */
-    validation: ValidationResponse;
 
     /** Default view mode. */
     @Input()
     viewMode: "code" | "gui" | "test" | "info";
+
+    @Input()
+    showInspector = false;
+
+    validationState: AppValidityState;
 
     /** Flag to indicate the document is loading */
     isLoading = true;
@@ -68,38 +90,33 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
     /** Sorted array of resulting command line parts */
     commandLineParts: Subject<CommandLinePart[]> = new ReplaySubject();
 
+    toolGroup: FormGroup;
+
+    codeEditorContent = new FormControl(undefined);
+
+    priorityCodeUpdates = new Subject<string>();
+
     /** Template of the status controls that will be shown in the status bar */
     @ViewChild("statusControls")
     private statusControls: TemplateRef<any>;
 
-    toolGroup: FormGroup;
-
     @ViewChild("inspector", {read: ViewContainerRef})
     private inspectorHostView: ViewContainerRef;
 
-    @Input()
-    showInspector = false;
-
     private changeTabLabel: (title: string) => void;
     private originalTabLabel: string;
+    private appSavingService: AppSaver;
 
-    codeEditorContent = new FormControl(undefined);
-
-    priorityCodeUpdates = new Subject();
-
-    /** Indicates if we are changing the revision manually (saving an app is also the case) */
-    private changingRevision = false;
-
-    constructor(private cwlValidatorService: CwlSchemaValidationWorkerService,
+    constructor(private appValidator: AppValidatorService,
                 private formBuilder: FormBuilder,
                 private inspector: EditorInspectorService,
                 private statusBar: StatusBarService,
                 private dataGateway: DataGatewayService,
                 private modal: ModalService,
-                public platformAppService: PlatformAppService,
-                private codeContentService: CodeContentService,
-                private zone: NgZone,
-                private errorBarService: ErrorBarService) {
+                private codeSwapService: CodeSwapService,
+                private injector: Injector,
+                private errorBarService: ErrorBarService,
+                public platformAppService: PlatformAppService,) {
 
         super();
 
@@ -114,173 +131,81 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
     }
 
     ngOnInit(): void {
+        // Push status controls to the status bar
+        this.statusBar.setControls(this.statusControls);
 
-        this.codeContentService.appID = this.data.id;
+        // Get the app saver from the injector
+        this.appSavingService = this.injector.get(APP_SAVER_TOKEN) as AppSaver;
 
-        this.codeEditorContent.valueChanges.take(1).subscribe(content => {
-            this.codeContentService.originalCodeContent.next(content);
-            this.codeContentService.codeContent.next(content);
-        });
-        this.codeEditorContent.valueChanges.skip(1).subscribe(content => {
-            this.codeContentService.codeContent.next(content)
-        });
-
-        this.tracked = Observable.combineLatest(
-            this.codeEditorContent.valueChanges.map(() => this.codeEditorContent.dirty),
-            (codeDirty) => codeDirty
-        ).debounceTime(300).subscribe(isDirty => {
-            const newLabel = isDirty ? `${this.originalTabLabel}` : this.originalTabLabel;
-            this.changeTabLabel(newLabel);
-        });
-
+        // Disable the code editor modifications if the app is read-only
         if (!this.data.isWritable) {
             this.codeEditorContent.disable();
         }
 
-        // Whenever the editor content is changed, validate it using a JSON Schema.
-        this.tracked = this.codeEditorContent
-            .valueChanges
-            .debounceTime(300)
-            .merge(this.priorityCodeUpdates)
-            .do(() => {
-                this.isValidatingCWL = true;
-            })
-            .switchMap((latestContent) => Observable.fromPromise(this.cwlValidatorService.validate(latestContent))
-                .map((result) => {
-                        return {
-                            latestContent: latestContent,
-                            result: result
-                        };
-                    }
-                ))
-            .subscribe(r => {
+        // Set this app's ID to the code content service
+        this.codeSwapService.appID = this.data.id;
 
-                this.isValidatingCWL = false;
+        this.codeEditorContent.valueChanges.subscribeTracked(this, content => this.codeSwapService.codeContent.next(content));
 
-                // Wrap it in zone in order to see changes immediately in status bar (cwlValidatorService.validate is
-                // in world out of Angular)
-                this.zone.run(() => {
+        /** Changes to the code that did not come from user's typing. */
+        const externalCodeChanges = Observable.merge(this.data.fileContent, this.priorityCodeUpdates).distinctUntilChanged().share();
 
+        /** Changes to the code from user's typing, slightly debounced */
+        const codeEditorChanges = this.codeEditorContent.valueChanges.debounceTime(300).distinctUntilChanged().share();
+
+        /** Observe all code changes */
+        const allCodeChanges = Observable.merge(externalCodeChanges, codeEditorChanges).distinctUntilChanged().share();
+
+        /** First time that user types something in the code editor */
+        const firstDirtyCodeChange = codeEditorChanges.filter(() => this.codeEditorContent.dirty === true).take(1);
+
+        /** Attach a CWL validator to code updates and observe the validation state changes. */
+        const validation = this.appValidator.createValidator(allCodeChanges).share();
+
+        /** Get the end of first validation check */
+        const firstValidationEnd = validation.filter(state => !state.isPending).take(1);
+
+        /**
+         * For each code change from outside the ace editor, update the content of the editor form control.
+         * Check for RDF as well
+         */
+        externalCodeChanges.subscribeTracked(this, (code: string) => {
+            // Exteral code changes should update the internal state as well
+            this.codeEditorContent.setValue(code);
+
+        });
+
+        /**
+         * After the initial validation, external code changes should resolve and recreate the model.
+         * The issue is that model creation registers a validation callback that overrides validation state
+         * provided by the {@link validation} stream. For the first input, however, the app might not be
+         * validated yet, so we should not create the model before the first validation ends.
+         * We therefore skip the input until the first validation, but need to preserve the latest
+         * code change that might have been there in the meantime so we know what to use as the base for
+         * the model creation.
+         */
+        firstValidationEnd.withLatestFrom(externalCodeChanges, (_, inner) => inner)
+            .switchMap(inner => Observable.of(inner).merge(externalCodeChanges).distinctUntilChanged())
+            .subscribeTracked(this, code => {
+                this.resolveToModel(code).then(() => {
                     this.isLoading = false;
-
-                    if (!r.result.isValidCwl) {
-                        // turn off loader and load document as code
-                        this.viewMode   = "code";
-                        this.isValidCWL = false;
-
-                        this.validation = r.result;
-                        return r.result;
-                    }
-
-                    this.isValidCWL = true;
-
-                    // If you are in mode other than Code mode or mode is undefined (opening app)
-                    // Also changingRevision is added when you are in Code mode and you are changing revision to know
-                    // when to generate a new toolModel
-                    if (this.viewMode !== "code" || this.changingRevision) {
-                        this.changingRevision = false;
-                        this.resolveContent(r.latestContent).then(noop, noop);
-                    } else {
-                        // In case when you are in Code mode just reset validations
-                        const v = {
-                            errors: [],
-                            warnings: [],
-                            isValidatableCwl: true,
-                            isValidCwl: true,
-                            isValidJSON: true
-                        };
-
-                        this.validation = v;
-                    }
-
                 });
-
             });
 
-        this.tracked = this.data.fileContent.subscribe(txt => this.codeEditorContent.setValue(txt));
-        this.tracked = this.priorityCodeUpdates.subscribe(txt => this.codeEditorContent.setValue(txt));
 
-        this.statusBar.setControls(this.statusControls);
-    }
+        /** When types something in the code editor for the first time, add a star to the tab label */
+        /** This does not work very well, so disable it for now */
+        // firstDirtyCodeChange.subscribeTracked(this, isDirty => this.changeTabLabel(this.originalTabLabel + (isDirty ? " (modified)" : "")));
 
-    /**
-     * Resolve content and create a new tool model
-     */
-    resolveContent(latestContent) {
+        /**
+         * We will store the validation state from the validator to avoid excessive template subscribers.
+         * Also, we will at some times override the data from the state validity with model validation.
+         */
+        validation.subscribe(state => this.validationState = state);
 
-        this.isLoading          = true;
-        this.isResolvingContent = true;
-
-        return new Promise((resolve, reject) => {
-
-            // Create ToolModel from json and set model validations
-            const createToolModel = (json) => {
-                this.toolModel = CommandLineToolFactory.from(json as any, "document");
-                this.toolModel.onCommandLineResult((res) => {
-                    this.commandLineParts.next(res);
-                });
-                this.toolModel.updateCommandLine();
-
-                const updateValidity = () => {
-                    this.validation = {
-                        errors: this.toolModel.errors,
-                        warnings: this.toolModel.warnings,
-                        isValidatableCwl: true,
-                        isValidCwl: true,
-                        isValidJSON: true
-                    };
-                };
-
-                // update validation stream on model validation updates
-                this.toolModel.setValidationCallback(updateValidity);
-
-                this.toolModel.validate().then(updateValidity);
-
-                if (!this.viewMode) {
-                    this.viewMode = "gui";
-                }
-
-                this.isLoading = false;
-            };
-
-            // If app is a local file
-            if (this.data.dataSource !== "local") {
-                // load JSON to generate model
-                const json = Yaml.safeLoad(latestContent, {
-                    json: true
-                } as LoadOptions);
-
-                createToolModel(json);
-                this.isResolvingContent = false;
-                resolve();
-
-            } else {
-                this.data.resolve(latestContent).subscribe((resolved) => {
-
-                    createToolModel(resolved);
-                    this.isResolvingContent = false;
-                    resolve();
-
-                }, (err) => {
-
-                    this.isLoading          = false;
-                    this.isResolvingContent = false;
-                    this.viewMode           = "code";
-                    this.validation         = {
-                        isValidatableCwl: true,
-                        isValidCwl: false,
-                        isValidJSON: true,
-                        warnings: [],
-                        errors: [{
-                            message: err.message,
-                            loc: "document",
-                            type: "error"
-                        }]
-                    };
-
-                    reject();
-                });
-            }
+        /** When the first validation ends, turn off the loader and determine which view we can show. Invalid app forces code view */
+        firstValidationEnd.subscribe(state => {
+            this.viewMode = state.isValid ? "gui" : "code";
         });
     }
 
@@ -288,78 +213,35 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
      * When click on Resolve button (visible only if app is a local file and you are in Code mode)
      */
     resolveButtonClick() {
-        this.resolveContent(this.codeEditorContent.value).then(noop, noop);
+        this.resolveToModel(this.codeEditorContent.value);
     }
 
     save() {
-        if (this.data.dataSource === "local" || this.isValidCWL) {
-            const proc = this.statusBar.startProcess(`Saving: ${this.originalTabLabel}`);
-            const text = this.viewMode !== "code" ? this.getModelText() : this.codeEditorContent.value;
 
-            this.dataGateway.saveFile(this.data.id, text).subscribe(save => {
-                console.log("Saved", save);
+        const proc = this.statusBar.startProcess(`Saving: ${this.originalTabLabel}`);
+        const text = this.viewMode === "code" ? this.codeEditorContent.value : this.getModelText();
+
+        this.appSavingService
+            .save(this.data.id, text)
+            .then(update => {
+                this.priorityCodeUpdates.next(update);
                 this.statusBar.stopProcess(proc, `Saved: ${this.originalTabLabel}`);
-                this.priorityCodeUpdates.next(save);
-                this.changingRevision = true;
             }, err => {
-                console.log("Not saved", err);
-                this.statusBar.stopProcess(proc, `Could not save ${this.originalTabLabel} (${err})`);
-                this.errorBarService.showError(`Unable to save Tool: ${err.message || err}`);
+                if (!err || !err.message) {
+                    this.statusBar.stopProcess(proc);
+                    return;
+                }
+
+                this.errorBarService.showError(`Saving failed: ${err.message}`);
+                this.statusBar.stopProcess(proc, `Could not save ${this.originalTabLabel} (${err.message})`);
             });
-        } else {
-            this.errorBarService.showError(`Unable to save Tool because JSON Schema is invalid`);
-        }
-    }
-
-    /**
-     * Toggles between GUI and Code view. If necessary, it will show a prompt about reformatting
-     * when switching to GUI view.
-     *
-     * @param mode
-     */
-    switchView(mode): void {
-
-        if (mode === "gui" && this.showReformatPrompt) {
-
-            // this.modal.checkboxPrompt({
-            //     title: "Confirm GUI Formatting",
-            //     content: "Activating GUI mode might change the formatting of this document. Do you wish to continue?",
-            //     cancellationLabel: "Cancel",
-            //     confirmationLabel: "OK",
-            //     checkboxLabel: "Don't show this dialog again",
-            // }).then(res => {
-            //     if (res) this.userPrefService.put("show_reformat_prompt", false);
-            //
-            //     this.showReformatPrompt = false;
-            //     this.viewMode           = mode;
-            // }, noop);
-            // return;
-        }
-
-        if (mode === "code" && this.toolGroup.dirty) {
-            this.codeEditorContent.setValue(this.getModelText());
-        }
-
-        this.viewMode = mode;
-    }
-
-    /**
-     * Serializes model to text. It also adds sbg:modified flag to indicate
-     * the text has been formatted by the GUI editor
-     */
-    private getModelText(): string {
-        const modelObject = Object.assign(this.toolModel.serialize(), {"sbg:modified": true});
-
-        return this.data.language === "json" || this.data.dataSource === "app"
-            ? JSON.stringify(modelObject, null, 4) : Yaml.dump(modelObject);
     }
 
     toggleReport(panel: "validation" | "commandLinePreview") {
         this.reportPanel = this.reportPanel === panel ? undefined : panel;
-        // Force browser reflow
-        setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-        });
+
+        // Force reflow, layout gets messed up otherwise
+        setTimeout(() => window.dispatchEvent(new Event("resize")));
     }
 
     openRevision(revisionNumber: number | string) {
@@ -368,14 +250,12 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
 
         this.dataGateway.fetchFileContent(fid).subscribe(txt => {
             this.priorityCodeUpdates.next(txt);
-            this.codeContentService.discardSwapContent();
+            this.codeSwapService.discardSwapContent();
             this.toolGroup.reset();
-            this.changingRevision = true;
         });
     }
 
     onJobUpdate(job) {
-
         this.toolModel.setJobInputs(job.inputs);
         this.toolModel.setRuntime(job.allocatedResources);
         this.toolModel.updateCommandLine();
@@ -387,41 +267,35 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
 
     switchTab(tabName) {
 
-        if (!tabName) {
+        if (!tabName) return;
+
+        // setTimeout(() => {
+
+        /** If switching to code mode, serialize the model first and update the editor text */
+        if (this.viewMode !== "code" && tabName === "code") {
+            this.priorityCodeUpdates.next(this.getModelText());
+            this.viewMode = tabName;
             return;
         }
 
-        setTimeout(() => {
+        /** If going from code mode to gui, resolve the content first */
+        if ((this.viewMode === "code" || !this.viewMode) && tabName !== "code") {
 
-            // If you are changing from other mode to a Code mode
-            if (this.viewMode !== "code" && tabName === "code") {
-                this.codeEditorContent.setValue(this.getModelText());
+            // Trick that will change reference for tabselector highlight line (to reset it to a Code mode if resolve fails)
+            this.viewMode = undefined;
+            this.resolveToModel(this.codeEditorContent.value).then(() => {
                 this.viewMode = tabName;
-                return;
-            }
+            }, err => {
+                this.viewMode = "code";
+                this.errorBarService.showError(`Cannot resolve RDF schema: “${err}”`);
 
-            // If you are changing from Code mode to another mode you have to resolve the content
-            if ((this.viewMode === "code" || !this.viewMode) && tabName !== "code") {
+            });
+            return;
+        }
 
-                // Trick that will change reference for tabselector highlight line (to reset it to a Code mode if resolve fails)
-                this.viewMode = undefined;
-
-                // Resolve content
-                this.resolveContent(this.codeEditorContent.value).then(() => {
-                    this.viewMode = tabName;
-                }, () => {
-                    // If fails open Code mode
-                    this.viewMode = "code";
-                });
-
-
-            } else {
-                // If changing from|to mode that is not a Code mode, just switch
-                this.viewMode = tabName;
-            }
-        });
+        // If changing from|to mode that is not a Code mode, just switch
+        this.viewMode = tabName;
     }
-
 
     ngAfterViewInit() {
         this.inspector.setHostView(this.inspectorHostView);
@@ -432,26 +306,17 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
         return this.statusControls;
     }
 
-    onTabActivation(): void {
-
-    }
-
     publish() {
-        if (this.isValidCWL) {
-            // Before you publish a local file you have to resolve the content
-            this.resolveContent(this.codeEditorContent.value).then(() => {
-                const component = this.modal.fromComponent(PublishModalComponent, {
-                    title: "Publish an App",
-                    backdrop: true
-                });
 
-                component.appContent = this.toolModel.serialize();
-            }, () => {
-                this.errorBarService.showError(`Unable to Publish Tool because Schema Salad Resolver failed`);
-            });
-        } else {
-            this.errorBarService.showError(`Unable to Publish Tool because JSON Schema is invalid`);
+        if (!this.validationState.isValid) {
+            this.errorBarService.showError(`Cannot publish this app because because it's doesn't match the proper JSON schema`);
+            return;
         }
+
+        this.syncModelAndCode(true).then(() => {
+            const modal      = this.modal.fromComponent(PublishModalComponent, {title: "Publish an App"});
+            modal.appContent = Yaml.safeLoad(this.codeEditorContent.value, {json: true} as LoadOptions);
+        });
     }
 
     registerOnTabLabelChange(update: (label: string) => void, originalLabel: string) {
@@ -459,7 +324,106 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
         this.originalTabLabel = originalLabel;
     }
 
-    isValidatingOrResolvingCWL() {
-        return this.isValidatingCWL || this.isResolvingContent;
+    private recreateToolModel(json: Object | any): void {
+
+        this.toolModel = CommandLineToolFactory.from(json, "document");
+
+        this.toolModel.onCommandLineResult(cmdResult => {
+            this.commandLineParts.next(cmdResult);
+        });
+
+        this.toolModel.updateCommandLine();
+        this.toolModel.setValidationCallback(this.afterModelValidation.bind(this))
+        this.toolModel.validate().then(this.afterModelValidation.bind(this));
     }
+
+    private afterModelValidation() {
+        Object.assign(this.validationState, {
+            errors: this.toolModel.errors || [],
+            warnings: this.toolModel.warnings || []
+        });
+    }
+
+    /**
+     * Resolve RDF code content and return a promise of the resolved content
+     * Side effect: recreate a tool model from resolved code
+     * @param content
+     * @returns Promise of resolved code content
+     */
+    private resolveToModel(content: string): Promise<Object> {
+        const appMightBeRDF     = this.data.dataSource === "local";
+        this.isResolvingContent = true;
+
+        return new Promise((resolve, reject) => {
+            if (appMightBeRDF) {
+                const statusMessage = this.statusBar.startProcess("Resolving RDF Schema...");
+
+                this.data.resolve(content).subscribe((resolved: Object) => {
+                    this.recreateToolModel(resolved);
+                    this.statusBar.stopProcess(statusMessage, "");
+                    resolve(resolved);
+                }, err => {
+                    this.statusBar.stopProcess(statusMessage, "Failed to resolve RDF schema.");
+                    reject(err);
+                });
+
+                return;
+            }
+
+            const json = Yaml.safeLoad(content, {json: true} as LoadOptions);
+            this.recreateToolModel(json);
+            resolve(json);
+
+        }).then(result => {
+            this.isResolvingContent = false;
+            return result;
+        }, err => {
+            this.errorBarService.showError("RDF resolution error: " + err.message);
+            this.isResolvingContent = false;
+            return err;
+        });
+
+
+    }
+
+    /**
+     * Serializes model to text. It also adds sbg:modified flag to indicate
+     * the text has been formatted by the GUI editor.
+     *
+     */
+    private getModelText(): string {
+
+        const modelObject = Object.assign(this.toolModel.serialize(), {"sbg:modified": true});
+
+        if (this.data.language === "json" || this.data.dataSource === "app") {
+            return JSON.stringify(modelObject, null, 4);
+        }
+
+        return Yaml.dump(modelObject);
+    }
+
+    private syncModelAndCode(resolveRDF = true): Promise<any> {
+        if (this.viewMode === "code") {
+            const codeVal = this.codeEditorContent.value;
+
+            if (resolveRDF) {
+                return this.resolveToModel(codeVal);
+            }
+
+            try {
+                const json = Yaml.safeLoad(codeVal, {json: true} as LoadOptions);
+                this.recreateToolModel(json);
+                return Promise.resolve();
+            } catch (err) {
+                return Promise.reject(err);
+            }
+
+        }
+
+        this.codeEditorContent.setValue(this.getModelText());
+
+        return Promise.resolve();
+    }
+
+
 }
