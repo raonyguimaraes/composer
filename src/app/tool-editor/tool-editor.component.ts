@@ -15,6 +15,7 @@ import {CodeSwapService} from "../core/code-content-service/code-content.service
 import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {PublishModalComponent} from "../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../core/workbox/app-tab-data";
+import {ProceedToEditingModalComponent} from "../core/modals/proceed-to-editing-modal/proceed-to-editing-modal.component";
 import {AppValidatorService, AppValidityState} from "../editor-common/app-validator/app-validator.service";
 import {PlatformAppService} from "../editor-common/components/platform-app-common/platform-app.service";
 import {EditorInspectorService} from "../editor-common/inspector/editor-inspector.service";
@@ -137,7 +138,10 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
         // Get the app saver from the injector
         this.appSavingService = this.injector.get(APP_SAVER_TOKEN) as AppSaver;
 
-        // Disable the code editor modifications if the app is read-only
+        if (this.data.dataSource === "app" && this.hasCopyOfProperty()) {
+            this.data.isWritable = false;
+        }
+
         if (!this.data.isWritable) {
             this.codeEditorContent.disable();
         }
@@ -207,6 +211,27 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
         firstValidationEnd.subscribe(state => {
             this.viewMode = state.isValid ? "gui" : "code";
         });
+    }
+
+    hasCopyOfProperty() {
+        return typeof this.data.parsedContent["sbg:copyOf"] !== "undefined";
+    }
+
+    edit() {
+        const modal = this.modal.fromComponent(ProceedToEditingModalComponent, {
+            closeOnOutsideClick: false,
+            backdrop: true,
+            title: `Edit ${(this.data.parsedContent.label)}?`,
+            closeOnEscape: true
+        });
+
+        modal.appName = this.data.parsedContent.label;
+        modal.response.subscribe(val => {
+            this.data.isWritable = val;
+            if (val) {
+                this.codeEditorContent.enable();
+            }
+        })
     }
 
     /**

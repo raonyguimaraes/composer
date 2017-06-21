@@ -37,7 +37,7 @@ export class DataGatewayService {
             return "local";
         }
 
-        if (id.startsWith("http://") || id.startsWith("https://")) {
+        if (id.includes("sbg-public-data")) {
             return "public";
         }
 
@@ -148,7 +148,7 @@ export class DataGatewayService {
             return fetch;
         }
 
-        if (source === "app") {
+        if (source === "app" || source === "public") {
             // ID example, all concatenated:
             // default_1b2a8fed50d9402593a57acddc7d7cfe/ivanbatic+admin/dfghhm/ivanbatic+admin/dfghhm/whole-genome-analysis-bwa-gatk-2-3-9-lite/2
 
@@ -162,19 +162,6 @@ export class DataGatewayService {
             return fetch;
 
 
-        }
-
-        if (source === "public") {
-            // Sample:
-            console.log("Feching public app", almostID);
-            const [, , , , , username, projectSlug, appSlug, revision] = almostID.split("/");
-
-            const request = this.api.getApp(`${username}/${projectSlug}/${appSlug}/${revision}`).take(1);
-            if (parse) {
-                return request;
-            }
-
-            return request.map(app => JSON.stringify(app, null, 4));
         }
     }
 

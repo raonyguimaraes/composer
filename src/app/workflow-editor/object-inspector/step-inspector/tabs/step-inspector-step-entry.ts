@@ -1,4 +1,7 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation} from "@angular/core";
+import {
+    ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges,
+    ViewEncapsulation
+} from "@angular/core";
 import {ObjectHelper} from "../../../../helpers/object.helper";
 import {JobHelper} from "cwlts/models/helpers/JobHelper";
 import {WorkflowStepInputModel} from "cwlts/models";
@@ -20,7 +23,9 @@ import {WorkflowStepInputModel} from "cwlts/models";
                 <!--Enums-->
                 <ng-template ngSwitchCase="enum">
                     <select [value]="value" class="form-control"
-                            [attr.prefix]="prefix">
+                            [attr.prefix]="prefix"
+                            [attr.fieldType]="inputType"
+                            [disabled]="readonly">
                         <option *ngFor="let val of input.type.symbols" [value]="val"> {{ val }}
                         </option>
                     </select>
@@ -29,35 +34,44 @@ import {WorkflowStepInputModel} from "cwlts/models";
                 <!--Numbers-->
                 <ng-template ngSwitchCase="int">
                     <input [attr.prefix]="prefix"
+                           [attr.fieldType]="inputType"
                            type="number"
                            class="form-control"
-                           [value]="value"/>
+                           [value]="value"
+                           [disabled]="readonly"/>
                 </ng-template>
                 <ng-template ngSwitchCase="float">
                     <input [attr.prefix]="prefix"
+                           [attr.fieldType]="inputType"
                            type="number"
                            class="form-control"
-                           [value]="value"/>
+                           [value]="value"
+                           [disabled]="readonly"/>
                 </ng-template>
 
                 <!--Strings-->
                 <ng-template ngSwitchCase="string">
                     <input [attr.prefix]="prefix"
+                           [attr.fieldType]="inputType"
                            class="form-control"
-                           [value]="value"/>
+                           [value]="value"
+                           [disabled]="readonly"/>
                 </ng-template>
 
                 <!--Booleans-->
                 <ng-template ngSwitchCase="boolean">
                     <ct-toggle-slider [attr.prefix]="prefix"
+                                      [attr.fieldType]="inputType"
                                       (valueChange)="updateJob($event)"
-                                      [value]="value"></ct-toggle-slider>
+                                      [value]="value"
+                                      [disabled]="readonly"></ct-toggle-slider>
                 </ng-template>
 
                 <!--Maps-->
                 <ng-template ngSwitchCase="map">
                     <ct-map-list class="form-group"
                                  [attr.prefix]="prefix"
+                                 [attr.fieldType]="inputType"
                                  (change)="updateMap($event)"
                                  [ngModel]="value"></ct-map-list>
                 </ng-template>
@@ -69,9 +83,19 @@ import {WorkflowStepInputModel} from "cwlts/models";
                     </span>
                 </ng-template>
 
+                <!--Directories and array of Directories-->
+                <ng-template ngSwitchCase="Directory">
+                    <span class="small text-muted">
+                        Cannot set default values for type Directory and Directory[].
+                    </span>
+                </ng-template>
+
                 <!--Every element that's a part of the array can be deleted, so we add a deletion button to it-->
                 <span class="input-group-btn" *ngIf="index !== -1">
-                    <button type="button" class="btn btn-secondary" (click)="deleteFromArray()">
+                    <button type="button" 
+                            class="btn btn-secondary" 
+                            (click)="deleteFromArray()"
+                            [disabled]="readonly">
                         <i class="fa fa-trash"></i>
                     </button>
                 </span>
@@ -90,7 +114,8 @@ import {WorkflowStepInputModel} from "cwlts/models";
                                                       [input]="entry"
                                                       [type]="input.type"
                                                       (update)="updateRecord(entry.id, $event)"
-                                                      [value]="value ? value[entry.id] : undefined"></ct-workflow-step-inspector-entry>
+                                                      [value]="value ? value[entry.id] : undefined"
+                                                      [readonly]="readonly"></ct-workflow-step-inspector-entry>
                     <ct-tooltip-content #ctt>
                         <div class="tooltip-info">
                             {{ entry.description }}
@@ -107,11 +132,13 @@ import {WorkflowStepInputModel} from "cwlts/models";
                                                   [type]="input.type"
                                                   [input]="arrayModifiedInput"
                                                   (update)="updateArray(i, $event)"
-                                                  [value]="entry"></ct-workflow-step-inspector-entry>
+                                                  [value]="entry"
+                                                  [readonly]="readonly"></ct-workflow-step-inspector-entry>
 
                 <button (click)="addArrayEntry(input)"
                         type="button"
-                        class="btn pl-0 btn-link no-outline no-underline-hover">
+                        class="btn pl-0 btn-link no-outline no-underline-hover"
+                        [disabled]="readonly">
                     <i class="fa fa-plus"></i> New {{ input.type.items }}
                 </button>
             </ng-template>
@@ -123,7 +150,10 @@ import {WorkflowStepInputModel} from "cwlts/models";
         </div>
     `
 })
-export class WorkflowStepInspectorInputEntry implements OnChanges {
+export class WorkflowStepInspectorInputEntryComponent implements OnChanges, OnInit {
+
+    @Input()
+    public readonly = false;
 
     @Input()
     public input: WorkflowStepInputModel;
@@ -213,7 +243,7 @@ export class WorkflowStepInspectorInputEntry implements OnChanges {
                             is of type “${typeof this.value}”, but the input is declared 
                             as “${this.inputType}”. 
                             You can generate a new set of test data for this input by clicking 
-                            on the “New ${this.input.type.items}” button.`
+                            on the “New ${this.input.type.items}” button.`;
         }
     }
 

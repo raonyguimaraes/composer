@@ -21,7 +21,8 @@ $gradientDarken: 4%;
     padding: 0;
 }
 
-.btn-link {
+.btn-link,
+.btn-link:disabled {
     border: none;
     background: none;
 }

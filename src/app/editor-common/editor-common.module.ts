@@ -32,8 +32,9 @@ import {FileDefNamePipe} from "./pipes/file-def-name.pipe";
 import {ValidationTextPipe} from "./pipes/validation-text.pipes";
 import {CWLModule} from "../cwl/cwl.module";
 import {EditorLayoutComponent} from "./editor-layout/editor-layout.component";
-import { EditorPanelComponent } from "./layout/editor-panel/editor-panel.component";
 import {AppValidatorService} from "./app-validator/app-validator.service";
+import {EditorPanelComponent} from "./layout/editor-panel/editor-panel.component";
+import {DirectoryInputInspectorComponent} from "./inspector-forms/directory-input-inspector/directory-input-inspector.component";
 
 @NgModule({
     declarations: [
@@ -66,6 +67,7 @@ import {AppValidatorService} from "./app-validator/app-validator.service";
         AppInfoComponent,
         EditorLayoutComponent,
         EditorPanelComponent,
+        DirectoryInputInspectorComponent
     ],
     exports: [
         MapListComponent,

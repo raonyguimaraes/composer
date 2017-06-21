@@ -11,7 +11,7 @@ import {SelectComponent} from "./select/select.component";
         provide: NG_VALUE_ACCESSOR,
         useExisting: forwardRef(() => AutoCompleteComponent), multi: true
     }],
-    template: `<input #el [placeholder]="placeholder">`,
+    template: `<input #el [placeholder]="placeholder" [disabled]="readonly">`,
     styleUrls: ["./auto-complete.component.scss"],
 })
 export class AutoCompleteComponent extends SelectComponent implements ControlValueAccessor, OnInit {

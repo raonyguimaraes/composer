@@ -36,6 +36,7 @@ import {WorkboxService} from "./workbox/workbox.service";
 import {LayoutService} from "./layout/layout.service";
 import {ModalErrorHandler} from "./error-report/modal-error-handler";
 import {WorkflowEditorModule} from "../workflow-editor/workflow-editor.module";
+import {ProceedToEditingModalComponent} from "./modals/proceed-to-editing-modal/proceed-to-editing-modal.component";
 
 @NgModule({
     entryComponents: [
@@ -44,6 +45,7 @@ import {WorkflowEditorModule} from "../workflow-editor/workflow-editor.module";
         ErrorReportComponent,
         CreateAppModalComponent,
         CreateLocalFolderModalComponent,
+        ProceedToEditingModalComponent,
         PublishModalComponent,
         PlatformCredentialsModalComponent,
     ],
@@ -67,6 +69,7 @@ import {WorkflowEditorModule} from "../workflow-editor/workflow-editor.module";
         ErrorReportComponent,
         CreateAppModalComponent,
         CreateLocalFolderModalComponent,
+        ProceedToEditingModalComponent,
         PublishModalComponent,
         PlatformCredentialsModalComponent
     ],
