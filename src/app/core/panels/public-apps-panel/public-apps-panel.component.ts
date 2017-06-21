@@ -116,12 +116,12 @@ export class PublicAppsPanelComponent extends DirectiveBase implements AfterView
 
         this.tree = this.treeComponent.getService();
 
-        setTimeout(() => {
-            this.loadDataSources();
-            this.attachSearchObserver();
-            this.attachExpansionStateSaving();
-            this.listenForAppOpening();
-        });
+        // setTimeout(() => {
+        //     this.loadDataSources();
+        //     this.attachSearchObserver();
+        //     this.attachExpansionStateSaving();
+        //     this.listenForAppOpening();
+        // });
 
         this.searchResultComponents.changes.subscribe(list => {
             list.forEach((el, idx) => setTimeout(() => el.nativeElement.classList.add("shown"), idx * 20));
@@ -145,39 +145,41 @@ export class PublicAppsPanelComponent extends DirectiveBase implements AfterView
 
     private groupByToolkit(folders, expandedNodes: string[] = []) {
 
-        return folders.map(folder => {
+        return [];
 
-            const groups = folder.children.reduce((acc, node) => {
-
-                const groupKey = (node.data["sbg:toolkit"] + " " + node.data["sbg:toolkitVersion"]).trim();
-
-                if (!acc[groupKey]) {
-                    const id      = "__toolkit/" + groupKey;
-                    acc[groupKey] = {
-                        id,
-                        label: groupKey,
-                        isExpandable: true,
-                        isExpanded: expandedNodes.indexOf(id) !== -1,
-                        type: "toolkit",
-                        children: [],
-                        icon: "fa-folder"
-                    };
-                }
-                acc[groupKey].children.push(node);
-
-                return acc;
-            }, {});
-
-            const sortedGroup = Object.keys(groups).sort((a, b) => {
-                return a.toLowerCase().localeCompare(b.toLowerCase());
-            }).map(key => groups[key]) as TreeNode<PlatformAppEntry>[];
-
-            if (groups[""]) {
-                const unnamedGroup = sortedGroup.shift();
-                return sortedGroup.concat(unnamedGroup.children);
-            }
-            return {...folder, children: sortedGroup};
-        });
+        // return folders.map(folder => {
+        //
+        //     const groups = folder.children.reduce((acc, node) => {
+        //
+        //         const groupKey = (node.data["sbg:toolkit"] + " " + node.data["sbg:toolkitVersion"]).trim();
+        //
+        //         if (!acc[groupKey]) {
+        //             const id      = "__toolkit/" + groupKey;
+        //             acc[groupKey] = {
+        //                 id,
+        //                 label: groupKey,
+        //                 isExpandable: true,
+        //                 isExpanded: expandedNodes.indexOf(id) !== -1,
+        //                 type: "toolkit",
+        //                 children: [],
+        //                 icon: "fa-folder"
+        //             };
+        //         }
+        //         acc[groupKey].children.push(node);
+        //
+        //         return acc;
+        //     }, {});
+        //
+        //     const sortedGroup = Object.keys(groups).sort((a, b) => {
+        //         return a.toLowerCase().localeCompare(b.toLowerCase());
+        //     }).map(key => groups[key]) as TreeNode<PlatformAppEntry>[];
+        //
+        //     if (groups[""]) {
+        //         const unnamedGroup = sortedGroup.shift();
+        //         return sortedGroup.concat(unnamedGroup.children);
+        //     }
+        //     return {...folder, children: sortedGroup};
+        // });
     }
 
     private groupByCategory(folders, expandedNodes: string[] = []) {

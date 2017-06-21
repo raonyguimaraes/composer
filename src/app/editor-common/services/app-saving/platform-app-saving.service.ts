@@ -34,6 +34,6 @@ export class PlatformAppSavingService implements AppSaver {
                     content: serialized
                 }).toPromise().then(resolve, reject);
             }, reject);
-        });
+        }) as Promise<string>;
     };
 }

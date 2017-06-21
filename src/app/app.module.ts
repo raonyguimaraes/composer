@@ -24,6 +24,7 @@ import {ToolEditorModule} from "./tool-editor/tool-editor.module";
 import {ModalService} from "./ui/modal/modal.service";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
+import {LocalFileRepositoryService} from "./file-repository/local-file-repository.service";
 
 @NgModule({
     providers: [
@@ -41,6 +42,7 @@ import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
         PlatformRepositoryService,
         SettingsService,
         UserPreferencesService,
+        LocalFileRepositoryService,
         {
             provide: CtHttp,
             useFactory: ctHttpFactory,

@@ -12,6 +12,7 @@ import {PlatformRepositoryService} from "../../../repository/platform-repository
 import {IpcService} from "../../../services/ipc.service";
 import {TreeNode} from "../../../ui/tree-view/tree-node";
 import {FilesystemEntry} from "../../data-gateway/data-types/local.types";
+import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
 
 @Injectable()
 export class MyAppsPanelService {
@@ -27,6 +28,7 @@ export class MyAppsPanelService {
                 private statusBar: StatusBarService,
                 private ipc: IpcService,
                 private localRepository: LocalRepositoryService,
+                private localFileRepository: LocalFileRepositoryService,
                 private platformRepository: PlatformRepositoryService) {
 
 
@@ -93,7 +95,7 @@ export class MyAppsPanelService {
                 label: path.split("/").pop(),
                 isExpanded: this.localExpandedNodes.map(list => list.indexOf(path) !== -1),
                 children: Observable.empty()
-                    .concat(this.ipc.request("readDirectory", path))
+                    .concat(this.localFileRepository.watch(path))
                     .map(listing => this.createDirectoryListingTreeNodes(listing))
 
             }));

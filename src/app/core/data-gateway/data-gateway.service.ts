@@ -1,6 +1,5 @@
 import {Injectable} from "@angular/core";
 import {FormControl} from "@angular/forms";
-import {Http} from "@angular/http";
 import * as YAML from "js-yaml";
 import "rxjs/add/observable/empty";
 import "rxjs/add/observable/fromPromise";
@@ -18,10 +17,8 @@ import {App} from "../../../../electron/src/sbg-api-client/interfaces/app";
 import {AppQueryParams} from "../../../../electron/src/sbg-api-client/interfaces/queries";
 import {Project} from "../../auth/api/dto-interfaces/project";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
-import {AuthService} from "../../auth/auth.service";
 import {OldAuthService} from "../../auth/auth/auth.service";
 import {noop} from "../../lib/utils.lib";
-import {PlatformAPI} from "../../services/api/platforms/platform-api.service";
 import {PlatformAppEntry} from "../../services/api/platforms/platform-api.types";
 import {IpcService} from "../../services/ipc.service";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
@@ -46,26 +43,10 @@ export class DataGatewayService {
 
 
     constructor(private preferences: UserPreferencesService,
-                private api: PlatformAPI,
-                private http: Http,
                 private modal: ModalService,
-                private auth: AuthService,
                 private oldAuth: OldAuthService,
                 private apiGateway: PlatformAPIGatewayService,
                 private ipc: IpcService) {
-    }
-
-    /**
-     * Gets the top-level data listing for a data source
-     */
-    getPlatformListing(): Observable<{ id: string, name: string }[]> {
-
-        const call = this.auth.active.switchMap(connection => {
-            const {url, token} = connection;
-            return this.ipc.request("getProjects", {url, token});
-        });
-
-        return this.throughCache(`getPlatformListing`, call);
     }
 
     invalidateProjectListing(hash, owner: string, project: string) {
@@ -78,10 +59,6 @@ export class DataGatewayService {
 
     createLocalFolder(folderPath) {
         return this.ipc.request("createDirectory", folderPath);
-    }
-
-    getFolderListing(folder) {
-        return this.throughCache(`readDirectory.${folder}`, this.ipc.request("readDirectory", folder));
     }
 
     invalidateFolderListing(folder) {
@@ -272,18 +249,6 @@ export class DataGatewayService {
         return bonus + matchedCharacters / hlen;
     }
 
-    getProjectsForAllConnections(all = false) {
-        return this.oldAuth.connections.flatMap((credentials: any) => {
-            const listings = credentials.map(creds => this.getPlatformListing());
-
-            if (listings.length === 0) {
-                return Observable.of([]);
-            }
-
-            return Observable.zip(...listings);
-        }, (credentials, listings) => ({credentials, listings}));
-    }
-
     invalidateCache(key: string) {
         this.cacheInvalidation.next(key);
     }
@@ -322,4 +287,7 @@ export class DataGatewayService {
         });
     }
 
+    reloadFolderContent(folder: string) {
+
+    }
 }

@@ -100,6 +100,4 @@ export class LocalRepositoryService {
     private patch(data: { [key: string]: any }) {
         return this.ipc.request("patchLocalRepository", data);
     }
-
-
 }

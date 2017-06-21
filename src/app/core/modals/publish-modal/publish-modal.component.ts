@@ -1,18 +1,16 @@
-import {ChangeDetectorRef, Component, Input} from "@angular/core";
+import {Component, Input} from "@angular/core";
+import {FormControl, FormGroup, Validators} from "@angular/forms";
+import {SlugifyPipe} from "ngx-pipes";
+import {Observable} from "rxjs/Observable";
+import {PlatformAPIGatewayService} from "../../../auth/api/platform-api-gateway.service";
+import {PlatformAppEntry} from "../../../services/api/platforms/platform-api.types";
 import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {DataGatewayService} from "../../data-gateway/data-gateway.service";
-import {SlugifyPipe} from "ngx-pipes";
-import {FormControl, Validators, FormGroup} from "@angular/forms";
-import {OldAuthService} from "../../../auth/auth/auth.service";
-import {PlatformAPIGatewayService} from "../../../auth/api/platform-api-gateway.service";
-import {AppGeneratorService} from "../../../cwl/app-generator/app-generator.service";
-const {app, dialog} = window["require"]("electron").remote;
-import * as YAML from "js-yaml";
 import {WorkboxService} from "../../workbox/workbox.service";
-import {Observable} from "rxjs/Observable";
-import {PlatformAppEntry} from "../../../services/api/platforms/platform-api.types";
+
+const {app, dialog} = window["require"]("electron").remote;
 
 @Component({
     selector: "ct-publish-modal",
@@ -95,17 +93,15 @@ export class PublishModalComponent extends DirectiveBase {
 
         this.remoteNameControl.valueChanges
             .map(value => this.slugify.transform(value))
-            .subscribe(val => this.remoteSlugControl.setValue(val));
+            .subscribeTracked(this, val => this.remoteSlugControl.setValue(val));
 
         this.platformGroup = new FormGroup({
             name: this.remoteSlugControl,
             project: this.projectSelection
         });
 
-        this.tracked = this.platformGroup.valueChanges.subscribe(change => {
-
+        this.platformGroup.valueChanges.subscribeTracked(this, change => {
             this.platformGroup.setErrors({});
-
         });
 
         this.tracked = this.platformGroup.valueChanges
@@ -148,25 +144,25 @@ export class PublishModalComponent extends DirectiveBase {
                 this.error = err;
             });
 
-        this.tracked = this.dataGateway.getProjectsForAllConnections().withLatestFrom(
-            this.preferences.getOpenProjects(),
-            (data, openProjects) => ({...data, openProjects}))
-            .subscribe(data => {
-
-                const {credentials, listings, openProjects} = data;
-
-                this.platformOptgroups = credentials.map(creds => ({value: creds.hash, label: creds.profile}));
-                this.projectOptions    = listings.reduce((acc, listing, index) => {
-
-                    return acc.concat(listing.map((entry: any) => {
-                        return {
-                            value: credentials[index].hash + `/${entry.owner}/${entry.slug}`,
-                            text: entry.name,
-                            hash: credentials[index].hash
-                        } as any;
-                    }));
-                }, []).filter((entry: any) => openProjects.indexOf(entry.value) !== -1);
-            });
+        // this.tracked = this.dataGateway.getProjectsForAllConnections().withLatestFrom(
+        //     this.preferences.getOpenProjects(),
+        //     (data, openProjects) => ({...data, openProjects}))
+        //     .subscribe(data => {
+        //
+        //         const {credentials, listings, openProjects} = data;
+        //
+        //         this.platformOptgroups = credentials.map(creds => ({value: creds.hash, label: creds.profile}));
+        //         this.projectOptions    = listings.reduce((acc, listing, index) => {
+        //
+        //             return acc.concat(listing.map((entry: any) => {
+        //                 return {
+        //                     value: credentials[index].hash + `/${entry.owner}/${entry.slug}`,
+        //                     text: entry.name,
+        //                     hash: credentials[index].hash
+        //                 } as any;
+        //             }));
+        //         }, []).filter((entry: any) => openProjects.indexOf(entry.value) !== -1);
+        //     });
     }
 
     publish() {

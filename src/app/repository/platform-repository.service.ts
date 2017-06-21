@@ -149,4 +149,13 @@ export class PlatformRepositoryService {
     getExpandedNodes() {
         return this.expandedNodes;
     }
+
+    createApp(appID: string, content: string): Promise<string> {
+        const nulledRevision = appID.split("/").slice(0, 3).concat("0").join("/");
+
+        return this.ipc.request("createPlatformApp", {
+            id: nulledRevision,
+            content: content
+        }).toPromise();
+    }
 }

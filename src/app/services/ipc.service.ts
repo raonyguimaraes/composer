@@ -13,6 +13,7 @@ export type IPCRoute =
     "accelerator"
     | "createDirectory"
     | "createFile"
+    | "createPlatformApp"
     | "deletePath"
     | "fetchPlatformData"
     | "patchSwap"

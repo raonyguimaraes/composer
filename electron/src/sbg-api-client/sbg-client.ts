@@ -57,7 +57,7 @@ export class SBGClient {
 
     get apps() {
         return {
-            private: (query: AppQueryParams = {fields: "id,name,project,raw.class"}) => {
+            private: (query: AppQueryParams = {fields: "id,name,project,raw.class,revision"}) => {
                 return this.fetchAll<App>("apps", query);
             },
             get: (appID: string) => {
@@ -82,6 +82,26 @@ export class SBGClient {
                         json: false
                     });
 
+                });
+            },
+
+            create: (appID, content) => {
+                const revisionlessID = appID.split("/").slice(0, 3).join("/");
+
+                return this.apiRequest(`apps/${revisionlessID}`).then((app) => {
+                    throw new Error("App already exists.");
+                }, err => {
+                    if (err.error && err.error.status == 404) {
+                        return Promise.resolve();
+                    }
+                    throw err;
+                }).then(() => {
+                    const url = `apps/${revisionlessID}/0/raw`;
+
+                    return this.apiRequest.post(url, {
+                        body: content,
+                        json: false
+                    });
                 });
             }
         }

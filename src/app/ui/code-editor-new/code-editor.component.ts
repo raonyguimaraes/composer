@@ -49,7 +49,7 @@ export class CodeEditorComponent implements OnInit, ControlValueAccessor, OnDest
     @Input()
     filePath?: string;
 
-    editor: AceAjax.Editor;
+    editor: ace.Editor;
 
     private originalContent: string;
 
@@ -129,7 +129,7 @@ export class CodeEditorComponent implements OnInit, ControlValueAccessor, OnDest
         this.editor.setReadOnly(isDisabled);
     }
 
-    getEditorInstance(): AceAjax.Editor {
+    getEditorInstance(): ace.Editor {
         return this.editor;
     }
 

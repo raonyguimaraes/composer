@@ -46,6 +46,7 @@ import {ProjectSelectionModal} from "./modal/custom/project-selection-modal.comp
 import {RadioButtonComponent} from "./radio-button/radio-button.component";
 import {RadioGroupComponent} from "./radio-button/radio-group.component";
 import {SelectComponent} from "./auto-complete/select/select.component";
+import {LoaderButtonContentComponent} from "./loader-button/loader-button-content.component";
 
 @NgModule({
     imports: [
@@ -86,7 +87,8 @@ import {SelectComponent} from "./auto-complete/select/select.component";
         TreeNodeComponent,
         TreeViewComponent,
         TrimValueAccessorModule,
-        MouseClickDirective
+        MouseClickDirective,
+        LoaderButtonContentComponent
     ],
 
     entryComponents: [
@@ -148,7 +150,8 @@ import {SelectComponent} from "./auto-complete/select/select.component";
         TreeNodeComponent,
         TreeViewComponent,
         CircularLoaderComponent,
-        MouseClickDirective
+        MouseClickDirective,
+        LoaderButtonContentComponent
     ]
 })
 export class UIModule {

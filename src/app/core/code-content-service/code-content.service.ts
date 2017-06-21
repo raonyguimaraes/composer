@@ -28,20 +28,6 @@ export class CodeSwapService {
         this.codeContent.take(1).subscribe(this.originalCodeContent);
     }
 
-    getOriginalCodeContent(): Observable<string> {
-        return this.originalCodeContent.asObservable();
-    }
-
-    getCodeContent(): Observable<string> {
-        return this.codeContent.asObservable();
-    }
-
-    isContentChanged(): Observable<boolean> {
-        return Observable.combineLatest(this.originalCodeContent, this.codeContent)
-            .map(pair => pair[0] === pair[1])
-            .distinctUntilChanged();
-    }
-
     discardSwapContent() {
         this.patchSwap(null);
     }

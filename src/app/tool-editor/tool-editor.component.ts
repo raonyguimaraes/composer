@@ -138,6 +138,7 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
         // Get the app saver from the injector
         this.appSavingService = this.injector.get(APP_SAVER_TOKEN) as AppSaver;
 
+        // @FIXME we should not modify the data input
         if (this.data.dataSource === "app" && this.hasCopyOfProperty()) {
             this.data.isWritable = false;
         }
@@ -214,15 +215,12 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
     }
 
     hasCopyOfProperty() {
-        return typeof this.data.parsedContent["sbg:copyOf"] !== "undefined";
+        return this.data.parsedContent["sbg:copyOf"] !== undefined;
     }
 
     edit() {
         const modal = this.modal.fromComponent(ProceedToEditingModalComponent, {
-            closeOnOutsideClick: false,
-            backdrop: true,
             title: `Edit ${(this.data.parsedContent.label)}?`,
-            closeOnEscape: true
         });
 
         modal.appName = this.data.parsedContent.label;

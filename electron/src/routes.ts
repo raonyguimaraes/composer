@@ -18,6 +18,19 @@ const repositoryLoad = new Promise((resolve, reject) => repository.load((err) =>
     // return err;
 });
 
+const ensurePlatformUser = () => {
+    return repositoryLoad.then(() => {
+        const credentials    = repository.local.activeCredentials;
+        const userRepository = repository.user;
+
+        if (!credentials || !userRepository) {
+            throw new Error("You are not connected to any platform.");
+        }
+
+        return repository;
+    });
+};
+
 module.exports = {
 
     // File System Routes
@@ -287,20 +300,45 @@ module.exports = {
         id: string
         content: string,
     }, callback) => {
-        repositoryLoad.then(() => {
-            const credentials    = repository.local.activeCredentials;
-            const userRepository = repository.user;
 
-            if (!credentials || !userRepository) {
-                callback(new Error("Cannot save an app, you are not connected to any platform."));
-            }
+        ensurePlatformUser().then(repo => {
+            const {url, token} = repo.local.activeCredentials;
 
-            const api = new SBGClient(credentials.url, credentials.token);
+            const api = new SBGClient(url, token);
+
             api.apps.save(data.id, data.content).then(response => {
                 callback(null, response);
             }, err => callback(err));
 
-
         }, err => callback(err));
+    },
+
+    createPlatformApp: (data: { id: string, content: string }, callback) => {
+
+        ensurePlatformUser().then(repo => {
+            const {url, token} = repo.local.activeCredentials;
+
+            const api = new SBGClient(url, token);
+
+            return api.apps.create(data.id, data.content).then((response) => {
+                callback(null, JSON.parse(response));
+
+                const project = data.id.split("/").slice(0, 2).join("/");
+
+                api.apps.private({
+                    project,
+                    fields: "id,name,project,raw.class,revision"
+                }).then((projectApps) => {
+                    const newAppList = repo.user.apps.filter(app => app.project !== project).concat(projectApps);
+                    repo.updateUser({
+                        apps: newAppList
+                    }, () => {
+                    });
+                }, err => {
+
+                });
+
+            }, callback);
+        }, callback);
     }
 };
