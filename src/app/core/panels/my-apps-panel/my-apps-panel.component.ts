@@ -53,8 +53,7 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
     @ViewChildren(NavSearchResultComponent, {read: ElementRef})
     private searchResultComponents: QueryList<ElementRef>;
 
-    constructor(private preferences: UserPreferencesService,
-                private cdr: ChangeDetectorRef,
+    constructor(private cdr: ChangeDetectorRef,
                 private workbox: WorkboxService,
                 private modal: ModalService,
                 private dataGateway: DataGatewayService,
@@ -284,12 +283,7 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
                         }
                     }),
                     new MenuItem("Remove from Workspace", {
-                        click: () => {
-                            this.preferences.get("openProjects", []).take(1).subscribe(openProjects => {
-
-                                this.preferences.put("openProjects", openProjects.filter((el) => el !== data.node.id));
-                            });
-                        }
+                        click: () => this.service.removeProjectFromWorkspace(data.node.id)
                     })
                 ];
                 this.context.showAt(data.node.getViewContainer(), contextMenu, data.coordinates);
@@ -338,12 +332,7 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
                         }
                     }),
                     new MenuItem("Remove from Workspace", {
-                        click: () => {
-                            this.preferences.get("localFolders", []).take(1).subscribe(openFolders => {
-
-                                this.preferences.put("localFolders", openFolders.filter((el) => el !== data.node.id));
-                            });
-                        }
+                        click: () => this.service.removeFolderFromWorkspace(data.node.id)
                     })
                 ];
 

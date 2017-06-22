@@ -6,13 +6,13 @@ import {App} from "../../../../../electron/src/sbg-api-client/interfaces/app";
 import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/project";
 import {AuthService} from "../../../auth/auth.service";
 import {AuthCredentials} from "../../../auth/model/auth-credentials";
+import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
 import {StatusBarService} from "../../../layout/status-bar/status-bar.service";
 import {LocalRepositoryService} from "../../../repository/local-repository.service";
 import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
 import {IpcService} from "../../../services/ipc.service";
 import {TreeNode} from "../../../ui/tree-view/tree-node";
 import {FilesystemEntry} from "../../data-gateway/data-types/local.types";
-import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
 
 @Injectable()
 export class MyAppsPanelService {
@@ -109,11 +109,11 @@ export class MyAppsPanelService {
         });
     }
 
-    updateLocalNodeExpansionState(path: string, state: boolean, ): void {
+    updateLocalNodeExpansionState(path: string, state: boolean,): void {
         this.localRepository.setFolderExpansion(path, state);
     }
 
-    updatePlatformNodeExpansionState(path: string, state: boolean): void{
+    updatePlatformNodeExpansionState(path: string, state: boolean): void {
         this.platformRepository.setNodeExpansion(path, state);
     }
 
@@ -196,5 +196,14 @@ export class MyAppsPanelService {
                 dragImageClass: app.raw.class === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
             }
         });
+    }
+
+    removeProjectFromWorkspace(projectID): Promise<any> {
+
+        return this.platformRepository.removeOpenProjects(projectID);
+    }
+
+    removeFolderFromWorkspace(folderPath) {
+        return this.localRepository.removeLocalFolders(folderPath);
     }
 }

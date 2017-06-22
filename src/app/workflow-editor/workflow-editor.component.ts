@@ -456,18 +456,20 @@ export class WorkflowEditorComponent extends DirectiveBase implements OnDestroy,
     }
 
     hasCopyOfProperty() {
-        return typeof this.data.parsedContent["sbg:copyOf"] !== "undefined";
+        return this.workflowModel && this.workflowModel.customProps["sbg:copyOf"] !== undefined;
     }
 
     edit() {
+
+        const appLabel = (this.workflowModel && this.workflowModel.label) || "Workflow";
         const modal = this.modal.fromComponent(ProceedToEditingModalComponent, {
             closeOnOutsideClick: false,
             backdrop: true,
-            title: `Edit ${(this.data.parsedContent.label)}?`,
+            title: `Edit ${appLabel}?`,
             closeOnEscape: true
         });
 
-        modal.appName = this.data.parsedContent.label;
+        modal.appName = appLabel;
         modal.response.subscribe(val => {
             this.data.isWritable = val;
             if (val) {

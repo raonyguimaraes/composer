@@ -3,8 +3,6 @@ import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {App} from "../../../electron/src/sbg-api-client/interfaces/app";
 import {Project} from "../../../electron/src/sbg-api-client/interfaces/project";
-import {AuthService} from "../auth/auth.service";
-import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {IpcService} from "../services/ipc.service";
 
 @Injectable()
@@ -18,65 +16,39 @@ export class PlatformRepositoryService {
 
     apps = new ReplaySubject<App[]>(1);
 
-    constructor(private auth: AuthService,
-                private dataGateway: DataGatewayService,
-                private ipc: IpcService) {
+    private publicApps = new ReplaySubject<App[]>(1);
 
-        this.auth.active.switchMap(active => {
-            if (!active) {
-                return Observable.of([]);
-            }
+    constructor(private ipc: IpcService) {
 
-            const {url, token} = active;
-            return this.dataGateway.getProjects(url, token);
-        }).subscribe(data => {
-            this.projects.next(data);
-        }, err => {
-            console.log("Error in repository projects", err);
-        });
+        this.listen("projects").subscribe(list => this.projects.next(list));
 
+        this.listen("openProjects").subscribe(list => this.openProjects.next(list));
 
-        this.auth.active.switchMap(active => {
-            if (!active) {
-                return Observable.of([]);
-            }
+        this.listen("apps").subscribe(list => this.apps.next(list));
 
-            const {url, token} = active;
-            return this.dataGateway.getApps(url, token);
-        }).subscribe(data => {
-            this.apps.next(data)
-        }, err => {
-            console.log("Err in repository apps", err);
-        });
+        this.listen("expandedNodes").subscribe(list => this.expandedNodes.next(list));
 
-        this.listen("openProjects").subscribe(list => {
-            this.openProjects.next(list);
-        });
-
-        this.listen("apps").subscribe(list => {
-            this.apps.next(list);
-        });
-
-        this.listen("expandedNodes").subscribe(list => {
-            this.expandedNodes.next(list);
-        })
+        this.listen("publicApps").subscribe(list => this.publicApps.next(list));
 
     }
 
-    getAppsForProject(projectID) {
-        return this.apps
-            .map(apps => apps.filter(app => app.project === projectID));
+    getAppsForProject(projectID): Observable<App[]> {
+        return this.apps.map(apps => apps.filter(app => app.project === projectID));
     }
 
-    getProjects() {
+    getProjects(): Observable<Project[]> {
         return this.projects;
     }
 
-    fetch() {
+    getPublicApps(): Observable<App[]> {
+        return this.publicApps;
+    }
+
+    fetch(): Observable<any> {
         return this.ipc.request("fetchPlatformData");
     }
 
-    getOpenProjects() {
+    getOpenProjects(): Observable<Project[]> {
         return Observable
             .combineLatest(this.projects, this.openProjects)
             .map(data => {
@@ -86,6 +58,17 @@ export class PlatformRepositoryService {
                 const mapped = all.reduce((acc, item) => ({...acc, [item.id]: item}), {});
                 return open.map(id => mapped[id] || undefined).filter(v => v);
             })
+    }
+
+    getClosedProjects(): Observable<Project[]> {
+        return Observable.combineLatest(this.projects, this.openProjects)
+            .map(data => {
+                const [all, open] = data;
+
+                if (open.length === 0) return all;
+
+                return all.filter(p => open.indexOf(p.id) === -1);
+            });
     }
 
     private listen(key: string) {

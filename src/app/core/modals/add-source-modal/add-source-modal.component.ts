@@ -1,9 +1,7 @@
 import {Component} from "@angular/core";
-import {Observable} from "rxjs/Observable";
-import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/project";
 import {AuthService} from "../../../auth/auth.service";
+import {LocalRepositoryService} from "../../../repository/local-repository.service";
 import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
-import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 
@@ -37,13 +35,13 @@ const {app, dialog} = window["require"]("electron").remote;
                 <div class="dialog-content dialog-connection" *ngIf="auth.active | async; else noActiveConnection">
 
                     <!--Projects are loaded-->
-                    <ng-container *ngIf="allProjects !== undefined; else projectsNotLoadedYet">
+                    <ng-container *ngIf="closedProjectOptions; else projectsNotLoadedYet">
 
                         <!--Offer projects so users can choose which to add-->
-                        <div *ngIf="nonAddedUserProjects.length > 0; else allProjectsAreAdded">
+                        <div *ngIf="closedProjectOptions.length > 0; else allProjectsAreAdded">
                             <p>Choose projects to add to the workspace:</p>
                             <div>
-                                <ct-auto-complete [(ngModel)]="selectedProjects" [options]="nonAddedUserProjects"></ct-auto-complete>
+                                <ct-auto-complete [(ngModel)]="selectedProjects" [options]="closedProjectOptions"></ct-auto-complete>
                             </div>
                         </div>
 
@@ -84,38 +82,26 @@ const {app, dialog} = window["require"]("electron").remote;
 })
 export class AddSourceModalComponent extends DirectiveBase {
 
-    activeTab            = "local";
-    selectedProjects     = [];
-    localFoldersToAdd    = [];
-    nonAddedUserProjects = [];
-    allProjects: Project[];
+    activeTab         = "local";
+    selectedProjects  = [];
+    localFoldersToAdd = [];
+    closedProjectOptions: { value: string, text: string }[];
 
     constructor(public modal: ModalService,
+                private localRepository: LocalRepositoryService,
                 private repository: PlatformRepositoryService,
-                public auth: AuthService,
-                private preferences: UserPreferencesService) {
+                public auth: AuthService) {
 
         super();
 
-        const projects          = this.repository.getProjects();
-        const openProjects      = this.repository.getOpenProjects();
-        const activeCredentials = this.auth.active;
-
-        this.tracked = Observable
-            .combineLatest(projects, openProjects, activeCredentials)
-            .subscribe(data => {
-                const [projects, openProjects, activeCredentials] = data;
-
-                this.nonAddedUserProjects = projects.filter(project => {
-                    const ID = [activeCredentials.getHash(), project.id].join("/");
-                    return openProjects.indexOf(ID) === -1;
-                }).map(project => {
-                    return {value: project.id, text: project.name};
-                });
-
-                this.allProjects = projects;
-
+        this.repository.getClosedProjects().subscribeTracked(this, (projects) => {
+            this.closedProjectOptions = projects.map(project => {
+                return {
+                    value: project.id,
+                    text: project.name
+                }
             });
+        });
     }
 
     onDone() {
@@ -140,8 +126,7 @@ export class AddSourceModalComponent extends DirectiveBase {
             properties: ["openDirectory", "multiSelections"]
         }, (paths) => {
             this.localFoldersToAdd = paths || [];
-
-            this.preferences.addLocalFolders(paths);
+            this.localRepository.addLocalFolders(...paths);
             this.modal.close();
         });
     }

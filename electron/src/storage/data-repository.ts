@@ -5,18 +5,23 @@ import {UserRepository} from "./types/user-repository";
 
 export class DataRepository {
 
-    user: UserRepository;
+    user?: UserRepository;
     local: LocalRepository;
 
     private listeners = {};
 
     constructor() {
         this.on("update.local.activeCredentials", (activeCredentials: any) => {
-            if (activeCredentials) {
-                this.loadProfile(activeCredentials.id, new UserRepository(), () => {
-                });
+
+            if (!activeCredentials) {
+                this.flushUserData();
+                return;
             }
 
+            this.loadProfile(activeCredentials.id, new UserRepository(), (err, data) => {
+                this.user = data;
+                Object.keys(this.user).forEach(key => this.trigger(`update.user.${key}`, this.user[key]));
+            });
         })
     }
 
@@ -42,7 +47,6 @@ export class DataRepository {
             });
         });
     }
-
 
     activateUser(credentialsID?: string, callback?: (err?: Error) => void) {
 
@@ -72,8 +76,15 @@ export class DataRepository {
                 callback();
             });
         });
+    }
 
+    private flushUserData() {
+        this.user = null;
 
+        const demoUser = new UserRepository();
+        Object.keys(demoUser).forEach(key => {
+            this.trigger(`update.user.${key}`, demoUser[key]);
+        });
     }
 
     private update<T extends RepositoryType>(profile: string, data: Partial<T>, callback?: (err?: Error, data?: T) => void) {

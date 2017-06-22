@@ -11,13 +11,14 @@ import "rxjs/add/operator/catch";
 import "rxjs/add/operator/mergeMap";
 import "rxjs/add/operator/publishReplay";
 import {AsyncSubject} from "rxjs/AsyncSubject";
-import {Observable} from "rxjs/Observable";
+import {Observable, ObservableInput} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {App} from "../../../../electron/src/sbg-api-client/interfaces/app";
 import {AppQueryParams} from "../../../../electron/src/sbg-api-client/interfaces/queries";
 import {Project} from "../../auth/api/dto-interfaces/project";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
 import {OldAuthService} from "../../auth/auth/auth.service";
+import {ErrorBarService} from "../../layout/error-bar/error-bar.service";
 import {noop} from "../../lib/utils.lib";
 import {PlatformAppEntry} from "../../services/api/platforms/platform-api.types";
 import {IpcService} from "../../services/ipc.service";
@@ -34,7 +35,7 @@ export class DataGatewayService {
             return "local";
         }
 
-        if (id.includes("sbg-public-data")) {
+        if (id.startsWith("https://") || id.startsWith("http://")) {
             return "public";
         }
 
@@ -44,6 +45,7 @@ export class DataGatewayService {
 
     constructor(private preferences: UserPreferencesService,
                 private modal: ModalService,
+                private errorBar: ErrorBarService,
                 private oldAuth: OldAuthService,
                 private apiGateway: PlatformAPIGatewayService,
                 private ipc: IpcService) {
@@ -119,26 +121,23 @@ export class DataGatewayService {
                         } catch (err) {
                             return new Error(err);
                         }
-                    });
+                    }).catch(this.makeErrorBarHandler());
             }
 
-            return fetch;
+            return fetch.catch(this.makeErrorBarHandler());
         }
 
         if (source === "app" || source === "public") {
-            // ID example, all concatenated:
-            // default_1b2a8fed50d9402593a57acddc7d7cfe/ivanbatic+admin/dfghhm/ivanbatic+admin/dfghhm/whole-genome-analysis-bwa-gatk-2-3-9-lite/2
 
+            console.log("Fetching app", almostID);
             const fetch = Observable.empty().concat(this.ipc.request("getPlatformApp", {
                 id: almostID
             }));
 
             if (parse) {
-                return fetch.map(content => JSON.parse(content));
+                return fetch.map(content => JSON.parse(content)).catch(this.makeErrorBarHandler());
             }
-            return fetch;
-
-
+            return fetch.catch(this.makeErrorBarHandler());
         }
     }
 
@@ -287,7 +286,14 @@ export class DataGatewayService {
         });
     }
 
-    reloadFolderContent(folder: string) {
-
+    private makeErrorBarHandler() {
+        return <T>(err: Error, observable: ObservableInput<T>) => {
+            if(err.name === "RequestError" && !navigator.onLine){
+                this.errorBar.showError("You are offline");
+            } else {
+                this.errorBar.showError(err.message);
+            }
+            return Observable.throw(err);
+        }
     }
 }

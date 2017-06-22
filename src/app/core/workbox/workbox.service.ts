@@ -192,7 +192,7 @@ export class WorkboxService {
 
         const id         = data.id;
         const label      = data.id.split("/").pop();
-        const isWritable = dataSource !== "public";
+        const isWritable = data.isWritable === undefined ? dataSource !== "public" : data.isWritable;
 
         const fileContent = Observable.empty().concat(this.dataGateway.fetchFileContent(id));
         const resolve     = (fcontent: string) => this.dataGateway.resolveContent(fcontent, id);
@@ -205,7 +205,6 @@ export class WorkboxService {
                 isWritable,
                 dataSource,
                 language: data.language || "yaml",
-                parsedContent: {},
                 fileContent,
                 resolve
             }

@@ -215,15 +215,17 @@ export class ToolEditorComponent extends DirectiveBase implements OnInit, OnDest
     }
 
     hasCopyOfProperty() {
-        return this.data.parsedContent["sbg:copyOf"] !== undefined;
+        return this.toolModel && this.toolModel.customProps["sbg:copyOf"] !== undefined;
     }
 
     edit() {
+        const label = (this.toolModel && this.toolModel.label) || "Unnamed App";
+
         const modal = this.modal.fromComponent(ProceedToEditingModalComponent, {
-            title: `Edit ${(this.data.parsedContent.label)}?`,
+            title: `Edit ${label}?`,
         });
 
-        modal.appName = this.data.parsedContent.label;
+        modal.appName = label;
         modal.response.subscribe(val => {
             this.data.isWritable = val;
             if (val) {

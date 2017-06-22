@@ -6,5 +6,5 @@ export interface App {
     project: string;
     name: string;
     revision: number;
-    raw: RawApp;
+    raw?: RawApp;
 }

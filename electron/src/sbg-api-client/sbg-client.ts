@@ -51,7 +51,9 @@ export class SBGClient {
 
     get projects() {
         return {
-            all: () => this.fetchAll<Project>("projects?fields=_all")
+            all: (): Promise<Project[]> => {
+                return this.fetchAll<Project>("projects?fields=_all").then(projects => projects.filter(project => project.type === "v2"))
+            }
         }
     }
 
@@ -63,8 +65,20 @@ export class SBGClient {
             get: (appID: string) => {
                 return this.apiRequest(`apps/${appID}`);
             },
-            public: () => {
-                return this.fetchAll<App>("apps?visibility=public");
+            public: (query: AppQueryParams = {
+                visibility: "public",
+                fields: [
+                    "id",
+                    "name",
+                    "project",
+                    "revision",
+                    "raw.class",
+                    "raw.sbg:categories",
+                    "raw.sbg:toolkit",
+                    "raw.sbg:toolkitVersion"
+                ].join(",")
+            }) => {
+                return this.fetchAll<App>("apps", query);
             },
 
             save: (appID, content) => {
