@@ -151,4 +151,8 @@ export class SBGClient {
             }, reject);
         });
     }
+
+    sendFeedback(type: string, text: string) {
+        return this.apiRequest.post("action/notifications/feedback", {body: {type, text}, json: true});
+    }
 }

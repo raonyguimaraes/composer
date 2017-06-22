@@ -178,7 +178,7 @@ describe("GettingStartedComponent", () => {
     it("should open mail client when click on 'Get support' button", () => {
         authServiceStub.connections.next([]);
 
-        const spyOnOpenFeedBackModal = spyOn(component, "openFeedbackModal").and.callThrough();
+        const spyOnOpenFeedBackModal = spyOn(component, "initiateFeedbackDialog").and.callThrough();
         const spyOnOpenLink = spyOn(systemServiceStub, "openLink");
         const spyOnFromComponent = spyOn(modalServiceStub, "fromComponent");
 

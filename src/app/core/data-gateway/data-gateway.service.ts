@@ -10,12 +10,8 @@ import "rxjs/add/operator/catch";
 
 import "rxjs/add/operator/mergeMap";
 import "rxjs/add/operator/publishReplay";
-import {AsyncSubject} from "rxjs/AsyncSubject";
 import {Observable, ObservableInput} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
-import {App} from "../../../../electron/src/sbg-api-client/interfaces/app";
-import {AppQueryParams} from "../../../../electron/src/sbg-api-client/interfaces/queries";
-import {Project} from "../../auth/api/dto-interfaces/project";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
 import {OldAuthService} from "../../auth/auth/auth.service";
 import {ErrorBarService} from "../../layout/error-bar/error-bar.service";
@@ -91,18 +87,6 @@ export class DataGatewayService {
 
             return Observable.zip(...requests);
         });
-    }
-
-    getPublicApps(hash) {
-
-        const platform = this.apiGateway.forHash(hash);
-
-        const call = platform ? platform.getPublicApps()
-            : Observable.throw(
-                new Error("Cannot get public apps because you are not connected to the necessary platform."));
-
-        return this.throughCache(
-            hash + ".getPublicApps", call);
     }
 
     fetchFileContent(almostID: string, parse = false): Observable<string> {
@@ -209,45 +193,6 @@ export class DataGatewayService {
         }).publishReplay().refCount();
     }
 
-    static fuzzyMatch(needle, haystack) {
-
-        const noSpaceNeedle = needle.replace(/ /g, "");
-        const hlen          = haystack.length;
-        const nlen          = noSpaceNeedle.length;
-
-        if (nlen > hlen) {
-            return 0;
-        }
-
-        if (nlen === hlen) {
-            return 1;
-        }
-        let matchedCharacters = 0;
-        const spacings        = [];
-
-        let previousFoundIndex = 0;
-
-        outer: for (let i = 0, j = 0; i < nlen; i++) {
-            const nch = noSpaceNeedle.charCodeAt(i);
-            while (j < hlen) {
-                if (haystack.charCodeAt(j++) === nch) {
-                    spacings.push(j - previousFoundIndex);
-                    previousFoundIndex = j;
-                    matchedCharacters++;
-
-                    continue outer;
-                }
-            }
-            return 0;
-        }
-        const totalDistance  = spacings.reduce((acc, n) => acc + n, 0);
-        const adjacencyBonus = haystack.length / (totalDistance * (haystack.length / spacings.length));
-        const indexBonus     = needle.split(" ").map(word => haystack.indexOf(word)).reduce((acc, idx) => acc + Number(idx !== -1), 0);
-        const bonus          = adjacencyBonus + indexBonus;
-
-        return bonus + matchedCharacters / hlen;
-    }
-
     invalidateCache(key: string) {
         this.cacheInvalidation.next(key);
     }
@@ -259,16 +204,6 @@ export class DataGatewayService {
      */
     getUserWithToken(url, token): Observable<any> {
         return this.ipc.request("getUserByToken", {url, token});
-    }
-
-    getProjects(url: string, token: string): AsyncSubject<Project[]> {
-        return this.ipc.request("getProjects", {url, token}) as AsyncSubject<Project[]>;
-    }
-
-    getApps(url: any, token: any, query: AppQueryParams = {
-        fields: "id,name,project,raw.class"
-    }): AsyncSubject<App[]> {
-        return this.ipc.request("getApps", {url, token, query}) as AsyncSubject<App[]>;
     }
 
     updateSwap(fileID, content): Observable<any> {
@@ -295,5 +230,9 @@ export class DataGatewayService {
             }
             return Observable.throw(err);
         }
+    }
+
+    sendFeedbackToPlatform(type: string, text: string): Promise<any> {
+        return this.ipc.request("sendFeedback", {type, text}).toPromise();
     }
 }

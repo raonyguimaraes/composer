@@ -29,6 +29,7 @@ export type IPCRoute =
     | "saveAppRevision"
     | "patchLocalRepository"
     | "patchUserRepository"
+    | "sendFeedback"
     | "pathExists"
     | "putSetting"
     | "readDirectory"

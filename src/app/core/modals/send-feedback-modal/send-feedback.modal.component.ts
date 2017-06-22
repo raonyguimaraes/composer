@@ -1,14 +1,11 @@
-import {ChangeDetectionStrategy, Component, Input} from "@angular/core";
-import {FormBuilder, Validators} from "@angular/forms";
-import {Observable} from "rxjs/Observable";
+import {Component} from "@angular/core";
+import {FormBuilder, FormControl, FormGroup} from "@angular/forms";
 import {ModalService} from "../../../ui/modal/modal.service";
-import {ErrorBarService} from "../../../layout/error-bar/error-bar.service";
-import {PlatformAPIGatewayService} from "../../../auth/api/platform-api-gateway.service";
-import {CredentialsEntry} from "../../../services/storage/user-preferences-types";
+import {DirectiveBase} from "../../../util/directive-base/directive-base";
+import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 
 
 @Component({
-    changeDetection: ChangeDetectionStrategy.OnPush,
     selector: "ct-send-feedback-modal",
     styleUrls: ["./send-feedback.modal.component.scss"],
     template: `
@@ -16,15 +13,14 @@ import {CredentialsEntry} from "../../../services/storage/user-preferences-types
 
             <div class="dialog-content">
 
-                <div class="feedback-prompt">
-                    What would you like to send?
-                </div>
+                <div class="feedback-prompt">What would you like to send?</div>
 
                 <!--Feedback type-->
                 <div class="feedback-type">
 
                     <!--Idea-->
-                    <div data-test="idea-region" class="feedback clickable" [class.active]="feedbackType === 'idea'"
+                    <div data-test="idea-region" class="feedback clickable"
+                         [class.active]="form.get('type').value === 'idea'"
                          (click)="selectFeedbackType('idea')">
 
                         <!--Caption-->
@@ -39,7 +35,7 @@ import {CredentialsEntry} from "../../../services/storage/user-preferences-types
 
                     <!--Problem-->
                     <div data-test="problem-region" class="feedback clickable"
-                         [class.active]="feedbackType === 'problem'"
+                         [class.active]="form.get('type').value === 'problem'"
                          (click)="selectFeedbackType('problem')">
 
                         <!--Caption-->
@@ -55,7 +51,7 @@ import {CredentialsEntry} from "../../../services/storage/user-preferences-types
 
                     <!--Thought-->
                     <div data-test="thought-region" class="feedback clickable"
-                         [class.active]="feedbackType === 'thought'"
+                         [class.active]="form.get('type').value === 'thought'"
                          (click)="selectFeedbackType('thought')">
 
                         <!--Caption-->
@@ -73,48 +69,37 @@ import {CredentialsEntry} from "../../../services/storage/user-preferences-types
 
 
                 <!--Idea feedback description-->
-                <div *ngIf="feedbackType === 'idea'" class="description">
+                <div *ngIf="form.get('type').value === 'idea'" class="description">
                     Please let us know:
                     <ul class="ml-2">
-                        <li>
-                            Which feature you would like
-                        </li>
-                        <li>
-                            Why it is important for you
-                        </li>
-                        <li>
-                            The problem it would solve
-                        </li>
+                        <li>Which feature you would like to add?</li>
+                        <li>Why it is important for you?</li>
+                        <li>The problem it would solve?</li>
                     </ul>
                 </div>
 
                 <!--Problem feedback description-->
-                <div *ngIf="feedbackType === 'problem'" class="description">
-                    In order to understand the problem, please tell us:
+                <div *ngIf="form.get('type').value === 'problem'" class="description">
+                    In order for us to better understand the problem, please tell us:
                     <ul class="ml-2">
-                        <li>
-                            What happened
-                        </li>
-                        <li>
-                            What you were trying to do
-                        </li>
-                        <li>
-                            What you expected to see instead
-                        </li>
+                        <li>What happened?</li>
+                        <li>What were you trying to do when the problem occured?</li>
+                        <li>What did you expected to see instead?</li>
                     </ul>
                 </div>
 
                 <!--Thought feedback description-->
-                <div *ngIf="feedbackType === 'thought'" class="description">
+                <div *ngIf="form.get('type').value === 'thought'" class="description">
                     Questions, comments, praise, criticism and everything in between.
                 </div>
 
                 <!--Feedback text-area-->
                 <div class="form-group">
-                    <textarea data-test="feedback-text" [formControl]="feedbackTextControl.controls['sendFeedBack']"
-                              class="form-control" rows="6">                    
+                    <textarea data-test="feedback-text" [formControl]="form.get('text')" class="form-control" rows="6">                    
                     </textarea>
                 </div>
+
+                <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
             </div>
 
 
@@ -125,8 +110,9 @@ import {CredentialsEntry} from "../../../services/storage/user-preferences-types
                 </button>
 
                 <button type="button" class="btn btn-primary" data-test='send-button'
-                        [disabled]="!feedbackTextControl.valid"
-                        (click)="onSendFeedback()">Send
+                        [disabled]="!form.valid || isSending"
+                        (click)="onSendFeedback()">
+                    <ct-loader-button-content [isLoading]="isSending">Send</ct-loader-button-content>
                 </button>
             </div>
 
@@ -135,50 +121,59 @@ import {CredentialsEntry} from "../../../services/storage/user-preferences-types
 
     `
 })
-export class SendFeedbackModalComponent {
+export class SendFeedbackModalComponent extends DirectiveBase {
 
-    public feedbackType: "idea" | "problem" | "thought" = "idea";
+    isSending = false;
 
-    public feedbackTextControl = this.formBuilder.group({
-        sendFeedBack: ["", [Validators.required]],
-    });
+    form: FormGroup;
 
-    @Input()
-    public feedbackPlatform: CredentialsEntry | any = null;
+    errorMessage?: string;
 
-    constructor(private modal: ModalService, private formBuilder: FormBuilder, private errorBar: ErrorBarService,
-                private apiGateway: PlatformAPIGatewayService) {
+
+    constructor(private modal: ModalService,
+                private formBuilder: FormBuilder,
+                private dataGateway: DataGatewayService,) {
+
+        super();
+
+        this.form = formBuilder.group({
+            type: ["idea", [(control: FormControl) => {
+                if (["idea", "problem", "thought"].indexOf(control.value) !== -1) {
+                    return null;
+                }
+                return {type: "Type must be “idea”, “problem” or “thought”"};
+            }]],
+            text: ["", [(ctrl: FormControl) => {
+                if (ctrl.value.trim()) return null;
+
+                return {text: "Content must not be empty"}
+            }]]
+        });
+
+        this.form.valueChanges.filter(() => this.errorMessage !== undefined).subscribeTracked(this, () => this.errorMessage = undefined);
+
     }
 
     selectFeedbackType(type: "idea" | "problem" | "thought") {
-        this.feedbackType = type;
+        this.form.patchValue({type});
     }
 
     public onSendFeedback() {
 
-        if (this.feedbackPlatform) {
+        const {type, text} = this.form.getRawValue();
+        this.errorMessage  = undefined;
 
-            const platform = this.apiGateway.forHash(this.feedbackPlatform.hash);
-
-            const call = platform ? platform.sendFeedback(this.feedbackPlatform.user.id, this.feedbackType,
-                this.feedbackTextControl.controls["sendFeedBack"].value, this.feedbackPlatform.url)
-                : Observable.throw(
-                    new Error("Could not connect to the platform and send a feedback message"));
-
-            call.subscribe(() => {
-                this.closeModal();
-            }, err => {
-                if (err.status === 0) {
-                    this.errorBar.showError("Could not connect to the platform and send a feedback message");
-                } else {
-                    this.errorBar.showError(err);
-                }
-            });
-
-        }
+        this.isSending = true;
+        this.dataGateway.sendFeedbackToPlatform(type, text).then(() => {
+            this.isSending = false;
+            this.closeModal();
+        }, err => {
+            this.isSending    = false;
+            this.errorMessage = err.error ? err.error.message : err.message;
+        });
     }
 
-    public closeModal() {
+    closeModal() {
         this.modal.close();
     }
 }

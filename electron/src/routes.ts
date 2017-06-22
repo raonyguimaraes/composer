@@ -340,5 +340,16 @@ module.exports = {
 
             }, callback);
         }, callback);
+    },
+
+    sendFeedback: (data: { type: string, text: string }, callback) => {
+        ensurePlatformUser().then(repo => {
+            const {url, token} = repo.local.activeCredentials;
+            const api          = new SBGClient(url, token);
+
+            return api.sendFeedback(data.type, data.text);
+        }).then(resolve => {
+            callback(null, resolve);
+        }, callback);
     }
 };
