@@ -273,9 +273,7 @@ export class CreateAppModalComponent extends DirectiveBase implements OnInit {
         const label = this.remoteNameControl.value;
         const app   = AppGeneratorService.generate(this.cwlVersion, this.appType, slug, label);
 
-        console.log("Project selection val", this.projectSelection.value);
-
-        const newAppID = `${this.projectSelection.value}/${slug}`;
+        const newAppID = `${this.projectSelection.value}/${slug}`.split("/").slice(0, 3).concat("0").join("/");
 
         this.platformRepository.createApp(newAppID, JSON.stringify(app, null, 4)).then(app => {
             const tab = this.workbox.getOrCreateAppTab({
@@ -295,24 +293,6 @@ export class CreateAppModalComponent extends DirectiveBase implements OnInit {
         });
 
         return;
-
-        // const [hash, owner, project] = this.projectSelection.value.split("/");
-        //
-        // const platform = this.apiGateway.forHash(hash);
-        //
-        // const call = platform ? platform.createApp(owner, project, slug, app)
-        //     : Observable.throw(
-        //         new Error("You cannot create the app because you are not connected to the necessary platform."));
-        //
-        // call.subscribe(data => {
-        //     this.dataGateway.invalidateProjectListing(hash, owner, project);
-        //     this.workbox.getOrCreateFileTab([hash, owner, project, owner, project, slug, 0].join("/")).subscribe(tab => {
-        //         this.workbox.openTab(tab);
-        //     });
-        //     this.modal.close();
-        // }, err => {
-        //     this.error = err;
-        // });
     }
 
     hasLocalFileAsyncValidator(control: FormControl) {

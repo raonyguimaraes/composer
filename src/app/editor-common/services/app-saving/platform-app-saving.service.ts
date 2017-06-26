@@ -4,6 +4,9 @@ import {IpcService} from "../../../services/ipc.service";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {AppSaver} from "./app-saver.interface";
 
+/**
+ * @deprecated use {@link PlatformRepositoryService.createApp)
+ */
 @Injectable()
 export class PlatformAppSavingService implements AppSaver {
 
@@ -11,7 +14,11 @@ export class PlatformAppSavingService implements AppSaver {
                 private modal: ModalService) {
     }
 
-    save(appID: string, content: string) {
+    save(appID: string, content: string, revisionNote?: string): Promise<any> {
+
+        if (revisionNote !== undefined) {
+            return this.saveWithNote(appID, content, revisionNote);
+        }
 
         return new Promise((resolve, reject) => {
 
@@ -23,17 +30,18 @@ export class PlatformAppSavingService implements AppSaver {
                 cancellationLabel: "Cancel",
                 confirmationLabel: "Publish",
                 formControl: revisionNoteControl
-            }).then(() => {
-
-                const appContent                = JSON.parse(content);
-                appContent["sbg:revisionNotes"] = revisionNoteControl.value;
-                const serialized                = JSON.stringify(appContent);
-
-                this.ipc.request("saveAppRevision", {
-                    id: appID,
-                    content: serialized
-                }).toPromise().then(resolve, reject);
-            }, reject);
+            }).then(() => this.saveWithNote(appID, content, revisionNoteControl.value), reject);
         }) as Promise<string>;
     };
+
+    private saveWithNote(appID: string, content: string, revisionNote: string): Promise<any> {
+        const appContent                = JSON.parse(content);
+        appContent["sbg:revisionNotes"] = revisionNote;
+        const serialized                = JSON.stringify(appContent);
+
+        return this.ipc.request("createPlatformApp", {
+            id: appID,
+            content: serialized
+        }).toPromise();
+    }
 }

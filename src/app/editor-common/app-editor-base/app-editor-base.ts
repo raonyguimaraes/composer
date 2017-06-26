@@ -1,13 +1,4 @@
-import {
-    AfterViewInit,
-    Component,
-    Injector,
-    Input,
-    OnInit,
-    TemplateRef,
-    ViewChild,
-    ViewContainerRef
-} from "@angular/core";
+import {AfterViewInit, Injector, Input, OnInit, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
 import {FormControl} from "@angular/forms";
 import {CommandLineToolModel, WorkflowModel} from "cwlts/models";
 
@@ -145,7 +136,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
         }, (err) => {
             this.unavailableError = err.message || "Error occurred while fetching app";
-            this.isLoading = false;
+            this.isLoading        = false;
         });
 
         /**
@@ -178,7 +169,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
         /** When the first validation ends, turn off the loader and determine which view we can show. Invalid app forces code view */
         firstValidationEnd.subscribe(state => {
-            this.viewMode = state.isValid ? this.getPreferredTab() : "code";
+            this.viewMode    = state.isValid ? this.getPreferredTab() : "code";
             this.reportPanel = state.isValid ? this.getPreferredReportPanel() : this.reportPanel;
         });
     }
@@ -213,7 +204,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
         this.syncModelAndCode(true).then(() => {
             const modal      = this.modal.fromComponent(PublishModalComponent, {title: "Publish an App"});
-            modal.appContent = Yaml.safeLoad(this.codeEditorContent.value, {json: true} as LoadOptions);
+            modal.appContent = this.codeEditorContent.value;
         });
     }
 
@@ -248,7 +239,11 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
         const fid = this.tabData.id.split("/").slice(0, 3).concat(revisionNumber.toString()).join("/");
 
-        return this.dataGateway.fetchFileContent(fid).take(1).toPromise();
+        return this.dataGateway.fetchFileContent(fid).take(1)
+            .toPromise().then(result => {
+                this.priorityCodeUpdates.next(result);
+                return result;
+            });
     }
 
     /**

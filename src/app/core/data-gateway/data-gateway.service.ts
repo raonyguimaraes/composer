@@ -47,10 +47,6 @@ export class DataGatewayService {
                 private ipc: IpcService) {
     }
 
-    invalidateProjectListing(hash, owner: string, project: string) {
-        this.invalidateCache(`${hash}.getProjectListing.${owner}.${project}`);
-    }
-
     checkIfPathExists(path) {
         return this.ipc.request("pathExists", path);
     }
@@ -105,10 +101,10 @@ export class DataGatewayService {
                         } catch (err) {
                             return new Error(err);
                         }
-                    }).catch(this.makeErrorBarHandler());
+                    });
             }
 
-            return fetch.catch(this.makeErrorBarHandler());
+            return fetch;
         }
 
         if (source === "app" || source === "public") {
@@ -118,9 +114,9 @@ export class DataGatewayService {
             }));
 
             if (parse) {
-                return fetch.map(content => JSON.parse(content)).catch(this.makeErrorBarHandler());
+                return fetch.map(content => JSON.parse(content));
             }
-            return fetch.catch(this.makeErrorBarHandler());
+            return fetch;
         }
     }
 
@@ -173,29 +169,6 @@ export class DataGatewayService {
         });
     }
 
-    private throughCache(key, handler) {
-        return new Observable(subscriber => {
-            const cacheSub = Observable
-                .merge(
-                    Observable.of(1),
-                    this.cacheInvalidation.filter(k => k === key)
-                )
-                .flatMap(() => handler)
-                .subscribe(data => {
-                    subscriber.next(data);
-                });
-
-            return () => {
-                cacheSub.unsubscribe();
-            };
-
-        }).publishReplay().refCount();
-    }
-
-    invalidateCache(key: string) {
-        this.cacheInvalidation.next(key);
-    }
-
     /**
      *
      * @param url
@@ -234,4 +207,6 @@ export class DataGatewayService {
     sendFeedbackToPlatform(type: string, text: string): Promise<any> {
         return this.ipc.request("sendFeedback", {type, text}).toPromise();
     }
+
+
 }

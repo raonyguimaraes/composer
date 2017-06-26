@@ -63,7 +63,7 @@ export class SBGClient {
                 return this.fetchAll<App>("apps", query);
             },
             get: (appID: string) => {
-                return this.apiRequest(`apps/${appID}`);
+                return this.apiRequest(`apps/${appID}`.toLowerCase());
             },
             public: (query: AppQueryParams = {
                 visibility: "public",
@@ -82,7 +82,7 @@ export class SBGClient {
             },
 
             save: (appID, content) => {
-                const revisionlessID = appID.split("/").slice(0, 3).join("/");
+                const revisionlessID = appID.split("/").slice(0, 3).join("/").toLowerCase();
 
                 return this.apiRequest(`apps/${revisionlessID}`, {
                     fields: "revision"
@@ -100,7 +100,7 @@ export class SBGClient {
             },
 
             create: (appID, content) => {
-                const revisionlessID = appID.split("/").slice(0, 3).join("/");
+                const revisionlessID = appID.split("/").slice(0, 3).join("/").toLowerCase();
 
                 return this.apiRequest(`apps/${revisionlessID}`).then((app) => {
                     throw new Error("App already exists.");

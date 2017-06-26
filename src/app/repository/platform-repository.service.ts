@@ -1,4 +1,7 @@
 import {Injectable} from "@angular/core";
+
+import * as Yaml from "js-yaml";
+import {LoadOptions} from "js-yaml";
 import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {App} from "../../../electron/src/sbg-api-client/interfaces/app";
@@ -151,11 +154,26 @@ export class PlatformRepositoryService {
         return this.expandedNodes;
     }
 
-    createApp(appID: string, content: string): Promise<string> {
-        const nulledRevision = appID.split("/").slice(0, 3).concat("0").join("/");
 
+    createApp(appID: string, content: string): Promise<string> {
+        console.log("Pushing new app", content);
         return this.ipc.request("createPlatformApp", {
-            id: nulledRevision,
+            id: appID,
+            content: content
+        }).toPromise();
+    }
+
+    saveAppRevision(appID: string, content: string, revisionNote?: string): Promise<string> {
+
+        const appContent = Yaml.safeLoad(content, {json: true} as LoadOptions);
+        if (typeof revisionNote === "string") {
+            appContent["sbg:revisionNotes"] = revisionNote;
+        }
+        content = JSON.stringify(appContent, null, 4);
+        console.log("Pushing json content", content);
+
+        return this.ipc.request("saveAppRevision", {
+            id: appID,
             content: content
         }).toPromise();
     }

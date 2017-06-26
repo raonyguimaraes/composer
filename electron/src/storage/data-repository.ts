@@ -8,6 +8,8 @@ export class DataRepository {
     user?: UserRepository;
     local: LocalRepository;
 
+    private storageWriteQueue = [];
+
     private listeners = {};
 
     constructor() {
@@ -95,12 +97,12 @@ export class DataRepository {
         if (profile === "local") {
             Object.assign(this.local, data);
             this.trigger("update.local", this.local);
-            storage.set<RepositoryType>(profilePath, this.local, callback);
+            this.enqueueStorageWrite(profilePath, this.local, callback);
         } else {
             Object.assign(this.user, data);
             this.trigger(`update.${profile}`, this.user);
             this.trigger(`update.user`, this.user);
-            storage.set<RepositoryType>(profilePath, this.user, callback);
+            this.enqueueStorageWrite(profilePath, this.user, callback);
         }
 
         for (let key in data) {
@@ -143,7 +145,7 @@ export class DataRepository {
 
         storage.isPathExists(filePath, (exists) => {
             if (!exists) {
-                storage.set(filePath, defaultData, (err) => {
+                this.enqueueStorageWrite(filePath, defaultData, (err) => {
                     if (err) return callback(err);
 
                     callback(null, defaultData);
@@ -152,7 +154,9 @@ export class DataRepository {
             }
 
             storage.get(filePath, (err, storageContent: T) => {
-                if (err) return callback(err);
+                if (err) {
+                    return callback(err);
+                }
                 for (let prop in defaultData) {
                     if (!storageContent.hasOwnProperty(prop)) {
                         storageContent[prop] = defaultData[prop];
@@ -178,5 +182,30 @@ export class DataRepository {
         });
     }
 
+    private enqueueStorageWrite(filePath, data, callback) {
 
+        const executor = () => {
+            storage.set(filePath, data, (err, data) => {
+                if (err) return callback(err);
+
+                callback(null, data);
+
+                this.storageWriteQueue.shift();
+                if (this.storageWriteQueue.length) {
+                    console.log("------->     Optimizing queue length <--------");
+                    this.storageWriteQueue = this.storageWriteQueue.slice(-1);
+                    this.storageWriteQueue[0]();
+                }
+            });
+        };
+        this.storageWriteQueue.push(executor);
+
+        if (this.storageWriteQueue.length === 1) {
+            this.storageWriteQueue[0]();
+        }
+
+        if(this.storageWriteQueue.length > 1){
+            console.log("-----> WOULD COME TO BREAK");
+        }
+    }
 }

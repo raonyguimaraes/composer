@@ -20,7 +20,6 @@ import {ModalService} from "../ui/modal/modal.service";
 import {WorkflowGraphEditorComponent} from "./graph-editor/graph-editor/workflow-graph-editor.component";
 import {WorkflowEditorService} from "./workflow-editor.service";
 
-
 @Component({
     selector: "ct-workflow-editor",
     providers: [EditorInspectorService, ErrorBarService, WorkflowEditorService, CodeSwapService, PlatformAppService,

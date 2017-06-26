@@ -1,8 +1,7 @@
-import {AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostBinding, Input, ViewChild} from "@angular/core";
+import {AfterViewInit, Component, ElementRef, HostBinding, Input, ViewChild} from "@angular/core";
 
 @Component({
     selector: "ct-loader-button-content",
-    changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrls: ["loader-button-content.component.scss"],
     template: `
         <span #content>
@@ -26,7 +25,6 @@ export class LoaderButtonContentComponent implements AfterViewInit {
         setTimeout(() => {
             this.minWidth = this.originalContent.nativeElement.getBoundingClientRect().width;
         });
+
     }
-
-
 }

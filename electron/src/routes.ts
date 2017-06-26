@@ -323,13 +323,18 @@ module.exports = {
             return api.apps.create(data.id, data.content).then((response) => {
                 callback(null, JSON.parse(response));
 
-                const project = data.id.split("/").slice(0, 2).join("/");
+                const idParts = data.id.split("/");
+
+                const project = idParts.slice(0, 2).join("/");
+
+                console.log("Updating!");
 
                 api.apps.private({
                     project,
                     fields: "id,name,project,raw.class,revision"
                 }).then((projectApps) => {
                     const newAppList = repo.user.apps.filter(app => app.project !== project).concat(projectApps);
+                    console.log("Update user project list");
                     repo.updateUser({
                         apps: newAppList
                     }, () => {
