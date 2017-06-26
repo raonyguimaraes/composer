@@ -15,24 +15,32 @@ import {TabData} from "./tab-data.interface";
 @Injectable()
 export class WorkboxService {
 
-    public tabs = new BehaviorSubject<TabData<any>[]>([]);
+    tabs = new BehaviorSubject<TabData<any>[]>([]);
 
-    public activeTab = new BehaviorSubject(undefined);
+    activeTab = new BehaviorSubject(undefined);
 
-    public tabCreation = new Subject<TabData<any>>();
+    tabCreation = new Subject<TabData<any>>();
 
     constructor(private dataGateway: DataGatewayService,
                 private localRepository: LocalRepositoryService,
                 private platformRepository: PlatformRepositoryService,
                 private preferences: UserPreferencesService) {
 
+        // First emit is an empty array (default), second emit is restoring tabs that were previously open
+        // after that, start listening for newly added tabs
         this.tabs.skip(2).subscribe(tabs => {
-            const t = tabs.map(tab => {
-                const {id, label, type} = tab;
-                return {id, label, type};
+
+
+            const localTabs    = [];
+            const platformTabs = [];
+
+            tabs.forEach((tab, position) => {
+                const {id, label, type, isWritable, language} = tab;
+
+                const entry = {id, label, type, isWritable, language, position};
+
             });
 
-            this.preferences.put("openTabs", t);
         });
 
         this.activeTab.filter(t => t !== undefined).subscribe(tab => {
@@ -40,7 +48,7 @@ export class WorkboxService {
         });
     }
 
-    public openTab(tab, persistToRecentApps: boolean = true) {
+    openTab(tab, persistToRecentApps: boolean = true) {
 
         const {tabs} = this.extractValues();
 
@@ -60,10 +68,6 @@ export class WorkboxService {
         if (!persistToRecentApps) {
             return;
         }
-
-        const isLocal = tab.id.startsWith("/");
-
-
 
         const recentTabData = {
             id: tab.id,
@@ -90,7 +94,7 @@ export class WorkboxService {
         }, false);
     }
 
-    public closeTab(tab?) {
+    closeTab(tab?) {
         if (!tab) {
             tab = this.extractValues().activeTab;
         }
@@ -109,16 +113,16 @@ export class WorkboxService {
         this.ensureActiveTab();
     }
 
-    public closeOtherTabs(tab) {
+    closeOtherTabs(tab) {
         this.tabs.next([tab]);
         this.activateTab(tab);
     }
 
-    public closeAllTabs() {
+    closeAllTabs() {
         this.tabs.next([]);
     }
 
-    public activateNext() {
+    activateNext() {
         const {tabs, activeTab} = this.extractValues();
         const index             = tabs.indexOf(activeTab);
         const newActiveTab      = index === (tabs.length - 1) ? tabs[0] : tabs[index + 1];
@@ -126,7 +130,7 @@ export class WorkboxService {
         this.activateTab(newActiveTab);
     }
 
-    public activatePrevious() {
+    activatePrevious() {
         const {tabs, activeTab} = this.extractValues();
         const index             = tabs.indexOf(activeTab);
         const newActiveTab      = index ? tabs[index - 1] : tabs[tabs.length - 1];
@@ -160,13 +164,12 @@ export class WorkboxService {
      * @deprecated Do this same thing with {@link getOrCreateAppTab}
      * @param fileID
      */
-    public getOrCreateFileTabAndOpenIt(fileID) {
+    getOrCreateFileTabAndOpenIt(fileID) {
         this.getOrCreateFileTab(fileID).take(1).subscribe((tab) => this.openTab(tab));
     }
 
     getOrCreateAppTab<T>(data: {
         id: string;
-        data?: any;
         type: string;
         label?: string;
         isWritable?: boolean;
@@ -200,7 +203,7 @@ export class WorkboxService {
                 fileContent,
                 resolve
             }
-        }, data);
+        }, data) as TabData<any>;
 
         if (id.endsWith(".json")) {
             tab.data.language = "json";
@@ -213,7 +216,7 @@ export class WorkboxService {
     /**
      * @deprecated Use {@link getOrCreateAppTab} for synchronous tab opening version
      */
-    public getOrCreateFileTab(fileID): Observable<TabData<AppTabData>> {
+    getOrCreateFileTab(fileID): Observable<TabData<AppTabData>> {
 
         const currentTab = this.tabs.getValue().find(tab => tab.id === fileID);
 

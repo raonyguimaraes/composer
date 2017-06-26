@@ -27,7 +27,7 @@ import {StatusBarService} from "./status-bar.service";
 
         <!--Process-->
         <span class="status-item">
-            <span *ngIf="queueSize">
+            <span *ngIf="queueSize" [ct-tooltip]="statusBar.process | async">
                 <span class="loader"></span>
                 {{ statusBar.process | async }}
                 <span *ngIf="queueSize > 1">

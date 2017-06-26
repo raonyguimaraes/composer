@@ -7,6 +7,7 @@ import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/pro
 import {AuthService} from "../../../auth/auth.service";
 import {AuthCredentials} from "../../../auth/model/auth-credentials";
 import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
+import {ErrorBarService} from "../../../layout/error-bar/error-bar.service";
 import {StatusBarService} from "../../../layout/status-bar/status-bar.service";
 import {LocalRepositoryService} from "../../../repository/local-repository.service";
 import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
@@ -27,6 +28,7 @@ export class MyAppsPanelService {
     constructor(private auth: AuthService,
                 private statusBar: StatusBarService,
                 private ipc: IpcService,
+                private errorBar: ErrorBarService,
                 private localRepository: LocalRepositoryService,
                 private localFileRepository: LocalFileRepositoryService,
                 private platformRepository: PlatformRepositoryService) {
@@ -103,9 +105,13 @@ export class MyAppsPanelService {
     }
 
     reloadPlatformData() {
-        const process = this.statusBar.startProcess("Fetching platform data...");
+        const process = this.statusBar.startProcess("Syncing platform data. You might not see up-to-date information while sync is in progress.");
         this.platformRepository.fetch().subscribe((data) => {
             this.statusBar.stopProcess(process, "Fetched platform data");
+
+        }, (err: Error) => {
+            this.errorBar.showError("Cannot sync platform data. " + err["error"] ? err["error"]["message"] : err.message);
+            this.statusBar.stopProcess(process, "Failed to fetch platform data.");
         });
     }
 

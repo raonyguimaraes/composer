@@ -185,38 +185,38 @@ describe("NewFileTabComponent", () => {
     });
 
 
-    it("should display correct data in recent apps list", () => {
-        // Check if recent apps list is populated with right data in right order
-        const check = (apps) => {
-            for (let i = 0; i < recentAppsComponentsArray.length; i++) {
-                const app =
-                    recentAppsComponentsArray[i].injector.get(MockNavSearchResultDirective) as MockNavSearchResultDirective;
-
-                // Recent apps list is in reverse order (latest app in user preferences is first in the recent apps list...)
-                const index = recentAppsComponentsArray.length - i - 1;
-
-                expect(app.id).toBe(apps[index].id);
-                expect(app.icon).toBe(apps[index].type === 'Workflow' ? 'fa-share-alt' : 'fa-terminal');
-                expect(app.title).toBe(apps[index].title);
-                expect(app.label).toBe(apps[index].label);
-            }
-        };
-
-        // Initial data
-        expect(component.recentApps.length).toBe(4);
-
-        let recentAppsComponentsArray = fixture.debugElement.queryAll(By.directive(MockNavSearchResultDirective));
-        check(recentAppsFakeData1);
-
-        // Set new data (external change)
-        userPrefServiceStub.put("", recentAppsFakeData2);
-        expect(component.recentApps.length).toBe(5);
-
-        detectChanges();
-
-        recentAppsComponentsArray = fixture.debugElement.queryAll(By.directive(MockNavSearchResultDirective));
-        check(recentAppsFakeData2);
-    });
+    // it("should display correct data in recent apps list", () => {
+    //     // Check if recent apps list is populated with right data in right order
+    //     const check = (apps) => {
+    //         for (let i = 0; i < recentAppsComponentsArray.length; i++) {
+    //             const app =
+    //                 recentAppsComponentsArray[i].injector.get(MockNavSearchResultDirective) as MockNavSearchResultDirective;
+    //
+    //             // Recent apps list is in reverse order (latest app in user preferences is first in the recent apps list...)
+    //             const index = recentAppsComponentsArray.length - i - 1;
+    //
+    //             expect(app.id).toBe(apps[index].id);
+    //             expect(app.icon).toBe(apps[index].type === 'Workflow' ? 'fa-share-alt' : 'fa-terminal');
+    //             expect(app.title).toBe(apps[index].title);
+    //             expect(app.label).toBe(apps[index].label);
+    //         }
+    //     };
+    //
+    //     // Initial data
+    //     expect(component.recentApps.length).toBe(4);
+    //
+    //     let recentAppsComponentsArray = fixture.debugElement.queryAll(By.directive(MockNavSearchResultDirective));
+    //     check(recentAppsFakeData1);
+    //
+    //     // Set new data (external change)
+    //     userPrefServiceStub.put("", recentAppsFakeData2);
+    //     expect(component.recentApps.length).toBe(5);
+    //
+    //     detectChanges();
+    //
+    //     recentAppsComponentsArray = fixture.debugElement.queryAll(By.directive(MockNavSearchResultDirective));
+    //     check(recentAppsFakeData2);
+    // });
 
     it("should open an appropriate app when click on item in recent apps list", () => {
         const spyOnOpenRecentApp = spyOn(component, "openRecentApp").and.callThrough();

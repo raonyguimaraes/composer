@@ -3,7 +3,7 @@ import {RepositoryType} from "./repository-type";
 
 export class LocalRepository extends RepositoryType {
 
-    activeCredentials: { id: string; user: User, url: string, token: string };
+    activeCredentials: { id: string; user: User, url: string, token: string } = null;
 
     credentials: { id: string; user: User, url: string, token: string }[] = [];
 
