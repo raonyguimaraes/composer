@@ -41,19 +41,18 @@ import {CheckboxPromptComponent} from "./modal/common/checkbox-prompt.component"
 import {PromptComponent} from "./modal/common/prompt.component";
 import {MultilangCodeEditorComponent} from "./code-editor/multilang-code-editor.component";
 import {InputComponent} from "./input/input.component";
-import {TrimValueAccessorModule} from "ng-trim-value-accessor";
 import {ProjectSelectionModal} from "./modal/custom/project-selection-modal.component";
 import {RadioButtonComponent} from "./radio-button/radio-button.component";
 import {RadioGroupComponent} from "./radio-button/radio-group.component";
 import {SelectComponent} from "./auto-complete/select/select.component";
 import {LoaderButtonContentComponent} from "./loader-button/loader-button-content.component";
+import {TrimValueAccessor} from "./accessors/trim-value-accessor/trim-value-accessor.directive";
 
 @NgModule({
     imports: [
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
-        TrimValueAccessorModule,
     ],
     exports: [
         AutoCompleteComponent,
@@ -86,8 +85,8 @@ import {LoaderButtonContentComponent} from "./loader-button/loader-button-conten
         TooltipDirective,
         TreeNodeComponent,
         TreeViewComponent,
-        TrimValueAccessorModule,
         MouseClickDirective,
+        TrimValueAccessor,
         LoaderButtonContentComponent
     ],
 
@@ -140,6 +139,7 @@ import {LoaderButtonContentComponent} from "./loader-button/loader-button-conten
         SearchFieldComponent,
         SelectComponent,
         TabComponent,
+        TrimValueAccessor,
         TabsComponent,
         TabSelectorComponent,
         TabSelectorComponent,
@@ -151,7 +151,7 @@ import {LoaderButtonContentComponent} from "./loader-button/loader-button-conten
         TreeViewComponent,
         CircularLoaderComponent,
         MouseClickDirective,
-        LoaderButtonContentComponent
+        LoaderButtonContentComponent,
     ]
 })
 export class UIModule {

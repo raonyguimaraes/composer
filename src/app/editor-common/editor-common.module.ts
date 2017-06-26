@@ -67,7 +67,8 @@ import {ValidationTextPipe} from "./pipes/validation-text.pipes";
         AppInfoComponent,
         EditorLayoutComponent,
         EditorPanelComponent,
-        DirectoryInputInspectorComponent
+        DirectoryInputInspectorComponent,
+
     ],
     exports: [
         MapListComponent,
@@ -95,7 +96,7 @@ import {ValidationTextPipe} from "./pipes/validation-text.pipes";
         SymbolsComponent,
         InputTypeSelectComponent,
         AppInfoComponent,
-        EditorLayoutComponent
+        EditorLayoutComponent,
     ],
     entryComponents: [
         EditorInspectorComponent,

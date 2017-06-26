@@ -1,4 +1,4 @@
-import {Component, Injector, Input, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
+import {Injector, Input, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
 import {FormControl} from "@angular/forms";
 import {CommandLineToolModel, WorkflowModel} from "cwlts/models";
 
@@ -20,7 +20,6 @@ import {AppValidatorService, AppValidityState} from "../app-validator/app-valida
 import {EditorInspectorService} from "../inspector/editor-inspector.service";
 import {APP_SAVER_TOKEN, AppSaver} from "../services/app-saving/app-saver.interface";
 
-@Component({})
 export abstract class AppEditorBase extends DirectiveBase implements StatusControlProvider {
 
     @Input()

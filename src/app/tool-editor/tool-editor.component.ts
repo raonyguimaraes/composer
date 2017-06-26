@@ -1,4 +1,4 @@
-import {Component, OnInit} from "@angular/core";
+import {Component, Injector, OnInit} from "@angular/core";
 import {FormGroup} from "@angular/forms";
 import {CommandLineToolFactory} from "cwlts/models/generic/CommandLineToolFactory";
 import {CommandLinePart} from "cwlts/models/helpers/CommandLinePart";
@@ -9,20 +9,23 @@ import "rxjs/add/operator/take";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {Subject} from "rxjs/Subject";
 import {CodeSwapService} from "../core/code-content-service/code-content.service";
+import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {AppEditorBase} from "../editor-common/app-editor-base/app-editor-base";
+import {AppValidatorService} from "../editor-common/app-validator/app-validator.service";
 import {PlatformAppService} from "../editor-common/components/platform-app-common/platform-app.service";
 import {EditorInspectorService} from "../editor-common/inspector/editor-inspector.service";
 import {APP_SAVER_TOKEN} from "../editor-common/services/app-saving/app-saver.interface";
 import {LocalFileSavingService} from "../editor-common/services/app-saving/local-file-saving.service";
 import {PlatformAppSavingService} from "../editor-common/services/app-saving/platform-app-saving.service";
 import {ErrorBarService} from "../layout/error-bar/error-bar.service";
+import {StatusBarService} from "../layout/status-bar/status-bar.service";
 import {IpcService} from "../services/ipc.service";
 import {ModalService} from "../ui/modal/modal.service";
 import "../util/rx-extensions/subscribe-tracked";
 
 @Component({
     selector: "ct-tool-editor",
-    styleUrls: ["./tool-editor.component.scss"],
+    styleUrls: ["../editor-common/app-editor-base/app-editor-base.scss"],
     providers: [
         EditorInspectorService,
         ErrorBarService,
@@ -58,6 +61,18 @@ export class ToolEditorComponent extends AppEditorBase implements OnInit {
     commandLineParts: Subject<CommandLinePart[]> = new ReplaySubject();
 
     toolGroup: FormGroup;
+
+
+    constructor(statusBar: StatusBarService,
+                errorBar: ErrorBarService,
+                modal: ModalService,
+                inspector: EditorInspectorService,
+                dataGateway: DataGatewayService,
+                injector: Injector,
+                appValidator: AppValidatorService,
+                codeSwapService: CodeSwapService) {
+        super(statusBar, errorBar, modal, inspector, dataGateway, injector, appValidator, codeSwapService);
+    }
 
     ngOnInit(): any {
         super.ngOnInit();

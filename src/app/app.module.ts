@@ -11,6 +11,7 @@ import {CoreModule} from "./core/core.module";
 import {DataGatewayService} from "./core/data-gateway/data-gateway.service";
 import {CWLModule} from "./cwl/cwl.module";
 import {EditorCommonModule} from "./editor-common/editor-common.module";
+import {LocalFileRepositoryService} from "./file-repository/local-file-repository.service";
 import {CtHttp} from "./http/ct-http.service";
 import {LocalRepositoryService} from "./repository/local-repository.service";
 import {PlatformRepositoryService} from "./repository/platform-repository.service";
@@ -24,7 +25,6 @@ import {ToolEditorModule} from "./tool-editor/tool-editor.module";
 import {ModalService} from "./ui/modal/modal.service";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
-import {LocalFileRepositoryService} from "./file-repository/local-file-repository.service";
 
 @NgModule({
     providers: [
@@ -64,7 +64,7 @@ import {LocalFileRepositoryService} from "./file-repository/local-file-repositor
         CWLModule,
         EditorCommonModule,
         ToolEditorModule,
-        WorkflowEditorModule
+        WorkflowEditorModule,
     ],
     bootstrap: [MainComponent]
 })

@@ -1,17 +1,20 @@
-import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from "@angular/core";
+import {AfterViewInit, Component, Injector, OnDestroy, OnInit, ViewChild} from "@angular/core";
 import {WorkflowFactory, WorkflowModel} from "cwlts/models";
 import * as Yaml from "js-yaml";
 import "rxjs/add/operator/debounceTime";
 import "rxjs/add/operator/merge";
 import "rxjs/add/operator/switchMap";
 import {CodeSwapService} from "../core/code-content-service/code-content.service";
+import {DataGatewayService} from "../core/data-gateway/data-gateway.service";
 import {AppEditorBase} from "../editor-common/app-editor-base/app-editor-base";
+import {AppValidatorService} from "../editor-common/app-validator/app-validator.service";
 import {PlatformAppService} from "../editor-common/components/platform-app-common/platform-app.service";
 import {EditorInspectorService} from "../editor-common/inspector/editor-inspector.service";
 import {APP_SAVER_TOKEN} from "../editor-common/services/app-saving/app-saver.interface";
 import {LocalFileSavingService} from "../editor-common/services/app-saving/local-file-saving.service";
 import {PlatformAppSavingService} from "../editor-common/services/app-saving/platform-app-saving.service";
 import {ErrorBarService} from "../layout/error-bar/error-bar.service";
+import {StatusBarService} from "../layout/status-bar/status-bar.service";
 import {IpcService} from "../services/ipc.service";
 import {ModalService} from "../ui/modal/modal.service";
 import {WorkflowGraphEditorComponent} from "./graph-editor/graph-editor/workflow-graph-editor.component";
@@ -34,10 +37,23 @@ import {WorkflowEditorService} from "./workflow-editor.service";
             deps: [WorkflowEditorComponent, IpcService, ModalService]
         }
     ],
-    styleUrls: ["./workflow-editor.component.scss"],
+    styleUrls: ["../editor-common/app-editor-base/app-editor-base.scss"],
     templateUrl: "./workflow-editor.component.html"
 })
 export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy, OnInit, AfterViewInit {
+
+
+    constructor(statusBar: StatusBarService,
+                errorBar: ErrorBarService,
+                modal: ModalService,
+                inspector: EditorInspectorService,
+                dataGateway: DataGatewayService,
+                injector: Injector,
+                appValidator: AppValidatorService,
+                codeSwapService: CodeSwapService) {
+        super(statusBar, errorBar, modal, inspector, dataGateway, injector, appValidator, codeSwapService);
+    }
+
     protected getPreferredTab(): string {
         return "graph";
     }

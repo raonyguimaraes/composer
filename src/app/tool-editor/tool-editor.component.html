@@ -19,6 +19,17 @@
 
     <div class="document-controls">
 
+        <!--Edit-->
+        <button *ngIf="isReadonly"
+                class="btn btn-edit-lock"
+                type="button"
+                ct-tooltip="Unlock this app for editing"
+                tooltipPlacement="bottom"
+
+                (click)="unlockEditing()">
+            <i class="fa fa-fw fa-lock"></i> Edit
+        </button>
+
         <!--Resolve-->
         <button class="btn"
                 type="button"
@@ -27,7 +38,7 @@
                 ct-tooltip="Resolve"
                 tooltipPlacement="bottom"
                 (click)="resolveButtonClick()">
-            <i class="fa fa-refresh"></i>
+            <i class="fa fa-fw fa-refresh"></i>
         </button>
 
         <!--Go to app-->
@@ -37,18 +48,10 @@
                 ct-tooltip="Open on Platform"
                 tooltipPlacement="bottom"
                 (click)="platformAppService.openOnPlatform(dataModel.sbgId)">
-            <i class="fa fa-external-link"></i>
+            <i class="fa fa-fw fa-external-link"></i>
         </button>
 
-        <!--Edit-->
-        <button *ngIf="!tabData.isWritable && tabData.dataSource !== 'public'"
-                class="btn"
-                type="button"
-                ct-tooltip="Edit"
-                tooltipPlacement="bottom"
-                (click)="unlockEditing()">
-            <i class="fa fa-edit"></i>
-        </button>
+
 
         <!--Save-->
         <button *ngIf="tabData.isWritable"
@@ -57,7 +60,7 @@
                 ct-tooltip="Save"
                 tooltipPlacement="bottom"
                 class="btn" type="button">
-            <i class="fa fa-save"></i>
+            <i class="fa fa-fw fa-save"></i>
         </button>
 
         <!--Publish to Platform-->
@@ -67,7 +70,7 @@
                 ct-tooltip="Publish to Platform"
                 tooltipPlacement="bottom"
                 (click)="publish()">
-            <i class="fa fa-cloud-upload"></i>
+            <i class="fa fa-fw fa-cloud-upload"></i>
         </button>
 
 
