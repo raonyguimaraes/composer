@@ -1,12 +1,11 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, QueryList, ViewChildren} from "@angular/core";
-import {Observable} from "rxjs/Observable";
 import {StatusBarService} from "../../layout/status-bar/status-bar.service";
 import {IpcService} from "../../services/ipc.service";
+import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {MenuItem} from "../../ui/menu/menu-item";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
 import {TabData} from "./tab-data.interface";
 import {WorkboxService} from "./workbox.service";
-import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 
 @Component({
     selector: "ct-workbox",
@@ -26,7 +25,7 @@ import {UserPreferencesService} from "../../services/storage/user-preferences.se
                     class="tab">
 
                     <div class="tab-icon">
-                        <i class="fa" 
+                        <i class="fa"
                            [class.fa-home]="tab?.type === 'Welcome'"
                            [class.fa-file-text-o]="tab?.type === 'Code'"
                            [class.fa-share-alt]="tab?.type === 'Workflow'"
@@ -59,7 +58,7 @@ import {UserPreferencesService} from "../../services/storage/user-preferences.se
         </div>
 
         <div class="body">
- 
+
             <div class="component-container" *ngFor="let tab of tabs" [class.hidden]="tab !== activeTab">
 
                 <ct-workbox-tab #workBoxTabComponent [tab]="tab" [isActive]="activeTab === tab"></ct-workbox-tab>
@@ -85,7 +84,6 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
     constructor(private ipc: IpcService,
                 public workbox: WorkboxService,
                 private statusBar: StatusBarService,
-                private preferences: UserPreferencesService,
                 private cdr: ChangeDetectorRef,
                 el: ElementRef) {
         super();
@@ -128,7 +126,7 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
 
     ngAfterViewInit() {
 
-        this.tracked = this.workbox.tabCreation.delay(1).subscribe(tab => {
+        this.workbox.tabCreation.delay(1).subscribeTracked(this, tab => {
             const component = this.getTabComponent(tab);
             if (component && typeof component.registerOnTabLabelChange === "function") {
                 component.registerOnTabLabelChange((title) => {
@@ -138,7 +136,7 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
             }
 
         });
-        this.tracked = this.workbox.activeTab.subscribe(tab => {
+        this.workbox.activeTab.subscribeTracked(this, tab => {
             this.statusBar.removeControls();
 
             this.activeTab = tab;
@@ -233,34 +231,25 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
     }
 
     restoreTabs() {
-        Observable.zip(this.preferences.get("localFolders", []), this.preferences.get("openProjects", [])
-            , this.preferences.get("openTabs", []), (localFolders, openProjects, openTabs) => {
 
-                // If there are no open local folders or user projects) open welcome tab
-                if (!(localFolders.length || openProjects.length)) {
-                    this.openWelcomeTab();
-                } else {
+        this.workbox.startingTabs.subscribeTracked(this, tabDataList => {
 
-                    // If there are no open tabs (to restore), open new file tab
-                    if (!openTabs.length) {
-                        this.openNewFileTab();
-                    } else {
+            if (tabDataList.length === 0) {
+                this.openNewFileTab();
+                return;
+            }
 
-                        // Restore open tabs
-                        openTabs.forEach(tab => {
-                            if (tab.id.startsWith("?")) {
-                                this.workbox.openTab(tab, false);
-                            } else {
-                                this.workbox.getOrCreateFileTab(tab.id).take(1).subscribe(appTab => {
-                                    this.workbox.openTab(appTab, false);
-                                }, err => {
-                                    console.warn("Cannot open app tab", tab);
-                                });
-                            }
-                        });
-                    }
+            tabDataList.forEach(tabDataEntry => {
+
+                if (tabDataEntry.id.startsWith("?")) {
+                    this.workbox.openTab(tabDataEntry);
+                    return;
                 }
-            }).take(1).subscribe(() => {
+
+                const tab = this.workbox.getOrCreateAppTab(tabDataEntry);
+                console.log("Created tab for opening", tab);
+                this.workbox.openTab(tab);
+            })
         });
     }
 }

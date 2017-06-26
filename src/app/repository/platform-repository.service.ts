@@ -4,6 +4,7 @@ import {ReplaySubject} from "rxjs/ReplaySubject";
 import {App} from "../../../electron/src/sbg-api-client/interfaces/app";
 import {Project} from "../../../electron/src/sbg-api-client/interfaces/project";
 import {RecentAppTab} from "../../../electron/src/storage/types/recent-app-tab";
+import {TabData} from "../core/workbox/tab-data.interface";
 import {IpcService} from "../services/ipc.service";
 
 @Injectable()
@@ -16,6 +17,8 @@ export class PlatformRepositoryService {
     private expandedNodes = new ReplaySubject<string[]>(1);
 
     private recentApps = new ReplaySubject<RecentAppTab[]>(1);
+
+    private openTabs = new ReplaySubject<TabData<any>[]>(1);
 
     apps = new ReplaySubject<App[]>(1);
 
@@ -35,6 +38,12 @@ export class PlatformRepositoryService {
 
         this.listen("recentApps").subscribe(this.recentApps);
 
+        this.listen("openTabs").subscribe(this.openTabs);
+
+    }
+
+    getOpenTabs(): Observable<TabData<any>[]> {
+        return this.openTabs;
     }
 
     getAppsForProject(projectID): Observable<App[]> {
@@ -160,5 +169,9 @@ export class PlatformRepositoryService {
 
             return this.patch({recentApps: update}).toPromise();
         });
+    }
+
+    setOpenTabs(openTabs: TabData<any>[]): Promise<any> {
+        return this.patch({openTabs}).toPromise();
     }
 }

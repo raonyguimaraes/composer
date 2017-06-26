@@ -4,6 +4,7 @@ import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {RecentAppTab} from "../../../electron/src/storage/types/recent-app-tab";
 import {AuthCredentials} from "../auth/model/auth-credentials";
+import {TabData} from "../core/workbox/tab-data.interface";
 import {IpcService} from "../services/ipc.service";
 
 @Injectable()
@@ -12,6 +13,7 @@ export class LocalRepositoryService {
     private localFolders    = new ReplaySubject<string[]>(1);
     private expandedFolders = new ReplaySubject<string[]>(1);
     private recentApps      = new ReplaySubject<RecentAppTab[]>(1);
+    private openTabs        = new ReplaySubject<TabData<any>[]>(1);
 
     private credentials       = new BehaviorSubject<AuthCredentials[]>([]);
     private activeCredentials = new BehaviorSubject<AuthCredentials>(undefined);
@@ -31,11 +33,16 @@ export class LocalRepositoryService {
         this.listen("expandedNodes").subscribe(this.expandedFolders);
 
         this.listen("recentApps").subscribe(this.recentApps);
+        this.listen("openTabs").subscribe(this.openTabs);
 
     }
 
     getLocalFolders(): Observable<string[]> {
         return this.localFolders;
+    }
+
+    getOpenTabs(): Observable<TabData<any>[]> {
+        return this.openTabs;
     }
 
     getRecentApps(): Observable<RecentAppTab[]> {
@@ -146,5 +153,9 @@ export class LocalRepositoryService {
 
             return this.patch({recentApps: update}).toPromise();
         });
+    }
+
+    setOpenTabs(openTabs: TabData<any>[]): Promise<any> {
+        return this.patch({openTabs}).toPromise();
     }
 }

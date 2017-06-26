@@ -21,10 +21,11 @@ export class WorkboxService {
 
     tabCreation = new Subject<TabData<any>>();
 
+    startingTabs: Observable<TabData<any>[]>;
+
     constructor(private dataGateway: DataGatewayService,
                 private localRepository: LocalRepositoryService,
-                private platformRepository: PlatformRepositoryService,
-                private preferences: UserPreferencesService) {
+                private platformRepository: PlatformRepositoryService) {
 
         // First emit is an empty array (default), second emit is restoring tabs that were previously open
         // after that, start listening for newly added tabs
@@ -38,14 +39,23 @@ export class WorkboxService {
                 const {id, label, type, isWritable, language} = tab;
 
                 const entry = {id, label, type, isWritable, language, position};
-
+                if (entry.id.startsWith("/")) {
+                    localTabs.push(entry);
+                } else {
+                    platformTabs.push(entry);
+                }
             });
 
+            this.localRepository.setOpenTabs(localTabs);
+            this.platformRepository.setOpenTabs(platformTabs);
+
         });
 
-        this.activeTab.filter(t => t !== undefined).subscribe(tab => {
-            this.preferences.put("activeTab", tab.id);
-        });
+        this.startingTabs = Observable.combineLatest(
+            this.localRepository.getOpenTabs(),
+            this.platformRepository.getOpenTabs(),
+            (local, platform) => [...local, ...platform].sort((a, b) => a.position - b.position)
+        ).take(1);
     }
 
     openTab(tab, persistToRecentApps: boolean = true) {
