@@ -13,6 +13,7 @@ import "rxjs/add/operator/concat";
 import "rxjs/add/operator/delay";
 import "rxjs/add/operator/bufferCount";
 import "rxjs/add/operator/concatAll";
+import {JavascriptEvalService} from "app/services/javascript-eval/javascript-eval.service";
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -41,7 +42,8 @@ export class MainComponent {
 
     constructor(modal: ModalService,
                 system: SystemService,
-                vcRef: ViewContainerRef) {
+                vcRef: ViewContainerRef,
+                js: JavascriptEvalService) {
 
         system.boot();
 

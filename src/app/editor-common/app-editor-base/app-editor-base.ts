@@ -1,4 +1,13 @@
-import {Injector, Input, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
+import {
+    AfterViewInit,
+    Component,
+    Injector,
+    Input,
+    OnInit,
+    TemplateRef,
+    ViewChild,
+    ViewContainerRef
+} from "@angular/core";
 import {FormControl} from "@angular/forms";
 import {CommandLineToolModel, WorkflowModel} from "cwlts/models";
 
@@ -20,7 +29,7 @@ import {AppValidatorService, AppValidityState} from "../app-validator/app-valida
 import {EditorInspectorService} from "../inspector/editor-inspector.service";
 import {APP_SAVER_TOKEN, AppSaver} from "../services/app-saving/app-saver.interface";
 
-export abstract class AppEditorBase extends DirectiveBase implements StatusControlProvider {
+export abstract class AppEditorBase extends DirectiveBase implements StatusControlProvider, OnInit, AfterViewInit {
 
     @Input()
     tabData: AppTabData;
@@ -48,6 +57,9 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
     /** Flag for validity of CWL document */
     isValidCWL = false;
+
+    /** Error message about app availability */
+    unavailableError;
 
     codeEditorContent = new FormControl(undefined);
 
@@ -131,6 +143,9 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
             // Exteral code changes should update the internal state as well
             this.codeEditorContent.setValue(code);
 
+        }, (err) => {
+            this.unavailableError = err.message || "Error occurred while fetching app";
+            this.isLoading = false;
         });
 
         /**
@@ -164,6 +179,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
         /** When the first validation ends, turn off the loader and determine which view we can show. Invalid app forces code view */
         firstValidationEnd.subscribe(state => {
             this.viewMode = state.isValid ? this.getPreferredTab() : "code";
+            this.reportPanel = state.isValid ? this.getPreferredReportPanel() : this.reportPanel;
         });
     }
 
@@ -382,4 +398,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
     protected abstract getPreferredTab(): string;
 
+    protected getPreferredReportPanel(): string {
+        return undefined;
+    };
 }

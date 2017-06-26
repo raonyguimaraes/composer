@@ -10,7 +10,8 @@
                                [tabName]="'graph'">Graph View
         </ct-tab-selector-entry>
 
-        <ct-tab-selector-entry [tabName]="'code'">Code
+        <ct-tab-selector-entry [tabName]="'code'"
+                               [disabled]="!!unavailableError">Code
         </ct-tab-selector-entry>
     </ct-tab-selector>
 
@@ -51,7 +52,7 @@
 
         <!--Save-->
         <button *ngIf="tabData.isWritable"
-                [disabled]="isValidatingCWL"
+                [disabled]="isValidatingCWL || !!unavailableError"
                 (click)="save()"
                 ct-tooltip="Save"
                 [tooltipPlacement]="'bottom'"
@@ -95,6 +96,14 @@
 <div class="editor-layout">
 
     <ct-circular-loader *ngIf="isLoading"></ct-circular-loader>
+
+    <div class="full-size-table-display" *ngIf="!!unavailableError">
+        <div class="vertically-aligned-cell text-md-center">
+            <p>This workflow is currently unavailable.</p>
+            <p>{{ unavailableError }}</p>
+        </div>
+    </div>
+
 
     <!--Editor Row-->
     <ct-code-editor *ngIf="viewMode === 'code' && !isLoading"
