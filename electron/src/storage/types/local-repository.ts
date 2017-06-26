@@ -9,8 +9,6 @@ export class LocalRepository extends RepositoryType {
 
     localFolders: string[] = [];
 
-    recentApps: Object[] = [];
-
     publicAppsGrouping: "toolkit" | "category" = "toolkit";
 
     selectedAppPanel: "myApps" | "publicApps" = "myApps";

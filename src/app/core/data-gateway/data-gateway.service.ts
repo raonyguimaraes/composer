@@ -113,7 +113,6 @@ export class DataGatewayService {
 
         if (source === "app" || source === "public") {
 
-            console.log("Fetching app", almostID);
             const fetch = Observable.empty().concat(this.ipc.request("getPlatformApp", {
                 id: almostID
             }));

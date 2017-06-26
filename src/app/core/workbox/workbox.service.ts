@@ -3,6 +3,9 @@ import * as YAML from "js-yaml";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
 import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
+import {RecentAppTab} from "../../../../electron/src/storage/types/recent-app-tab";
+import {LocalRepositoryService} from "../../repository/local-repository.service";
+import {PlatformRepositoryService} from "../../repository/platform-repository.service";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {DataGatewayService} from "../data-gateway/data-gateway.service";
 import {AppTabData} from "./app-tab-data";
@@ -19,6 +22,8 @@ export class WorkboxService {
     public tabCreation = new Subject<TabData<any>>();
 
     constructor(private dataGateway: DataGatewayService,
+                private localRepository: LocalRepositoryService,
+                private platformRepository: PlatformRepositoryService,
                 private preferences: UserPreferencesService) {
 
         this.tabs.skip(2).subscribe(tabs => {
@@ -48,46 +53,33 @@ export class WorkboxService {
             return;
         }
 
-        // if (persistToRecentApps) {
-        //     this.preferences.get("recentApps", []).take(1).subscribe((recentApps) => {
-        //
-        //         const tabIdSplit = tab.id.split("/");
-        //
-        //         // Persist an app without revision number so in recently opened apps we can have only one app (no multiple
-        //         // apps with different revisions)
-        //         const tabId = isNaN(Number([...tabIdSplit].pop())) ? tab.id : (() => {
-        //             tabIdSplit.pop();
-        //             return tabIdSplit.join("/");
-        //         })();
-        //
-        //         // Remove from the recent apps if tab is already in the list
-        //         const newArray = recentApps.filter((item) => item.id !== tabId);
-        //
-        //         // Maximum number of recent apps
-        //         if (newArray.length === 20) {
-        //             newArray.shift();
-        //         }
-        //
-        //         const itemToAdd = {
-        //             id: tabId,
-        //             label: tab.data.dataSource === "local" ? (() => {
-        //                 const idSplit = tab.id.split("/");
-        //                 idSplit.pop();
-        //                 return idSplit.join("/");
-        //             })() : tab.data.parsedContent["sbg:project"],
-        //             title: tab.data.parsedContent.label || tab.label,
-        //             type: tab.type
-        //         };
-        //
-        //         newArray.push(itemToAdd);
-        //
-        //         this.preferences.put("recentApps", newArray);
-        //     });
-        // }
-
         this.tabs.next(tabs.concat(tab));
         this.tabCreation.next(tab);
         this.activateTab(tab);
+
+        if (!persistToRecentApps) {
+            return;
+        }
+
+        const isLocal = tab.id.startsWith("/");
+
+
+
+        const recentTabData = {
+            id: tab.id,
+            label: tab.label,
+            type: tab.type,
+            isWritable: tab.isWritable,
+            language: tab.language,
+            description: tab.id,
+            time: Date.now()
+        } as RecentAppTab;
+
+        if (tab.id.startsWith("/")) {
+            this.localRepository.pushRecentApp(recentTabData);
+        } else {
+            this.platformRepository.pushRecentApp(recentTabData);
+        }
     }
 
     openSettingsTab() {
@@ -271,7 +263,7 @@ export class WorkboxService {
                 tab.label = parsed.label || fileID;
 
                 if (["CommandLineTool", "Workflow"].indexOf(parsed.class) !== -1) {
-                    tab.type  = parsed.class;
+                    tab.type = parsed.class;
                 }
             } catch (ex) {
                 console.warn("Could not parse app", ex);

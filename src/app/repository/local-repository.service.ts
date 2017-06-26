@@ -2,14 +2,17 @@ import {Injectable} from "@angular/core";
 import {BehaviorSubject} from "rxjs/BehaviorSubject";
 import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
+import {RecentAppTab} from "../../../electron/src/storage/types/recent-app-tab";
 import {AuthCredentials} from "../auth/model/auth-credentials";
 import {IpcService} from "../services/ipc.service";
 
 @Injectable()
 export class LocalRepositoryService {
 
-    private localFolders      = new ReplaySubject<string[]>(1);
-    private expandedFolders   = new ReplaySubject<string[]>(1);
+    private localFolders    = new ReplaySubject<string[]>(1);
+    private expandedFolders = new ReplaySubject<string[]>(1);
+    private recentApps      = new ReplaySubject<RecentAppTab[]>(1);
+
     private credentials       = new BehaviorSubject<AuthCredentials[]>([]);
     private activeCredentials = new BehaviorSubject<AuthCredentials>(undefined);
 
@@ -27,10 +30,16 @@ export class LocalRepositoryService {
 
         this.listen("expandedNodes").subscribe(this.expandedFolders);
 
+        this.listen("recentApps").subscribe(this.recentApps);
+
     }
 
     getLocalFolders(): Observable<string[]> {
         return this.localFolders;
+    }
+
+    getRecentApps(): Observable<RecentAppTab[]> {
+        return this.recentApps;
     }
 
     getExpandedFolders(): Observable<string[]> {
@@ -124,6 +133,18 @@ export class LocalRepositoryService {
             return this.patch({
                 localFolders: update
             }).toPromise();
+        });
+    }
+
+    pushRecentApp(recentTabData: RecentAppTab, limit = 20): Promise<any> {
+
+        return this.getRecentApps().take(1).toPromise().then((entries) => {
+            const update = [recentTabData].concat(entries).filter((val, idx, arr) => {
+                const duplicateIndex = arr.findIndex(el => el.id === val.id);
+                return duplicateIndex === idx;
+            }).slice(0, limit);
+
+            return this.patch({recentApps: update}).toPromise();
         });
     }
 }

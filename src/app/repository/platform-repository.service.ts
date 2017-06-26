@@ -3,6 +3,7 @@ import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {App} from "../../../electron/src/sbg-api-client/interfaces/app";
 import {Project} from "../../../electron/src/sbg-api-client/interfaces/project";
+import {RecentAppTab} from "../../../electron/src/storage/types/recent-app-tab";
 import {IpcService} from "../services/ipc.service";
 
 @Injectable()
@@ -13,6 +14,8 @@ export class PlatformRepositoryService {
     private openProjects = new ReplaySubject<string[]>(1);
 
     private expandedNodes = new ReplaySubject<string[]>(1);
+
+    private recentApps = new ReplaySubject<RecentAppTab[]>(1);
 
     apps = new ReplaySubject<App[]>(1);
 
@@ -30,6 +33,8 @@ export class PlatformRepositoryService {
 
         this.listen("publicApps").subscribe(list => this.publicApps.next(list));
 
+        this.listen("recentApps").subscribe(this.recentApps);
+
     }
 
     getAppsForProject(projectID): Observable<App[]> {
@@ -42,6 +47,10 @@ export class PlatformRepositoryService {
 
     getPublicApps(): Observable<App[]> {
         return this.publicApps;
+    }
+
+    getRecentApps(): Observable<RecentAppTab[]> {
+        return this.recentApps;
     }
 
     fetch(): Observable<any> {
@@ -140,5 +149,16 @@ export class PlatformRepositoryService {
             id: nulledRevision,
             content: content
         }).toPromise();
+    }
+
+    pushRecentApp(recentTabData: RecentAppTab, limit = 20): Promise<any> {
+        return this.getRecentApps().take(1).toPromise().then((entries) => {
+            const update = [recentTabData].concat(entries).filter((val, idx, arr) => {
+                const duplicateIndex = arr.findIndex(el => el.id === val.id);
+                return duplicateIndex === idx;
+            }).slice(0, limit);
+
+            return this.patch({recentApps: update}).toPromise();
+        });
     }
 }

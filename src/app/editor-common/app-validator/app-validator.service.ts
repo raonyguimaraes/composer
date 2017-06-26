@@ -30,7 +30,6 @@ export class AppValidatorService {
         const subs          = [];
         const preValidation = contentStream;
         const validation    = preValidation.switchMap(content => {
-            console.log("Creating a validation worker");
             return Observable.fromPromise(this.cwlWorker.validate(content))
         });
 
