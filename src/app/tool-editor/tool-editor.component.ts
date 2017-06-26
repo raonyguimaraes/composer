@@ -49,7 +49,7 @@ export class ToolEditorComponent extends AppEditorBase implements OnInit {
     viewMode: "code" | "gui" | "test" | "info";
 
     /** Flag for bottom panel, shows validation-issues, commandline, or neither */
-    reportPanel: "validation" | "commandLinePreview" | undefined = "commandLinePreview";
+    reportPanel: "validation" | "commandLinePreview" | undefined;
 
     /** Model that's recreated on document change */
     dataModel = CommandLineToolFactory.from(null, "document");
@@ -80,6 +80,10 @@ export class ToolEditorComponent extends AppEditorBase implements OnInit {
 
     protected getPreferredTab(): string {
         return "gui";
+    }
+
+    protected getPreferredReportPanel(): string {
+        return "commandLinePreview";
     }
 
     protected recreateModel(json: Object): void {

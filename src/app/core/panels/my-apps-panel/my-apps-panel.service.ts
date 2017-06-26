@@ -79,8 +79,7 @@ export class MyAppsPanelService {
                 isExpandable: true,
                 isExpanded: this.platformRepository.getExpandedNodes().map(list => list.indexOf(platformHash) !== -1),
                 children: this.platformRepository.getOpenProjects().map(projects => this.createPlatformListingTreeNodes(projects))
-            }
-                ;
+            };
         });
 
         return Observable
@@ -115,7 +114,7 @@ export class MyAppsPanelService {
         });
     }
 
-    updateLocalNodeExpansionState(path: string, state: boolean,): void {
+    updateLocalNodeExpansionState(path: string, state: boolean): void {
         this.localRepository.setFolderExpansion(path, state);
     }
 
@@ -129,15 +128,15 @@ export class MyAppsPanelService {
             const id    = fsEntry.path;
             const label = fsEntry.path.split("/").pop();
 
-            let icon         = "fa-folder";
-            let iconExpanded = "fa-folder-open";
+            let icon           = "fa-folder";
+            const iconExpanded = "fa-folder-open";
 
             if (fsEntry.type === "Workflow") {
                 icon = "fa-share-alt";
             } else if (fsEntry.type === "CommandLineTool") {
-                icon = "fa-terminal"
+                icon = "fa-terminal";
             } else if (fsEntry.isFile) {
-                icon = "fa-file"
+                icon = "fa-file";
             }
 
             let children = undefined;
@@ -145,7 +144,7 @@ export class MyAppsPanelService {
             if (fsEntry.isDir) {
                 children = Observable.empty()
                     .concat(this.ipc.request("readDirectory", fsEntry.path))
-                    .map(list => this.createDirectoryListingTreeNodes(list))
+                    .map(list => this.createDirectoryListingTreeNodes(list));
             }
 
             return MyAppsPanelService.makeTreeNode({
@@ -182,7 +181,7 @@ export class MyAppsPanelService {
                 iconExpanded: "fa-folder-open",
                 children: this.platformRepository.getAppsForProject(project.id).map(apps => this.createPlatformAppListingTreeNodes(apps)),
 
-            }
+            };
         });
     }
 
@@ -200,7 +199,7 @@ export class MyAppsPanelService {
                 dragDropZones: ["zone1"],
                 dragLabel: app.name,
                 dragImageClass: app.raw.class === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
-            }
+            };
         });
     }
 
