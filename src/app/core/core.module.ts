@@ -20,7 +20,6 @@ import {CreateLocalFolderModalComponent} from "./modals/create-local-folder-moda
 import {PlatformCredentialsModalComponent} from "./modals/platform-credentials-modal/platform-credentials-modal.component";
 import {LayoutComponent} from "./layout/layout.component";
 import {LogoComponent} from "./logo/logo.component";
-import {LayoutTabContentComponent} from "./layout-tab-content/layout-tab-content.component";
 import {SettingsButtonComponent} from "./workbox/settings-button.component";
 import {AppsPanelComponent} from "./panels/apps-panel/apps-panel.component";
 import {MyAppsPanelComponent} from "./panels/my-apps-panel/my-apps-panel.component";
@@ -52,7 +51,6 @@ import {ProceedToEditingModalComponent} from "./modals/proceed-to-editing-modal/
     declarations: [
         LayoutComponent,
         LogoComponent,
-        LayoutTabContentComponent,
         WorkBoxComponent,
         WorkBoxTabComponent,
         SettingsButtonComponent,

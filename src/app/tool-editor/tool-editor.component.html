@@ -23,7 +23,7 @@
         <button class="btn"
                 type="button"
                 [disabled]="!validationState?.isValid"
-                *ngIf="viewMode === 'code' && data.dataSource === 'local'"
+                *ngIf="viewMode === 'code' && tabData.dataSource === 'local'"
                 ct-tooltip="Resolve"
                 tooltipPlacement="bottom"
                 (click)="resolveButtonClick()">
@@ -33,25 +33,25 @@
         <!--Go to app-->
         <button class="btn"
                 type="button"
-                *ngIf="data.dataSource !== 'local'"
+                *ngIf="tabData.dataSource !== 'local'"
                 ct-tooltip="Open on Platform"
                 tooltipPlacement="bottom"
-                (click)="platformAppService.openOnPlatform(toolModel.sbgId)">
+                (click)="platformAppService.openOnPlatform(dataModel.sbgId)">
             <i class="fa fa-external-link"></i>
         </button>
 
         <!--Edit-->
-        <button *ngIf="!data.isWritable && data.dataSource !== 'public'"
+        <button *ngIf="!tabData.isWritable && tabData.dataSource !== 'public'"
                 class="btn"
                 type="button"
                 ct-tooltip="Edit"
                 tooltipPlacement="bottom"
-                (click)="edit()">
+                (click)="unlockEditing()">
             <i class="fa fa-edit"></i>
         </button>
 
         <!--Save-->
-        <button *ngIf="data.isWritable"
+        <button *ngIf="tabData.isWritable"
                 [disabled]="isValidatingCWL"
                 (click)="save()"
                 ct-tooltip="Save"
@@ -63,7 +63,7 @@
         <!--Publish to Platform-->
         <button class="btn"
                 [disabled]="!validationState?.isValid"
-                *ngIf="data.dataSource === 'local'"
+                *ngIf="tabData.dataSource === 'local'"
                 ct-tooltip="Publish to Platform"
                 tooltipPlacement="bottom"
                 (click)="publish()">
@@ -72,18 +72,18 @@
 
 
         <!--Revisions-->
-        <button *ngIf="data.dataSource !== 'local' && toolModel.customProps['sbg:revisionsInfo']"
+        <button *ngIf="tabData.dataSource !== 'local' && dataModel.customProps['sbg:revisionsInfo']"
                 class="btn" type="button"
                 ct-tooltip="See Revision History"
                 tooltipPlacement="bottom"
                 [ct-editor-inspector-target]="'revisions'"
                 [ct-editor-inspector]="revisions">
 
-            Revision: {{ toolModel.customProps['sbg:revision']}}
+            Revision: {{ dataModel.customProps['sbg:revision']}}
 
             <ng-template #revisions>
-                <ct-revision-list [active]="toolModel.customProps['sbg:revision']"
-                                  [revisions]="toolModel.customProps['sbg:revisionsInfo']"
+                <ct-revision-list [active]="dataModel.customProps['sbg:revision']"
+                                  [revisions]="dataModel.customProps['sbg:revisionsInfo']"
                                   (select)="openRevision($event)">
                 </ct-revision-list>
             </ng-template>
@@ -110,22 +110,22 @@
     <!--GUI Editor-->
     <ct-tool-visual-editor *ngIf="viewMode === 'gui' && !isLoading"
                            class="flex-col"
-                           [readonly]="!data.isWritable"
+                           [readonly]="!tabData.isWritable"
                            [formGroup]="toolGroup"
-                           [model]="toolModel"></ct-tool-visual-editor>
+                           [model]="dataModel"></ct-tool-visual-editor>
 
     <ct-job-editor *ngIf="viewMode === 'test' && !isLoading"
                    class="flex-col"
-                   [model]="toolModel"
+                   [model]="dataModel"
                    (update)="onJobUpdate($event)"
                    (reset)="resetJob()"></ct-job-editor>
 
     <ct-app-info *ngIf="viewMode === 'info' && !isLoading"
                  class="gui-editor-component p-2"
-                 [readonly]="!data.isWritable"
+                 [readonly]="!tabData.isWritable"
                  [formGroup]="toolGroup"
                  [class.flex-col]="showInspector"
-                 [model]="toolModel"></ct-app-info>
+                 [model]="dataModel"></ct-app-info>
 
 
     <!--Object Inspector Column-->
@@ -151,7 +151,7 @@
        class="fa fa-circle-o-notch fa-spin">
     </i>
 
-    <span class="tag tag-warning">{{ toolModel.cwlVersion }}</span>
+    <span class="tag tag-warning">{{ dataModel.cwlVersion }}</span>
     <span class="btn-group">
                     <button [disabled]="!validationState"
                             [class.active]="reportPanel === 'validation'"
