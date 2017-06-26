@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit, ViewChild} from "@angular/core";
+import {AfterViewInit, Component, OnDestroy, OnInit, ViewChild} from "@angular/core";
 import {WorkflowFactory, WorkflowModel} from "cwlts/models";
 import * as Yaml from "js-yaml";
 import "rxjs/add/operator/debounceTime";
@@ -37,7 +37,7 @@ import {WorkflowEditorService} from "./workflow-editor.service";
     styleUrls: ["./workflow-editor.component.scss"],
     templateUrl: "./workflow-editor.component.html"
 })
-export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy, OnInit {
+export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy, OnInit, AfterViewInit {
     protected getPreferredTab(): string {
         return "graph";
     }
@@ -56,7 +56,9 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
     dataModel: WorkflowModel = WorkflowFactory.from(null, "document");
 
     @ViewChild(WorkflowGraphEditorComponent)
-    private graphEditor: WorkflowGraphEditorComponent;
+    graphEditor: WorkflowGraphEditorComponent;
+
+    private graphDrawQueue: Function[] = [];
 
     // ngOnInit(): void {
     //
@@ -216,7 +218,13 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
     protected toggleLock(locked: boolean): void {
         super.toggleLock(locked);
 
-        this.graphEditor.setGraphManipulationsLock(locked);
+        if (this.graphEditor) {
+            this.graphEditor.setGraphManipulationsLock(locked);
+        } else {
+            this.graphDrawQueue.push(() => {
+                this.graphEditor.setGraphManipulationsLock(locked);
+            });
+        }
     }
 
     /**
@@ -283,5 +291,13 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
 
     isValidatingOrResolvingCWL() {
         return this.isValidatingCWL || this.isResolvingContent;
+    }
+
+    onGraphDraw(component: WorkflowGraphEditorComponent) {
+        this.graphEditor = component;
+
+        while (this.graphDrawQueue.length) {
+            this.graphDrawQueue.shift()();
+        }
     }
 }

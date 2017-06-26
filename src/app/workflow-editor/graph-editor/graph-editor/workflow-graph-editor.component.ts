@@ -243,7 +243,7 @@ import {WorkflowEditorService} from "../../workflow-editor.service";
 export class WorkflowGraphEditorComponent extends DirectiveBase implements OnChanges, OnDestroy, AfterViewInit {
 
     @Input()
-    public model: WorkflowModel;
+    model: WorkflowModel;
 
     @Input()
     data;
@@ -253,10 +253,13 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
     modelChangedFromHistory: WorkflowModel;
 
     @Input()
-    public readonly = false;
+    readonly = false;
 
     @Output()
-    public modelChange = new EventEmitter();
+    modelChange = new EventEmitter();
+
+    @Output()
+    draw = new EventEmitter<WorkflowGraphEditorComponent>();
 
     @ViewChild("canvas")
     private canvas: ElementRef;
@@ -269,9 +272,9 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
 
     inspectedNode: StepModel | WorkflowOutputParameterModel | WorkflowInputParameterModel = null;
 
-    public graph: Workflow;
+    graph: Workflow;
 
-    public selectedElement: SVGElement;
+    selectedElement: SVGElement;
 
     private historyHandler: (ev: KeyboardEvent) => void;
 
@@ -283,7 +286,8 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
      */
     private tryToFitWorkflowOnNextTabActivation = false;
 
-    private emptyState = false;
+    private emptyState                            = false;
+    private functionsWaitingForRender: Function[] = [];
 
     constructor(private gateway: DataGatewayService,
                 private ipc: IpcService,
@@ -314,6 +318,7 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
 
         this.graph = new Workflow(this.canvas.nativeElement, this.model as any);
         console.log("Drawing graph", this.model);
+
         if (this.readonly) {
             this.graph.disableGraphManipulations();
         }
@@ -325,6 +330,11 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
                 console.warn("Workflow should be able to fit in by now...");
                 try {
                     this.graph.fitToViewport();
+                    console.log("Should be rendered");
+                    this.draw.emit(this);
+                    this.functionsWaitingForRender.forEach(fn => fn());
+                    this.functionsWaitingForRender = undefined;
+
                 } catch (ex) {
                     console.warn("Screw fitting.");
                 }
@@ -586,12 +596,16 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
     }
 
     setGraphManipulationsLock(isLocked: boolean): void {
-        if (isLocked) {
-            this.graph.disableGraphManipulations();
-            return;
-        }
 
-        this.graph.enableGraphManipulations();
+        this.scheduleAfterRender(() => {
+            if (isLocked) {
+                this.graph.disableGraphManipulations();
+                return;
+            }
+
+            this.graph.enableGraphManipulations();
+
+        });
     }
 
 
@@ -601,5 +615,15 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
         }
         this.drawGraphAndAttachListeners();
         this.tryToFitWorkflowOnNextTabActivation = false;
+    }
+
+    private scheduleAfterRender(fn: Function) {
+
+        if (this.graph) {
+            fn();
+            return;
+        }
+
+        this.functionsWaitingForRender.push(fn);
     }
 }

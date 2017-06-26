@@ -1,7 +1,6 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, QueryList, ViewChildren} from "@angular/core";
 import {StatusBarService} from "../../layout/status-bar/status-bar.service";
 import {IpcService} from "../../services/ipc.service";
-import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {MenuItem} from "../../ui/menu/menu-item";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
 import {TabData} from "./tab-data.interface";
@@ -247,7 +246,6 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
                 }
 
                 const tab = this.workbox.getOrCreateAppTab(tabDataEntry);
-                console.log("Created tab for opening", tab);
                 this.workbox.openTab(tab);
             })
         });

@@ -101,7 +101,6 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
             this.toggleLock(true);
         }
 
-
         // Set this app's ID to the code content service
         this.codeSwapService.appID = this.tabData.id;
 

@@ -6,7 +6,6 @@ import {Subject} from "rxjs/Subject";
 import {RecentAppTab} from "../../../../electron/src/storage/types/recent-app-tab";
 import {LocalRepositoryService} from "../../repository/local-repository.service";
 import {PlatformRepositoryService} from "../../repository/platform-repository.service";
-import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {DataGatewayService} from "../data-gateway/data-gateway.service";
 import {AppTabData} from "./app-tab-data";
 import {TabData} from "./tab-data.interface";
