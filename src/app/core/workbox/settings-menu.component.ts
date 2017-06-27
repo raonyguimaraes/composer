@@ -15,7 +15,7 @@ import {WorkboxService} from "./workbox.service";
     styleUrls: ["./settings-menu.component.scss"],
     template: `
         <ct-generic-dropdown-menu [ct-menu]="menu" menuAlign="left" [menuState]="openStatus">
-            <span *ngIf="active">{{ active?.user.username }}</span>
+            <span *ngIf="active">{{ userLabel }}</span>
             <i class="fa fa-sliders fa-fw settings-icon" *ngIf="!active"> </i>
         </ct-generic-dropdown-menu>
 
@@ -42,6 +42,8 @@ export class SettingsMenuComponent extends DirectiveBase {
 
     active: AuthCredentials;
 
+    userLabel: string;
+
     openStatus = new Subject<boolean>();
 
     constructor(private workbox: WorkboxService,
@@ -51,7 +53,12 @@ export class SettingsMenuComponent extends DirectiveBase {
                 public auth: AuthService) {
         super();
         settings.validity.subscribeTracked(this, isValid => this.hasWarning = !isValid);
-        auth.active.subscribeTracked(this, cred => this.active = cred);
+        auth.active.subscribeTracked(this, cred => {
+            this.active = cred;
+            if (this.active) {
+                this.userLabel = `${this.active.user.username} (${AuthCredentials.getPlatformShortName(this.active.url)})`;
+            }
+        });
     }
 
     openSettings() {

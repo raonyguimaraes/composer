@@ -41,6 +41,26 @@ export class AuthCredentials implements UserPlatformIdentifier {
         return url.slice(8, url.length - 15);
     }
 
+    static getPlatformShortName(url: string): string {
+        const subdomain = AuthCredentials.getSubdomain(url);
+        switch (subdomain) {
+            case "api":
+                return "SBG";
+            case "gcp-api":
+                return "GCP";
+            case "eu-api":
+                return "EU";
+            case "cgc-api":
+                return "CGC";
+            case "pgc-api":
+                return "CHOP";
+            case "bpa-api":
+                return "BPA";
+            default:
+                return subdomain;
+        }
+    }
+
     static getPlatformLabel(url: string): string {
         const subdomain = AuthCredentials.getSubdomain(url);
         switch (subdomain) {
