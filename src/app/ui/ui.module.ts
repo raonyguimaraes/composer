@@ -46,6 +46,7 @@ import {RadioButtonComponent} from "./radio-button/radio-button.component";
 import {RadioGroupComponent} from "./radio-button/radio-group.component";
 import {SelectComponent} from "./auto-complete/select/select.component";
 import {LoaderButtonContentComponent} from "./loader-button/loader-button-content.component";
+import {GenericDropDownMenuComponent} from "./drop-down-menu/generic-drop-down-menu.component";
 import {TrimValueAccessor} from "./accessors/trim-value-accessor/trim-value-accessor.directive";
 
 @NgModule({
@@ -68,6 +69,7 @@ import {TrimValueAccessor} from "./accessors/trim-value-accessor/trim-value-acce
         DragOverDirective,
         DropDirective,
         DropDownButtonComponent,
+        GenericDropDownMenuComponent,
         DropZones,
         FormPanelComponent,
         InlineEditorComponent,
@@ -152,6 +154,7 @@ import {TrimValueAccessor} from "./accessors/trim-value-accessor/trim-value-acce
         CircularLoaderComponent,
         MouseClickDirective,
         LoaderButtonContentComponent,
+        GenericDropDownMenuComponent
     ]
 })
 export class UIModule {

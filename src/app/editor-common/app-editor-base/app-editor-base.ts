@@ -99,10 +99,6 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
         // Get the app saver from the injector
         this.appSavingService = this.injector.get(APP_SAVER_TOKEN) as AppSaver;
 
-        if (!this.tabData.isWritable || this.hasCopyOfProperty()) {
-            this.toggleLock(true);
-        }
-
         // Set this app's ID to the code content service
         this.codeSwapService.appID = this.tabData.id;
 
@@ -153,6 +149,10 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
             .subscribeTracked(this, code => {
                 this.resolveToModel(code).then(() => {
                     this.isLoading = false;
+
+                    if (this.tabData.isWritable && this.hasCopyOfProperty()) {
+                        this.toggleLock(true);
+                    }
                 });
             });
 
@@ -334,7 +334,9 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
     switchTab(tabName): void {
 
-        if (!tabName) return;
+        if (!tabName) {
+            return;
+        }
 
         /** If switching to code mode, serialize the model first and update the editor text */
         if (this.viewMode !== "code" && tabName === "code") {
@@ -395,5 +397,5 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
     protected getPreferredReportPanel(): string {
         return undefined;
-    };
+    }
 }

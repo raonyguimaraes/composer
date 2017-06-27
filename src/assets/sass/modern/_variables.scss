@@ -134,9 +134,9 @@ $action-bar-background: white; // @TODO Fix theme variable, bottom of tab value
 $layout-title-bar-background: #1e2124;
 $layout-title-bar-height: 36px;
 
-$layout-tab-height: 32px;
-$layout-tab-background-idle: #5c5f64;
-$layout-tab-background-active: white;
+$layout-tab-height: 32px; // @fixme unused?
+$layout-tab-background-idle: #5c5f64; // @fixme unused?
+$layout-tab-background-active: white; // @fixme unused?
 
 $layout-element-alt-background: rgb(246, 246, 246);
 $layout-element-alt-foreground: white;
