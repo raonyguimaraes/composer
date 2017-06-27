@@ -1,5 +1,4 @@
 import {Component, ViewContainerRef, ViewEncapsulation} from "@angular/core";
-import {JavascriptEvalService} from "app/services/javascript-eval/javascript-eval.service";
 import "rxjs/add/observable/fromEvent";
 import "rxjs/add/operator/bufferCount";
 import "rxjs/add/operator/concat";
@@ -40,8 +39,7 @@ export class MainComponent {
 
     constructor(modal: ModalService,
                 system: SystemService,
-                vcRef: ViewContainerRef,
-                js: JavascriptEvalService) {
+                vcRef: ViewContainerRef) {
 
         system.boot();
 

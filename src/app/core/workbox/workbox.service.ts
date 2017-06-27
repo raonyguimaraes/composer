@@ -74,7 +74,7 @@ export class WorkboxService {
         this.tabCreation.next(tab);
         this.activateTab(tab);
 
-        if (!persistToRecentApps) {
+        if (!persistToRecentApps || tab.id.startsWith("?")) {
             return;
         }
 

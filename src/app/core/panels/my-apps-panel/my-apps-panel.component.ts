@@ -227,12 +227,6 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
 
             this.workbox.openTab(tab);
         });
-
-        // this.tree.open.filter(n => n.type === "file")
-        //     .flatMap(node => this.workbox.getOrCreateFileTab(node.data.path).catch(() => {
-        //         return Observable.empty();
-        //     }))
-        //     .subscribe(tab => this.workbox.openTab(tab));
     }
 
     private listenForContextMenu() {
