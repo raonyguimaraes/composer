@@ -34,7 +34,9 @@ import {WorkboxService} from "./workbox.service";
                         ></i>
                     </div>
 
-                    <div class="title" [ct-tooltip]="ctt" [tooltipPlacement]="'bottom'">{{ tab.label }}</div>
+                    <div class="title" [ct-tooltip]="ctt" [tooltipPlacement]="'bottom'">{{ tab.label
+                        }}
+                    </div>
                     <div class="close-icon">
                         <i class="fa fa-times clickable" (click)="removeTab(tab)"></i>
                     </div>
@@ -53,7 +55,7 @@ import {WorkboxService} from "./workbox.service";
 
             </ul>
 
-            <ct-settings-button></ct-settings-button>
+            <ct-settings-menu></ct-settings-menu>
         </div>
 
         <div class="body">
@@ -247,7 +249,7 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
 
                 const tab = this.workbox.getOrCreateAppTab(tabDataEntry);
                 this.workbox.openTab(tab);
-            })
+            });
         });
     }
 }
