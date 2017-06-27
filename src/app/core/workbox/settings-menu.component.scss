@@ -8,6 +8,10 @@
         line-height: $line-height-base;
         padding: .55rem 1rem;
         cursor: pointer;
+
+        .text-muted {
+            white-space: nowrap;
+        }
     }
 
     .active-icon {
