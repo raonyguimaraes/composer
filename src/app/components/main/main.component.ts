@@ -1,5 +1,11 @@
 import {Component, ViewContainerRef, ViewEncapsulation} from "@angular/core";
-import {StatusBarService} from "../../layout/status-bar/status-bar.service";
+import {JavascriptEvalService} from "app/services/javascript-eval/javascript-eval.service";
+import "rxjs/add/observable/fromEvent";
+import "rxjs/add/operator/bufferCount";
+import "rxjs/add/operator/concat";
+import "rxjs/add/operator/concatAll";
+import "rxjs/add/operator/delay";
+import {Observable} from "rxjs/Observable";
 import {SystemService} from "../../platform-providers/system.service";
 import {PlatformAPI} from "../../services/api/platforms/platform-api.service";
 import {GuidService} from "../../services/guid.service";
@@ -7,13 +13,6 @@ import {ContextService} from "../../ui/context/context.service";
 import {MarkdownService} from "../../ui/markdown/markdown.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import {UrlValidator} from "../../validators/url.validator";
-import {Observable} from "rxjs/Observable";
-import "rxjs/add/observable/fromEvent";
-import "rxjs/add/operator/concat";
-import "rxjs/add/operator/delay";
-import "rxjs/add/operator/bufferCount";
-import "rxjs/add/operator/concatAll";
-import {JavascriptEvalService} from "app/services/javascript-eval/javascript-eval.service";
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -31,7 +30,6 @@ import {JavascriptEvalService} from "app/services/javascript-eval/javascript-eva
         PlatformAPI,
         MarkdownService,
         ContextService,
-        StatusBarService,
         // FIXME: this needs to be handled in a system-specific way
         GuidService
     ],
