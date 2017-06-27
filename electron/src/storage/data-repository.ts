@@ -5,10 +5,10 @@ import {UserRepository} from "./types/user-repository";
 
 export class DataRepository {
 
-    user?: UserRepository;
-    local: LocalRepository;
+    user: UserRepository = new UserRepository();
+    local: LocalRepository = new LocalRepository();
 
-    private storageWriteQueue = [];
+    private storageWriteQueue: { [filePath: string]: Function[] } = {};
 
     private listeners = {};
 
@@ -68,7 +68,7 @@ export class DataRepository {
             if (err) return callback(err);
 
             if (patch.activeCredentials === null) {
-                this.user = undefined;
+                this.user = new UserRepository();
                 return callback();
             }
 
@@ -81,7 +81,7 @@ export class DataRepository {
     }
 
     private flushUserData() {
-        this.user = null;
+        this.user = new UserRepository();
 
         const demoUser = new UserRepository();
         Object.keys(demoUser).forEach(key => {
@@ -184,28 +184,40 @@ export class DataRepository {
 
     private enqueueStorageWrite(filePath, data, callback) {
 
+        if (!this.storageWriteQueue[filePath]) {
+            this.storageWriteQueue[filePath] = [];
+        }
+        const pathQueue = this.storageWriteQueue[filePath];
+
         const executor = () => {
+
+
             storage.set(filePath, data, (err, data) => {
                 if (err) return callback(err);
 
                 callback(null, data);
 
-                this.storageWriteQueue.shift();
-                if (this.storageWriteQueue.length) {
-                    console.log("------->     Optimizing queue length <--------");
-                    this.storageWriteQueue = this.storageWriteQueue.slice(-1);
-                    this.storageWriteQueue[0]();
+                pathQueue.shift();
+
+                if (pathQueue.length) {
+                    pathQueue[0]();
                 }
             });
         };
-        this.storageWriteQueue.push(executor);
 
-        if (this.storageWriteQueue.length === 1) {
-            this.storageWriteQueue[0]();
+        if (pathQueue.length === 2) {
+            pathQueue[1] = executor;
+            return;
         }
 
-        if(this.storageWriteQueue.length > 1){
-            console.log("-----> WOULD COME TO BREAK");
+        if (pathQueue.length === 1) {
+            pathQueue.push(executor);
+            return;
+        }
+
+        if (pathQueue.length === 0) {
+            pathQueue.push(executor);
+            pathQueue[0]();
         }
     }
 }

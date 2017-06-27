@@ -7,8 +7,6 @@ export class RepositoryType {
 
     openTabs: Object[] = [];
 
-    swap: { [path: string]: string } = {};
-
     recentApps: RecentAppTab[] = [];
 
     appMeta: {

@@ -53,7 +53,7 @@ const {app, dialog} = window["require"]("electron").remote;
 
             <ng-template #noActiveConnection>
 
-                <div *ngIf="(auth.credentials | async).length === 0; else platformActivation" class="dialog-content dialog-centered">
+                <div *ngIf="(auth.getCredentials() | async).length === 0; else platformActivation" class="dialog-content dialog-centered">
                     User has no platforms listed
                 </div>
 
@@ -106,16 +106,16 @@ export class AddSourceModalComponent extends DirectiveBase {
 
     onDone() {
 
-        const activePlatform = this.auth.active.getValue();
-        if (!activePlatform) {
-            throw new Error("Trying to open a project, but there is no active platform set.");
-        }
+        this.auth.getActive().take(1).subscribeTracked(this, (activePlatform) => {
+            if (!activePlatform) {
+                throw new Error("Trying to open a project, but there is no active platform set.");
+            }
 
-        this.repository.addOpenProjects(...this.selectedProjects).then(() => {
-            this.modal.close();
+            this.repository.addOpenProjects(...this.selectedProjects).then(() => {
+                this.modal.close();
+            });
+
         });
-
-        return;
     }
 
     selectLocalFolders() {

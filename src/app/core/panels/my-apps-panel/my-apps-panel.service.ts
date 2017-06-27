@@ -1,7 +1,6 @@
 import {Injectable} from "@angular/core";
 import "rxjs/add/operator/withLatestFrom";
 import {Observable} from "rxjs/Observable";
-import {ReplaySubject} from "rxjs/ReplaySubject";
 import {App} from "../../../../../electron/src/sbg-api-client/interfaces/app";
 import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/project";
 import {AuthService} from "../../../auth/auth.service";
@@ -18,12 +17,11 @@ import {FilesystemEntry} from "../../data-gateway/data-types/local.types";
 @Injectable()
 export class MyAppsPanelService {
 
+    projects: Observable<Project[]>;
+    expandedNodes: Observable<string[]>;
     rootFolders: Observable<TreeNode<any>[]>;
-    localFolders = new ReplaySubject<TreeNode<any>[]>(1);
-
-    projects           = new ReplaySubject<Project[]>(1);
-    expandedNodes      = new ReplaySubject<string[]>(1);
-    localExpandedNodes = new ReplaySubject<string[]>(1);
+    localExpandedNodes: Observable<string[]>;
+    localFolders: Observable<TreeNode<any>[]>;
 
     constructor(private auth: AuthService,
                 private statusBar: StatusBarService,
@@ -34,11 +32,10 @@ export class MyAppsPanelService {
                 private platformRepository: PlatformRepositoryService) {
 
 
-        this.rootFolders = this.getRootFolders();
-
-        this.platformRepository.getOpenProjects().subscribe(this.projects);
-        this.localRepository.getExpandedFolders().subscribe(this.localExpandedNodes);
-        this.localRepository.getLocalFolders().subscribe(this.localFolders);
+        this.localFolders       = this.localRepository.getLocalFolders();
+        this.projects           = this.platformRepository.getOpenProjects();
+        this.localExpandedNodes = this.localRepository.getExpandedFolders();
+        this.rootFolders        = this.getRootFolders();
     }
 
     private static makeTreeNode(data: Partial<TreeNode<any>>): TreeNode<any> {
@@ -55,7 +52,6 @@ export class MyAppsPanelService {
      * Gives an observable of root tree nodes.
      */
     getRootFolders(): Observable<TreeNode<any>[]> {
-
         const localFolder = Observable.of(MyAppsPanelService.makeTreeNode({
             id: "local",
             label: "Local Files",
@@ -63,7 +59,7 @@ export class MyAppsPanelService {
             isExpanded: this.localExpandedNodes.map(list => list.indexOf("local") !== -1)
         }));
 
-        const platformEntry = this.auth.active.map(credentials => {
+        const platformEntry = this.auth.getActive().map(credentials => {
             if (!credentials) {
                 return null;
             }
@@ -88,19 +84,20 @@ export class MyAppsPanelService {
     }
 
     getLocalNodes(): Observable<TreeNode<string>[]> {
-        return this.localRepository.getLocalFolders().map(folders => {
-            return folders.map(path => MyAppsPanelService.makeTreeNode({
-                id: path,
-                data: path,
-                type: "folder",
-                label: path.split("/").pop(),
-                isExpanded: this.localExpandedNodes.map(list => list.indexOf(path) !== -1),
-                children: Observable.empty()
-                    .concat(this.localFileRepository.watch(path))
-                    .map(listing => this.createDirectoryListingTreeNodes(listing))
+        return this.localRepository.getLocalFolders()
+            .map(folders => {
+                return folders.map(path => MyAppsPanelService.makeTreeNode({
+                    id: path,
+                    data: path,
+                    type: "folder",
+                    label: path.split("/").pop(),
+                    isExpanded: this.localExpandedNodes.map(list => list.indexOf(path) !== -1),
+                    children: Observable.empty()
+                        .concat(this.localFileRepository.watch(path))
+                        .map(listing => this.createDirectoryListingTreeNodes(listing))
 
-            }));
-        });
+                }));
+            });
     }
 
     reloadPlatformData() {

@@ -39,14 +39,14 @@ type ViewMode = "auth" | "keyBindings" | "cache";
                     </thead>
                     <tbody>
 
-                    <tr *ngFor="let entry of (auth.credentials | async)" class="align-middle">
+                    <tr *ngFor="let entry of (auth.getCredentials() | async)" class="align-middle">
                         <td class="align-middle">{{ entry.url }}</td>
                         <td class="align-middle">
                             {{ entry.user.username }}
-                            <span *ngIf="(auth.active | async) === entry" class="tag tag-primary">active</span>
+                            <span *ngIf="(auth.getActive() | async) === entry" class="tag tag-primary">active</span>
                         </td>
                         <td class="text-xs-right">
-                            <button *ngIf="(auth.active | async) === entry; else deactivate;"
+                            <button *ngIf="(auth.getActive() | async) === entry; else deactivate;"
                                     (click)="auth.setActiveCredentials(undefined)"
                                     class="btn btn-secondary">Deactivate
                             </button>

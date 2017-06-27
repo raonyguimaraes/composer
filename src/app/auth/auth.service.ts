@@ -1,81 +1,84 @@
 import {Injectable} from "@angular/core";
-import {BehaviorSubject} from "rxjs/BehaviorSubject";
+import "rxjs/add/operator/shareReplay";
+
+import "rxjs/add/operator/startWith";
 import {Observable} from "rxjs/Observable";
-import {User} from "../../../electron/src/sbg-api-client/interfaces/user";
+import {ReplaySubject} from "rxjs/ReplaySubject";
 import {LocalRepositoryService} from "../repository/local-repository.service";
 import {AuthCredentials} from "./model/auth-credentials";
-
 
 @Injectable()
 export class AuthService {
 
-    user: BehaviorSubject<User>                     = new BehaviorSubject(undefined);
-    active: BehaviorSubject<AuthCredentials>        = new BehaviorSubject(undefined);
-    credentials: BehaviorSubject<AuthCredentials[]> = new BehaviorSubject([]);
+    private active = new ReplaySubject<AuthCredentials>(1);
 
     constructor(private repository: LocalRepositoryService) {
 
-        // Proxy all credentials rom the repository
-        this.repository.getCredentials().subscribe(c => this.credentials.next(c));
+        Observable.combineLatest(
+            this.repository.getCredentials(),
+            this.repository.getActiveCredentials(),
+            (all, active) => {
+                if (!active) return undefined;
 
-        // Proxy active credentials from the repository
-        this.repository.getActiveCredentials().map(active => {
+                return all.find(c => c.equals(active));
+            }
+        ).subscribe(this.active);
+    }
 
-            // It is really convenient for components to be able to check for credentials by reference
-            // So, whenever we get new active entry, try to find a similar reference in the array of all credentials
-            // If it's not there, then we shouldn't have an active user anyway, so it's a bit of a safeguard as well
+    getActive() {
+        return this.active;
+    }
 
-            if (!active) return active;
-            return this.credentials.getValue().find(c => c.equals(active));
-        }).subscribe(c => this.active.next(c));
-
-        // Filter whenever active credentials change, check if the user has changed.
-        // It might not change if only the token changed, but the owner is the same
-        this.active
-            .distinctUntilChanged((x, y) => AuthCredentials.isSimilar(x, y))
-            .map(c => c ? c.user : undefined)
-            .subscribe(u => this.user.next(u));
+    getCredentials() {
+        return this.repository.getCredentials();
     }
 
     /**
      * Sets an AuthCredentials instance as an active one
      * @returns {Observable<any>} Observable that completes when the activation is completed
      */
-    setActiveCredentials(credentials?: AuthCredentials): Observable<any> {
+    setActiveCredentials(credentials?: AuthCredentials): Promise<any> {
 
         if (!credentials) {
             return this.repository.setActiveCredentials(undefined);
-    }
-
-        const c = this.credentials.getValue().find(c => c.equals(credentials));
-        if (!c) {
-            throw "Could not activate an unregistered credential set";
         }
 
-        return this.repository.setActiveCredentials(c);
+        return this.getCredentials().take(1).toPromise().then(all => {
+            const val = all.find(c => c.equals(credentials));
+
+            if (!val) {
+                throw new Error("Could not activate an unregistered credentials set");
+            }
+
+            return this.repository.setActiveCredentials(val);
+        });
     }
 
-    addCredentials(credentials: AuthCredentials): Observable<any> {
-        const current = this.credentials.getValue();
-        const similar = current.find(c => c.equals(credentials));
+    addCredentials(credentials: AuthCredentials): Promise<any> {
+        return this.getCredentials().take(1).toPromise().then(current => {
+            const similar = current.find(c => c.equals(credentials));
+            if (similar) {
+                similar.updateToMatch(credentials);
+                return Promise.resolve(null);
+            }
 
-        if (similar) {
-            similar.updateToMatch(credentials);
-            return;
-        }
+            const updatedCredentials = current.concat(credentials);
 
-        const updatedCredentials = current.concat(credentials);
-
-        return this.repository.setCredentials(updatedCredentials);
+            return this.repository.setCredentials(updatedCredentials);
+        });
     }
 
-    removeCredentials(credentials: AuthCredentials): void {
-        const current = this.credentials.getValue();
-        const index   = current.findIndex(c => c.equals(credentials));
+    removeCredentials(credentials: AuthCredentials): Promise<any> {
 
-        if (index !== -1) {
-            const updated = current.slice(0, index).concat(current.slice(index + 1));
-            this.repository.setCredentials(updated);
-        }
+        return this.getCredentials().take(1).toPromise().then(current => {
+            const index = current.findIndex(c => c.equals(credentials));
+
+            if (index !== -1) {
+                const updated = current.slice(0, index).concat(current.slice(index + 1));
+                return this.repository.setCredentials(updated);
+            }
+
+            return Promise.resolve();
+        });
     }
 }

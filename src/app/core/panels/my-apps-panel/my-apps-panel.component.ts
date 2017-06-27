@@ -13,7 +13,6 @@ import {FormControl} from "@angular/forms";
 import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import {Observable} from "rxjs/Observable";
-import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ContextService} from "../../../ui/context/context.service";
 import {MenuItem} from "../../../ui/menu/menu-item";
 import {ModalService} from "../../../ui/modal/modal.service";

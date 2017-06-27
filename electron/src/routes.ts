@@ -1,15 +1,21 @@
 import {RequestCallback} from "request";
 import {PublicAPI} from "./controllers/public-api.controller";
 import * as SearchController from "./controllers/search.controller";
+import {SwapController} from "./controllers/swap.controller";
 import {AppQueryParams} from "./sbg-api-client/interfaces/queries";
 import {SBGClient} from "./sbg-api-client/sbg-client";
 import {DataRepository} from "./storage/data-repository";
 import {LocalRepository} from "./storage/types/local-repository";
 import {UserRepository} from "./storage/types/user-repository";
 
+const swapPath = require("electron").app.getPath("userData") + "/swap";
+console.log("Swap path is", swapPath);
+const swapController = new SwapController(swapPath);
+
 const fsController          = require("./controllers/fs.controller");
 const acceleratorController = require("./controllers/accelerator.controller");
 const resolver              = require("./schema-salad-resolver");
+const md5                   = require("md5");
 
 
 const repository     = new DataRepository();
@@ -160,11 +166,15 @@ module.exports = {
                     callback(null, value);
                 });
             } else {
-                const keyList = Object.keys(repository.user).map(k => `“${k}”`).join(", ");
-                callback(new Error(`Key “${data.key}” does not exist in the user storage. Available keys: ${keyList}`));
+                const keyList = Object.keys(repository.user || {}).map(k => `“${k}”`).join(", ");
+                const msg =`Key “${data.key}” does not exist in the user storage. Available keys: ${keyList}`;
+                callback(new Error(msg));
             }
 
-        }, err => callback(err));
+        }, err => {
+            console.log("Watch user error");
+            callback(err)
+        });
     },
 
     patchUserRepository: (patch: Partial<UserRepository>, callback) => {
@@ -230,70 +240,47 @@ module.exports = {
                 callback(new Error("Cannot fetch an app, you are not connected to any platform."));
             }
 
+            swapController.exists(data.id, (err, exists) => {
 
-            if (userRepository.swap && userRepository.swap[data.id]) {
-                callback(null, repository.user.swap[data.id]);
-                return;
-            }
+                if (err) return callback(err);
 
-            const api = new SBGClient(credentials.url, credentials.token);
-            api.apps.get(data.id).then(response => {
-                callback(null, JSON.stringify(response.raw, null, 4));
-            }, err => callback(err));
+                if (exists) {
+                    swapController.read(data.id, callback);
+                    return;
+                }
+
+                const api = new SBGClient(credentials.url, credentials.token);
+                api.apps.get(data.id).then(response => {
+                    callback(null, JSON.stringify(response.raw, null, 4));
+                }, err => callback(err));
 
 
+            });
         }, err => callback(err));
     },
 
     patchSwap: (data: { local: boolean, swapID: string, swapContent?: string }, callback) => {
-        repositoryLoad.then(() => {
-
-            if (data.local) {
-                if (typeof data.swapContent !== "string") {
-                    delete repository.local.swap[data.swapID];
-                } else {
-                    repository.local.swap[data.swapID] = data.swapContent;
-                }
-
-                repository.updateLocal({
-                    swap: repository.local.swap
-                }, callback);
-
-                return;
-            }
-
-            if (!repository.user) {
-                callback(new Error("Cannot save a swap file for a non-connected user."));
-            }
-
-            if (typeof data.swapContent !== "string") {
-                delete repository.user.swap[data.swapID];
-            } else {
-                repository.user.swap[data.swapID] = data.swapContent;
-            }
-
-            repository.updateUser({
-                swap: repository.user.swap
-            }, callback);
-
+        if (data.swapContent === null) {
+            swapController.remove(data.swapID, callback);
             return;
+        }
 
-        }, err => callback(err));
+        swapController.write(data.swapID, data.swapContent, callback);
     },
 
     getLocalFileContent: (path, callback) => {
 
-        repositoryLoad.then(() => {
+        swapController.exists(path, (err, exists) => {
 
-            const repo = repository.local;
-            if (repo && repo.swap && repo.swap[path]) {
-                callback(null, repo.swap[path]);
-                return;
+            if (err) return callback(err);
+
+            if (exists) {
+                return swapController.read(path, callback);
             }
 
             fsController.readFileContent(path, callback);
 
-        }, err => callback(err));
+        });
     },
 
     saveAppRevision: (data: {
@@ -327,14 +314,11 @@ module.exports = {
 
                 const project = idParts.slice(0, 2).join("/");
 
-                console.log("Updating!");
-
                 api.apps.private({
                     project,
                     fields: "id,name,project,raw.class,revision"
                 }).then((projectApps) => {
                     const newAppList = repo.user.apps.filter(app => app.project !== project).concat(projectApps);
-                    console.log("Update user project list");
                     repo.updateUser({
                         apps: newAppList
                     }, () => {
