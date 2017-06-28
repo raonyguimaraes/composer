@@ -5,6 +5,9 @@ import {MenuItem} from "../../ui/menu/menu-item";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
 import {TabData} from "./tab-data.interface";
 import {WorkboxService} from "./workbox.service";
+import {AuthService} from "../../auth/auth.service";
+import {LocalRepositoryService} from "../../repository/local-repository.service";
+import {Observable} from "rxjs/Observable";
 
 @Component({
     selector: "ct-workbox",
@@ -84,6 +87,8 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
 
     constructor(private ipc: IpcService,
                 public workbox: WorkboxService,
+                private auth: AuthService,
+                private local: LocalRepositoryService,
                 private statusBar: StatusBarService,
                 private cdr: ChangeDetectorRef,
                 el: ElementRef) {
@@ -239,7 +244,17 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
             this.workbox.activeTab.next(undefined);
 
             if (tabDataList.length === 0) {
-                this.openNewFileTab();
+
+                Observable.combineLatest(this.local.getLocalFolders(), this.auth.getActive(), (folders, cred) => {
+                    return folders.length || cred;
+                }).subscribeTracked(this, (hasSettings) => {
+                    if (hasSettings) {
+                        this.openNewFileTab();
+                    } else {
+                        this.openWelcomeTab();
+                    }
+                });
+
                 return;
             }
 
