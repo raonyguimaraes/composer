@@ -12,7 +12,7 @@ import {WorkboxTab} from "./workbox-tab.interface";
 
             <ct-workflow-editor #tabComponent class="tab-component" [tabData]="tab.data" *ngSwitchCase="'Workflow'"></ct-workflow-editor>
 
-            <ct-file-editor #tabComponent class="tab-component" [data]="tab.data" *ngSwitchCase="'Code'"></ct-file-editor>
+            <ct-file-editor #tabComponent class="tab-component" [tabData]="tab.data" *ngSwitchCase="'Code'"></ct-file-editor>
 
             <ct-welcome-tab #tabComponent class="tab-component" *ngSwitchCase="'Welcome'"></ct-welcome-tab>
 
