@@ -178,12 +178,14 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
     save(): void {
 
-        const proc = this.statusBar.startProcess(`Saving: ${this.originalTabLabel}`);
+        const proc = this.statusBar.startProcess(`Saving ${this.originalTabLabel}`);
         const text = this.viewMode === "code" ? this.codeEditorContent.value : this.getModelText();
 
+        console.log("Starging app saving");
         this.appSavingService
             .save(this.tabData.id, text)
             .then(update => {
+                console.log("Done with app saving");
                 this.priorityCodeUpdates.next(update);
                 this.statusBar.stopProcess(proc, `Saved: ${this.originalTabLabel}`);
             }, err => {

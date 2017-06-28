@@ -22,6 +22,7 @@ import {StatusBarService} from "../layout/status-bar/status-bar.service";
 import {IpcService} from "../services/ipc.service";
 import {ModalService} from "../ui/modal/modal.service";
 import "../util/rx-extensions/subscribe-tracked";
+import {PlatformRepositoryService} from "../repository/platform-repository.service";
 
 @Component({
     selector: "ct-tool-editor",
@@ -33,15 +34,15 @@ import "../util/rx-extensions/subscribe-tracked";
         PlatformAppService,
         {
             provide: APP_SAVER_TOKEN,
-            useFactory(comp: ToolEditorComponent, ipc: IpcService, modal: ModalService) {
+            useFactory(comp: ToolEditorComponent, ipc: IpcService, modal: ModalService, platformRepository: PlatformRepositoryService) {
 
                 if (comp.tabData.dataSource === "local") {
                     return new LocalFileSavingService(ipc);
                 }
 
-                return new PlatformAppSavingService(ipc, modal);
+                return new PlatformAppSavingService(platformRepository, modal);
             },
-            deps: [ToolEditorComponent, IpcService, ModalService]
+            deps: [ToolEditorComponent, IpcService, ModalService, PlatformRepositoryService]
         }
     ],
     templateUrl: "./tool-editor.component.html"
