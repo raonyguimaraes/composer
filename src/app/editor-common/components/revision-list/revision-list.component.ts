@@ -19,7 +19,7 @@ import {PlatformAppRevisionEntry} from "../../../services/api/platforms/platform
 
 
                     <div class="revision-number h5">
-                        <ct-circular-loader class="loader-75" *ngIf="loadingRevision === revision; else revNum"></ct-circular-loader>
+                        <ct-circular-loader class="loader-50" *ngIf="loadingRevision === revision; else revNum"></ct-circular-loader>
                         <ng-template #revNum>{{ revision.number }}</ng-template>
                     </div>
                     <div class="revision-info">

@@ -57,7 +57,7 @@ import "rxjs/add/operator/toPromise";
                 <button class="btn btn-secondary" type="button" (click)="close()">Cancel</button>
                 <button class="btn btn-primary" type="submit" [class.btn-loader]="form.pending" [disabled]="!form.valid">
                     <ng-container *ngIf="!form.pending">Apply</ng-container>
-                    <ct-circular-loader *ngIf="form.pending"></ct-circular-loader>
+                    <ct-circular-loader class="loader-25" *ngIf="form.pending"></ct-circular-loader>
                 </button>
             </div>
         </form>

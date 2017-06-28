@@ -143,7 +143,7 @@
 
     <!--Object Inspector Column-->
     <ct-editor-inspector
-        [class.flex-hide]="!showInspector && (viewMode === 'code' || viewMode === 'info')">
+        [class.flex-hide]="isLoading || !showInspector && (viewMode === 'code' || viewMode === 'info')">
         <ng-template #inspector></ng-template>
     </ct-editor-inspector>
 </div>
