@@ -12,6 +12,7 @@ import {ContextService} from "../../ui/context/context.service";
 import {MarkdownService} from "../../ui/markdown/markdown.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import {UrlValidator} from "../../validators/url.validator";
+import {JavascriptEvalService} from "../../services/javascript-eval/javascript-eval.service";
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -39,7 +40,9 @@ export class MainComponent {
 
     constructor(modal: ModalService,
                 system: SystemService,
-                vcRef: ViewContainerRef) {
+                vcRef: ViewContainerRef,
+                // DON'T REMOVE THIS PLEASE I KNOW IT DOESN'T HAVE ANY USAGES
+                js: JavascriptEvalService ) {
 
         system.boot();
 
