@@ -5,11 +5,10 @@ import {SwapController} from "./controllers/swap.controller";
 import {AppQueryParams} from "./sbg-api-client/interfaces/queries";
 import {SBGClient} from "./sbg-api-client/sbg-client";
 import {DataRepository} from "./storage/data-repository";
-import {LocalRepository} from "./storage/types/local-repository";
+import {CredentialsCache, LocalRepository} from "./storage/types/local-repository";
 import {UserRepository} from "./storage/types/user-repository";
 
-const swapPath = require("electron").app.getPath("userData") + "/swap";
-console.log("Swap path is", swapPath);
+const swapPath       = require("electron").app.getPath("userData") + "/swap";
 const swapController = new SwapController(swapPath);
 
 const fsController          = require("./controllers/fs.controller");
@@ -167,7 +166,7 @@ module.exports = {
                 });
             } else {
                 const keyList = Object.keys(repository.user || {}).map(k => `“${k}”`).join(", ");
-                const msg =`Key “${data.key}” does not exist in the user storage. Available keys: ${keyList}`;
+                const msg     = `Key “${data.key}” does not exist in the user storage. Available keys: ${keyList}`;
                 callback(new Error(msg));
             }
 
@@ -340,5 +339,26 @@ module.exports = {
         }).then(resolve => {
             callback(null, resolve);
         }, callback);
+    },
+
+    switchActiveUser: (data: { credentials?: CredentialsCache }, callback) => {
+        repositoryLoad.then(() => {
+
+            const originalUser = repository.user;
+
+            const off = repository.on("update.user", (user) => {
+                console.log("user comparison", typeof user, typeof originalUser);
+                if (user !== originalUser) {
+                    off();
+                    // @FIXME hack for event receiving order, have no idea why it forks for the moment, figure it out later
+                    setTimeout(() => callback(null, repository.local.activeCredentials));
+                }
+            });
+
+            repository.updateLocal({activeCredentials: data.credentials}, (err, data) => {
+                if (err) return callback(err);
+            });
+
+        }, err => callback(err));
     }
 };

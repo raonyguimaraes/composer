@@ -5,7 +5,7 @@ import {UserRepository} from "./types/user-repository";
 
 export class DataRepository {
 
-    user: UserRepository = new UserRepository();
+    user: UserRepository   = new UserRepository();
     local: LocalRepository = new LocalRepository();
 
     private storageWriteQueue: { [filePath: string]: Function[] } = {};
@@ -20,9 +20,11 @@ export class DataRepository {
                 return;
             }
 
+            console.log("triggered credential load switch");
             this.loadProfile(activeCredentials.id, new UserRepository(), (err, data) => {
                 this.user = data;
                 Object.keys(this.user).forEach(key => this.trigger(`update.user.${key}`, this.user[key]));
+                this.trigger("update.user", this.user);
             });
         })
     }
@@ -126,14 +128,22 @@ export class DataRepository {
 
     /**
      * Sets a listener for an event name
+     * @return off function
      */
-    on(eventType: string, callback: Function): void {
+    on(eventType: string, callback: Function): () => void {
 
         if (!this.listeners[eventType]) {
             this.listeners[eventType] = [];
         }
 
-        this.listeners[eventType].push(callback);
+        const evListeners = this.listeners[eventType];
+
+        evListeners.push(callback);
+
+        return () => {
+            const idx = evListeners.indexOf(callback);
+            evListeners.splice(idx, 1);
+        }
     }
 
     /**
@@ -190,8 +200,6 @@ export class DataRepository {
         const pathQueue = this.storageWriteQueue[filePath];
 
         const executor = () => {
-
-
             storage.set(filePath, data, (err, data) => {
                 if (err) return callback(err);
 

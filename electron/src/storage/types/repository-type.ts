@@ -15,4 +15,5 @@ export class RepositoryType {
             jobFilePath?: string
         }
     } = {};
+
 }

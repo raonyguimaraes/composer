@@ -7,6 +7,7 @@ import {SettingsService} from "../../services/settings/settings.service";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
+import {WorkboxService} from "../../core/workbox/workbox.service";
 
 type ViewMode = "auth" | "keyBindings" | "cache";
 
@@ -73,6 +74,7 @@ export class SettingsComponent extends DirectiveBase {
                 public preferences: UserPreferencesService,
                 private global: GlobalService,
                 public modal: ModalService,
+                private workbox: WorkboxService,
                 public auth: AuthService) {
 
         super();
@@ -109,9 +111,11 @@ export class SettingsComponent extends DirectiveBase {
     }
 
     setActiveCredentials(credentials: AuthCredentials) {
+
         this.auth.setActiveCredentials(credentials).then(() => {
 
             this.global.reloadPlatformData();
+            this.workbox.forceReloadTabs();
         });
     }
 }

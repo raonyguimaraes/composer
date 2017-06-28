@@ -81,8 +81,9 @@ export class SettingsMenuComponent extends DirectiveBase {
     }
 
     setActiveUser(c) {
-        this.auth.setActiveCredentials(c).then(() => {
-            this.global.reloadPlatformData();
+        this.auth.setActiveCredentials(c).then((user) => {
+            // this.global.reloadPlatformData();
+            this.workbox.forceReloadTabs();
         });
 
         this.openStatus.next(false);

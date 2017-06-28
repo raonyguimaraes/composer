@@ -40,6 +40,7 @@ export type IPCRoute =
     | "searchLocalProjects"
     | "searchPublicApps"
     | "searchUserProjects"
+    | "switchActiveUser"
     | "saveFileContent";
 
 export type IPCListeners =

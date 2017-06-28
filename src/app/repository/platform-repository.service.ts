@@ -34,7 +34,7 @@ export class PlatformRepositoryService {
     }
 
     getOpenTabs(): Observable<TabData<any>[]> {
-        return this.openTabs;
+        return this.openTabs.do(data => console.log("Received open tabs for platform", data));
     }
 
     getAppsForProject(projectID): Observable<App[]> {
