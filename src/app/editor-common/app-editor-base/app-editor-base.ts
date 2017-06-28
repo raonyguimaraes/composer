@@ -133,7 +133,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
             this.codeEditorContent.setValue(code);
 
         }, (err) => {
-            this.unavailableError = err.message || "Error occurred while fetching app";
+            this.unavailableError = (err.error ? err.error.message : err.message) || "Error occurred while fetching app";
             this.isLoading        = false;
         });
 
