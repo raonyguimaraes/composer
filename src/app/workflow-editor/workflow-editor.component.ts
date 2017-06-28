@@ -15,6 +15,7 @@ import {LocalFileSavingService} from "../editor-common/services/app-saving/local
 import {PlatformAppSavingService} from "../editor-common/services/app-saving/platform-app-saving.service";
 import {NotificationBarService} from "../layout/notification-bar/notification-bar.service";
 import {StatusBarService} from "../layout/status-bar/status-bar.service";
+import {PlatformRepositoryService} from "../repository/platform-repository.service";
 import {IpcService} from "../services/ipc.service";
 import {ModalService} from "../ui/modal/modal.service";
 import {WorkflowGraphEditorComponent} from "./graph-editor/graph-editor/workflow-graph-editor.component";
@@ -25,15 +26,15 @@ import {WorkflowEditorService} from "./workflow-editor.service";
     providers: [EditorInspectorService, NotificationBarService, WorkflowEditorService, CodeSwapService, PlatformAppService,
         {
             provide: APP_SAVER_TOKEN,
-            useFactory(comp: WorkflowEditorComponent, ipc: IpcService, modal: ModalService) {
+            useFactory(comp: WorkflowEditorComponent, ipc: IpcService, modal: ModalService, platformRepository: PlatformRepositoryService) {
 
                 if (comp.tabData.dataSource === "local") {
                     return new LocalFileSavingService(ipc);
                 }
 
-                return new PlatformAppSavingService(ipc, modal);
+                return new PlatformAppSavingService(platformRepository, modal);
             },
-            deps: [WorkflowEditorComponent, IpcService, ModalService]
+            deps: [WorkflowEditorComponent, IpcService, ModalService, PlatformRepositoryService]
         }
     ],
     styleUrls: ["../editor-common/app-editor-base/app-editor-base.scss"],
