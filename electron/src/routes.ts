@@ -239,8 +239,7 @@ module.exports = {
 
             if (platformFetchingLocks[targetID]) {
                 const currentFetch = platformFetchingLocks[targetID];
-                callback(null);
-                // currentFetch.then(data => callback(data)).catch(callback);
+                currentFetch.then(data => callback(data)).catch(callback);
                 return
             }
 
@@ -270,13 +269,12 @@ module.exports = {
                     }, targetCredentials.id);
                 });
 
-            }, err => callback(err)).then(resolve => {
-                callback(null, resolve)
-            }).catch(callback);
-
-            platformFetchingLocks[targetID] = call.then(() => {
-                delete platformFetchingLocks[targetID];
             });
+
+            platformFetchingLocks[targetID] = call.then((data) => {
+                callback(null, data)
+                delete platformFetchingLocks[targetID];
+            }).catch(callback);
 
 
         }, err => callback(err));

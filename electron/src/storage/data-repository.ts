@@ -114,7 +114,7 @@ export class DataRepository {
         for (let key in data) {
             this.trigger(["update", profile, key].join("."), data[key]);
 
-            if (profile !== "local") {
+            if (profile !== "local" && profile === this.local.activeCredentials.id) {
                 this.trigger(["update", "user", key].join("."), data[key]);
             }
         }
