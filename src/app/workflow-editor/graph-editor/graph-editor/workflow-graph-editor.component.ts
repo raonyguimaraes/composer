@@ -19,6 +19,8 @@ import {EditorInspectorService} from "../../../editor-common/inspector/editor-in
 import {IpcService} from "../../../services/ipc.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {WorkflowEditorService} from "../../workflow-editor.service";
+import {StatusBarService} from "../../../layout/status-bar/status-bar.service";
+import {NotificationBarService} from "../../../layout/notification-bar/notification-bar.service";
 
 
 @Component({
@@ -26,7 +28,7 @@ import {WorkflowEditorService} from "../../workflow-editor.service";
     encapsulation: ViewEncapsulation.None,
     styleUrls: ["./workflow-graph-editor.component.scss"],
     template: `
-        <div *ngIf="model.steps.length === 0" class="svg-graph-empty-state"></div>
+        <div *ngIf="model && model.steps.length === 0" class="svg-graph-empty-state"></div>
         
         <svg (dblclick)="openInspector($event)"
              ct-click
@@ -163,6 +165,8 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
     constructor(private gateway: DataGatewayService,
                 private ipc: IpcService,
                 private inspector: EditorInspectorService,
+                private statusBar: StatusBarService,
+                private notificationBar: NotificationBarService,
                 private workflowEditorService: WorkflowEditorService) {
         super();
     }
@@ -351,7 +355,7 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
             return;
         }
 
-        console.log("Dropped!", nodeID);
+        const statusProcess = this.statusBar.startProcess(`Adding ${nodeID} to Workflow...`);
 
         this.gateway.fetchFileContent(nodeID, true).subscribe((app: any) => {
             // if the app is local, give it an id that's the same as its filename (if doesn't exist)
@@ -381,8 +385,11 @@ export class WorkflowGraphEditorComponent extends DirectiveBase implements OnCha
             this.graph.command("app.create.step", step);
 
             this.setFocusOnCanvas();
+
+            this.statusBar.stopProcess(statusProcess, `Added ${step.label}`);
         }, err => {
-            console.warn("Could not add an app", err);
+            this.statusBar.stopProcess(statusProcess);
+            this.notificationBar.showError("Failed to add an app to workflow: " + err.error ? err.error.message : err.message);
         });
     }
 

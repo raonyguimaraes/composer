@@ -46,6 +46,7 @@
         <!--Go to app-->
         <button class="btn"
                 type="button"
+                [disabled]="dataModel === undefined"
                 *ngIf="tabData.dataSource !== 'local'"
                 ct-tooltip="Open on Platform"
                 tooltipPlacement="bottom"
@@ -57,7 +58,7 @@
 
         <!--Save-->
         <button *ngIf="tabData.isWritable"
-                [disabled]="isValidatingCWL || !!unavailableError"
+                [disabled]="isValidatingCWL || !!unavailableError || !dataModel"
                 (click)="save()"
                 ct-tooltip="Save"
                 tooltipPlacement="bottom"
@@ -67,7 +68,7 @@
 
         <!--Publish to Platform-->
         <button class="btn"
-                [disabled]="!validationState?.isValid"
+                [disabled]="!validationState?.isValid || !dataModel"
                 *ngIf="tabData.dataSource === 'local'"
                 ct-tooltip="Publish to Platform"
                 tooltipPlacement="bottom"
@@ -77,7 +78,7 @@
 
 
         <!--Revisions-->
-        <button *ngIf="tabData.dataSource !== 'local' && dataModel.customProps['sbg:revisionsInfo']"
+        <button *ngIf="tabData.dataSource !== 'local' && dataModel && dataModel.customProps['sbg:revisionsInfo']"
                 class="btn" type="button"
                 ct-tooltip="See Revision History"
                 tooltipPlacement="bottom"
@@ -87,7 +88,7 @@
             Revision: {{ dataModel.customProps['sbg:revision']}}
 
             <ng-template #revisions>
-                <ct-revision-list [active]="dataModel.customProps['sbg:revision']"
+                <ct-revision-list *ngIf="dataModel" [active]="dataModel.customProps['sbg:revision']"
                                   [revisions]="dataModel.customProps['sbg:revisionsInfo']"
                                   (select)="openRevision($event)">
                 </ct-revision-list>
@@ -126,13 +127,13 @@
                            [formGroup]="toolGroup"
                            [model]="dataModel"></ct-tool-visual-editor>
 
-    <ct-job-editor *ngIf="viewMode === 'test' && !isLoading"
+    <ct-job-editor *ngIf="viewMode === 'test' && !isLoading && dataModel"
                    class="flex-col"
                    [model]="dataModel"
                    (update)="onJobUpdate($event)"
                    (reset)="resetJob()"></ct-job-editor>
 
-    <ct-app-info *ngIf="viewMode === 'info' && !isLoading"
+    <ct-app-info *ngIf="viewMode === 'info' && !isLoading && dataModel"
                  class="gui-editor-component p-2"
                  [readonly]="!tabData.isWritable"
                  [formGroup]="toolGroup"
@@ -163,7 +164,7 @@
        class="fa fa-circle-o-notch fa-spin">
     </i>
 
-    <span class="tag tag-warning">{{ dataModel.cwlVersion }}</span>
+    <span class="tag tag-warning" *ngIf="dataModel">{{ dataModel.cwlVersion }}</span>
     <span class="btn-group">
                     <button [disabled]="!validationState"
                             [class.active]="reportPanel === 'validation'"

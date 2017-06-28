@@ -61,6 +61,7 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
 
     protected recreateModel(json: Object): void {
         this.dataModel = WorkflowFactory.from(json as any, "document");
+        console.log("Data model is now", this.dataModel);
         this.dataModel.setValidationCallback(this.afterModelValidation.bind(this));
         this.dataModel.validate().then(this.afterModelValidation.bind(this));
     }
@@ -70,167 +71,12 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
     viewMode: "info" | "graph" | "code" | string;
 
     /** Model that's recreated on document change */
-    dataModel: WorkflowModel = WorkflowFactory.from(null, "document");
+    dataModel: WorkflowModel;
 
     @ViewChild(WorkflowGraphEditorComponent)
     graphEditor: WorkflowGraphEditorComponent;
 
     private graphDrawQueue: Function[] = [];
-
-    // ngOnInit(): void {
-    //
-    //     // Whenever the editor content is changed, validate it using a JSON Schema.
-    //     this.tracked = this.codeEditorContent.valueChanges
-    //         .debounceTime(300)
-    //         .merge(this.priorityCodeUpdates)
-    //         .do(() => {
-    //             this.isValidatingCWL = true;
-    //         })
-    //         .switchMap(latestContent => {
-    //             return Observable.fromPromise(this.cwlValidatorService.validate(latestContent)).map((result) => {
-    //                     return {
-    //                         latestContent: latestContent,
-    //                         result: result
-    //                     };
-    //                 }
-    //             );
-    //         })
-    //         .subscribe(r => {
-    //
-    //             this.isValidatingCWL = false;
-    //
-    //             // Wrap it in zone in order to see changes immediately in status bar (cwlValidatorService.validate is
-    //             // in world out of Angular)
-    //             this.zone.run(() => {
-    //
-    //                 this.isLoading = false;
-    //
-    //                 if (!r.result.isValidCWL) {
-    //                     // turn off loader and load document as code
-    //                     this.viewMode   = "code";
-    //                     this.isValidCWL = false;
-    //
-    //                     this.validation = r.result;
-    //                     return r;
-    //                 }
-    //
-    //                 this.isValidCWL = true;
-    //
-    //                 // If you are in mode other than Code mode or mode is undefined (opening app)
-    //                 // ChangingRevision is when you are in Code mode and you are changing revision to know to generate
-    //                 // a new dataModel
-    //                 if (this.viewMode !== "code" || this.changingRevision) {
-    //                     this.changingRevision = false;
-    //                     this.resolveContent(r.latestContent).then(noop, noop);
-    //                 } else {
-    //                     // In case when you are in Code mode just reset validations
-    //                     const v = {
-    //                         errors: [],
-    //                         warnings: [],
-    //                         isValidatableCWL: true,
-    //                         isValidCWL: true,
-    //                         isValidJSON: true
-    //                     };
-    //
-    //                     this.validation = v;
-    //                 }
-    //             });
-    //         });
-    //
-    //     this.tracked = this.tabData.fileContent.subscribe(txt => {
-    //         this.codeEditorContent.setValue(txt)
-    //     });
-    // }
-
-    // /**
-    //  * Resolve content and create a new tool model
-    //  * @TODO: this became kinda spaghetti, make the code better organized
-    //  */
-    // resolveContent(latestContent) {
-    //
-    //
-    //     this.isLoading          = true;
-    //     this.isResolvingContent = true;
-    //
-    //     return new Promise((resolve, reject) => {
-    //
-    //         // Create ToolModel from json and set model validations
-    //         const createWorkflowModel = (json) => {
-    //             console.time("Workflow Model");
-    //             this.workflowModel = WorkflowFactory.from(json as any, "document");
-    //             console.timeEnd("Workflow Model");
-    //
-    //             // update validation stream on model validation updates
-    //
-    //             this.workflowModel.setValidationCallback((res) => {
-    //                 this.validation = {
-    //                     errors: this.workflowModel.errors,
-    //                     warnings: this.workflowModel.warnings,
-    //                     isValidatableCWL: true,
-    //                     isValidCWL: true,
-    //                     isValidJSON: true
-    //                 };
-    //             });
-    //
-    //             this.workflowModel.validate();
-    //
-    //             const out       = {
-    //                 errors: this.workflowModel.errors,
-    //                 warnings: this.workflowModel.warnings,
-    //                 isValidatableCWL: true,
-    //                 isValidCWL: true,
-    //                 isValidJSON: true
-    //             };
-    //             this.validation = out;
-    //
-    //             // After wf is created get updates for steps
-    //             // this.getStepUpdates();
-    //
-    //             if (!this.viewMode) {
-    //                 this.viewMode = "graph";
-    //             }
-    //             this.isLoading = false;
-    //         };
-    //
-    //         // If app is a local file
-    //         if (this.tabData.dataSource !== "local") {
-    //             // load JSON to generate model
-    //             const json = Yaml.safeLoad(latestContent, {
-    //                 json: true
-    //             } as LoadOptions);
-    //
-    //             createWorkflowModel(json);
-    //             this.isResolvingContent = false;
-    //             resolve();
-    //
-    //         } else {
-    //             this.tabData.resolve(latestContent).subscribe((resolved) => {
-    //
-    //                 createWorkflowModel(resolved);
-    //                 this.isResolvingContent = false;
-    //                 resolve();
-    //
-    //             }, (err) => {
-    //                 this.isLoading          = false;
-    //                 this.isResolvingContent = false;
-    //                 this.viewMode           = "code";
-    //                 this.validation         = {
-    //                     isValidatableCWL: true,
-    //                     isValidCWL: false,
-    //                     isValidJSON: true,
-    //                     warnings: [],
-    //                     errors: [{
-    //                         message: err.message,
-    //                         loc: "document",
-    //                         type: "error"
-    //                     }]
-    //                 };
-    //
-    //                 reject();
-    //             });
-    //         }
-    //     });
-    // }
 
     protected toggleLock(locked: boolean): void {
         super.toggleLock(locked);
@@ -304,10 +150,6 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
         if (this.graphEditor) {
             this.graphEditor.checkOutstandingGraphFitting();
         }
-    }
-
-    isValidatingOrResolvingCWL() {
-        return this.isValidatingCWL || this.isResolvingContent;
     }
 
     onGraphDraw(component: WorkflowGraphEditorComponent) {
