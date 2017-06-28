@@ -19,6 +19,7 @@ export type IPCRoute =
     | "patchSwap"
     | "getPlatformApp"
     | "getApps"
+    | "getAppUpdates"
     | "getLocalRepository"
     | "getProjects"
     | "getSetting"

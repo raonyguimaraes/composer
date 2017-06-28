@@ -123,8 +123,13 @@ export class SBGClient {
 
     private fetchAll<T>(endpoint: string, qs?: QueryParams): SBGClientResponse<T[]> {
         const load = (offset = 0) => this.apiRequest.defaults({
+
             qs: {...qs, offset, limit: SBGClient.MAX_QUERY_LIMIT},
-            resolveWithFullResponse: true
+            useQuerystring: true,
+            resolveWithFullResponse: true,
+            qsStringifyOptions: {
+                arrayFormat: "repeat"
+            }
         })(endpoint);
 
         return new Promise((resolve, reject) => {

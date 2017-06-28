@@ -71,6 +71,8 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
     protected originalTabLabel: string;
     protected appSavingService: AppSaver;
 
+    private modelCreated = false;
+
     constructor(protected statusBar: StatusBarService,
                 protected errorBar: NotificationBarService,
                 protected modal: ModalService,
@@ -142,7 +144,6 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
          * Also, we will at some times override the data from the state validity with model validation.
          */
         validation.subscribe(state => {
-            console.log("subsequent", JSON.parse(JSON.stringify(state)));
             this.validationState = state;
         });
 
@@ -290,6 +291,9 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
             try {
                 const json = Yaml.safeLoad(codeVal, {json: true} as LoadOptions);
                 this.recreateModel(json);
+                this.afterModelCreated(!this.modelCreated);
+                this.modelCreated = true;
+
                 return Promise.resolve();
             } catch (err) {
                 return Promise.reject(err);
@@ -330,7 +334,11 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
                 const statusMessage = this.statusBar.startProcess("Resolving RDF Schema...");
 
                 this.tabData.resolve(content).subscribe((resolved: Object) => {
+
                     this.recreateModel(resolved);
+                    this.afterModelCreated(!this.modelCreated);
+                    this.modelCreated = true;
+
                     this.statusBar.stopProcess(statusMessage, "");
                     resolve(resolved);
                 }, err => {
@@ -343,6 +351,8 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
             const json = Yaml.safeLoad(content, {json: true} as LoadOptions);
             this.recreateModel(json);
+            this.afterModelCreated(!this.modelCreated);
+            this.modelCreated = true;
             resolve(json);
 
         }).then(result => {
@@ -424,5 +434,8 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
     protected getPreferredReportPanel(): string {
         return undefined;
+    }
+
+    protected afterModelCreated(isFirstCreation: boolean): void {
     }
 }

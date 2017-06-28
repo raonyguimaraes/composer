@@ -360,5 +360,19 @@ module.exports = {
             });
 
         }, err => callback(err));
+    },
+
+    getAppUpdates: (data: { appIDs: string[] }, callback) => {
+        ensurePlatformUser().then(repo => {
+            const {url, token} = repo.local.activeCredentials;
+            const api          = new SBGClient(url, token);
+
+            return api.apps.private({
+                id: data.appIDs,
+                fields: "id,revision,name"
+            }).then(result => {
+                callback(null, result);
+            }, callback);
+        }).catch(callback);
     }
 };

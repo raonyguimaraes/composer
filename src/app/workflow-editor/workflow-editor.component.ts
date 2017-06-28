@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, Injector, OnDestroy, OnInit, ViewChild} from "@angular/core";
+import {AfterViewInit, ChangeDetectorRef, Component, Injector, OnDestroy, OnInit, ViewChild} from "@angular/core";
 import {WorkflowFactory, WorkflowModel} from "cwlts/models";
 import * as Yaml from "js-yaml";
 import "rxjs/add/operator/debounceTime";
@@ -51,6 +51,8 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
                 injector: Injector,
                 appValidator: AppValidatorService,
                 codeSwapService: CodeSwapService,
+                private platformRepository: PlatformRepositoryService,
+                private cdr: ChangeDetectorRef,
                 platformAppService: PlatformAppService) {
         super(statusBar, errorBar, modal, inspector, dataGateway, injector, appValidator, codeSwapService, platformAppService);
     }
@@ -90,12 +92,59 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
         }
     }
 
+
+    protected afterModelCreated(isFirstCreation: boolean): void {
+        if (this.tabData.isWritable) {
+            this.getStepUpdates();
+        }
+    }
+
     /**
-     * @FIXME don't forget this
      * Call updates service to get information about steps if they have updates and mark ones that can be updated
      */
     private getStepUpdates() {
-        throw "Not implemented";
+
+
+        const updateStatusProcess      = this.statusBar.startProcess("Checking for app updates…");
+        const nestedAppRevisionlessIDs = this.dataModel.steps
+            .map(step => {
+                if (!step.run) return;
+
+                return step.run.customProps["sbg:id"].split("/").slice(0, 3).join("/");
+            })
+            .filter(v => v);
+
+        this.platformRepository.getUpdates(nestedAppRevisionlessIDs).then(result => {
+
+            const appRevisionMap = result.reduce((acc, item) => {
+
+                const revisionlessID = item.id.split("/").slice(0, 3).join("/");
+                return {...acc, [revisionlessID]: item.revision};
+            }, {});
+
+            this.dataModel.steps.forEach(step => {
+
+                const revisionless = step.run.customProps["sbg:id"].split("/").slice(0, 3).join("/");
+                const revision     = Number(step.run.customProps["sbg:id"].split("/").pop());
+
+                if (appRevisionMap[revisionless] === undefined) {
+                    return;
+                }
+
+                step.hasUpdate = appRevisionMap[revisionless] > revision;
+            });
+
+            setTimeout(() => {
+                this.cdr.markForCheck();
+                this.cdr.detectChanges();
+            });
+
+            this.statusBar.stopProcess(updateStatusProcess);
+        }).catch(err => {
+            this.errorBar.showError(err.error ? err.error.message : err.message);
+            this.statusBar.stopProcess(updateStatusProcess);
+        });
+
 
         // Observable.of(1).switchMap(() => {
         //     // Call service only if wf is in user projects

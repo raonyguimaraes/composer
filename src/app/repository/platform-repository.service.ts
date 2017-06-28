@@ -10,6 +10,7 @@ import {Project} from "../../../electron/src/sbg-api-client/interfaces/project";
 import {RecentAppTab} from "../../../electron/src/storage/types/recent-app-tab";
 import {TabData} from "../core/workbox/tab-data.interface";
 import {IpcService} from "../services/ipc.service";
+import {RawApp} from "../../../electron/src/sbg-api-client/interfaces/raw-app";
 
 @Injectable()
 export class PlatformRepositoryService {
@@ -177,5 +178,19 @@ export class PlatformRepositoryService {
 
     setOpenTabs(openTabs: TabData<any>[]): Promise<any> {
         return this.patch({openTabs}).toPromise();
+    }
+
+    getUpdates(appIDs: string[]): Promise<{
+        id: string;
+        name: string;
+        revision: number;
+    }[]> {
+        return this.ipc.request("getAppUpdates", {appIDs}).toPromise();
+    }
+
+    getApp(id: string): Promise<RawApp> {
+        return this.ipc.request("getPlatformApp", {id}).toPromise().then((appText: string) => {
+            return JSON.parse(appText);
+        });
     }
 }
