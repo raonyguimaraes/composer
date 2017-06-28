@@ -35,6 +35,8 @@ import {EditorPanelComponent} from "./layout/editor-panel/editor-panel.component
 import {FileDefContentPipe} from "./pipes/file-def-content.pipe";
 import {FileDefNamePipe} from "./pipes/file-def-name.pipe";
 import {ValidationTextPipe} from "./pipes/validation-text.pipes";
+import {HintsComponent} from "./components/hint-list/hint-list.component";
+import {RequirementInputComponent} from "./components/hint-list/requirement-input.component";
 
 @NgModule({
     declarations: [
@@ -67,8 +69,9 @@ import {ValidationTextPipe} from "./pipes/validation-text.pipes";
         AppInfoComponent,
         EditorLayoutComponent,
         EditorPanelComponent,
+        HintsComponent,
         DirectoryInputInspectorComponent,
-
+        RequirementInputComponent
     ],
     exports: [
         MapListComponent,
@@ -97,6 +100,8 @@ import {ValidationTextPipe} from "./pipes/validation-text.pipes";
         InputTypeSelectComponent,
         AppInfoComponent,
         EditorLayoutComponent,
+        HintsComponent,
+        RequirementInputComponent
     ],
     entryComponents: [
         EditorInspectorComponent,

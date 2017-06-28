@@ -36,6 +36,7 @@ import {LayoutService} from "./layout/layout.service";
 import {ModalErrorHandler} from "./error-report/modal-error-handler";
 import {WorkflowEditorModule} from "../workflow-editor/workflow-editor.module";
 import {ProceedToEditingModalComponent} from "./modals/proceed-to-editing-modal/proceed-to-editing-modal.component";
+import {HintsModalComponent} from "./modals/hints-modal/hints-modal.component";
 
 @NgModule({
     entryComponents: [
@@ -46,6 +47,7 @@ import {ProceedToEditingModalComponent} from "./modals/proceed-to-editing-modal/
         CreateLocalFolderModalComponent,
         ProceedToEditingModalComponent,
         PublishModalComponent,
+        HintsModalComponent,
         PlatformCredentialsModalComponent,
     ],
     declarations: [
@@ -69,6 +71,7 @@ import {ProceedToEditingModalComponent} from "./modals/proceed-to-editing-modal/
         CreateLocalFolderModalComponent,
         ProceedToEditingModalComponent,
         PublishModalComponent,
+        HintsModalComponent,
         PlatformCredentialsModalComponent
     ],
     exports: [
@@ -94,7 +97,7 @@ import {ProceedToEditingModalComponent} from "./modals/proceed-to-editing-modal/
         EditorCommonModule,
         ToolEditorModule,
         WorkflowEditorModule,
-        NgStringPipesModule,
+        NgStringPipesModule
     ]
 })
 export class CoreModule {

@@ -11,19 +11,26 @@ import {SelectComponent} from "./select/select.component";
         provide: NG_VALUE_ACCESSOR,
         useExisting: forwardRef(() => AutoCompleteComponent), multi: true
     }],
-    template: `<input #el [placeholder]="placeholder" [disabled]="readonly">`,
+    template: `<input #el [placeholder]="placeholder">`,
     styleUrls: ["./auto-complete.component.scss"],
 })
 export class AutoCompleteComponent extends SelectComponent implements ControlValueAccessor, OnInit {
 
     // Important inputs -> [options], [create], see parent class...
 
+    // Set disabled/enabled state
+    @Input("readonly") set disableControl(disabled: boolean) {
+        this.setDisabledState(disabled);
+    }
+
     // True makes control mono-selection (suggested input)
     @Input() mono        = false;
-    @Input() readonly    = false;
     @Input() disabled    = false;
     @Input() placeholder = "";
 
+    // Specify the return type of a value that will be propagated
+    @Input()
+    public type: "string" | "number" = "string";
 
     private update          = new Subject();
     private onTouched       = noop;
@@ -41,7 +48,12 @@ export class AutoCompleteComponent extends SelectComponent implements ControlVal
     }
 
     ngOnChanges() {
-        this.setDisabledState(this.disabled);
+        // @todo (maya) check that this component works
+        //this.setDisabledState(this.disabled);
+        // Component is initialized through jQuery after view init
+        // if (this.component) {
+        //     (this.disabled || this.readonly) ? this.component.disable() : this.component.enable();
+        // }
     }
 
     writeValue(obj: any): void {
@@ -49,12 +61,14 @@ export class AutoCompleteComponent extends SelectComponent implements ControlVal
     }
 
     onChange(value: string) {
-        this.update.next(this.mono ? value : (value ? value.split(this.delimiter) : []));
+        // If onChange is triggered because of user actions (add/remove item)
+        if (this.shouldTriggerChange) {
 
-        // Component is initialized through jQuery after view init
-        if (this.component) {
-            (this.disabled || this.readonly) ? this.component.disable() : this.component.enable();
+            const parse = this.type === "string" ? (value) => value : (value) => parseFloat(value);
+            this.update.next(this.mono ?
+                parse(value) : (value ? value.split(this.delimiter).map((item) => parse(item)) : []));
         }
+
     }
 
     registerOnChange(fn: any): void {
