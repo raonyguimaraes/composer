@@ -8,6 +8,7 @@
         line-height: $line-height-base;
         padding: .55rem 1rem;
         cursor: pointer;
+        min-width: 150px;
 
         .text-muted {
             white-space: nowrap;
