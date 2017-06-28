@@ -13,7 +13,7 @@ import {EditorInspectorService} from "../editor-common/inspector/editor-inspecto
 import {APP_SAVER_TOKEN} from "../editor-common/services/app-saving/app-saver.interface";
 import {LocalFileSavingService} from "../editor-common/services/app-saving/local-file-saving.service";
 import {PlatformAppSavingService} from "../editor-common/services/app-saving/platform-app-saving.service";
-import {ErrorBarService} from "../layout/error-bar/error-bar.service";
+import {NotificationBarService} from "../layout/notification-bar/notification-bar.service";
 import {StatusBarService} from "../layout/status-bar/status-bar.service";
 import {IpcService} from "../services/ipc.service";
 import {ModalService} from "../ui/modal/modal.service";
@@ -22,7 +22,7 @@ import {WorkflowEditorService} from "./workflow-editor.service";
 
 @Component({
     selector: "ct-workflow-editor",
-    providers: [EditorInspectorService, ErrorBarService, WorkflowEditorService, CodeSwapService, PlatformAppService,
+    providers: [EditorInspectorService, NotificationBarService, WorkflowEditorService, CodeSwapService, PlatformAppService,
         {
             provide: APP_SAVER_TOKEN,
             useFactory(comp: WorkflowEditorComponent, ipc: IpcService, modal: ModalService) {
@@ -43,7 +43,7 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
 
 
     constructor(statusBar: StatusBarService,
-                errorBar: ErrorBarService,
+                errorBar: NotificationBarService,
                 modal: ModalService,
                 inspector: EditorInspectorService,
                 dataGateway: DataGatewayService,

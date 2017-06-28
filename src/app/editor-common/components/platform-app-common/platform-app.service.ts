@@ -2,14 +2,14 @@ import {Injectable} from "@angular/core";
 
 import "rxjs/add/operator/take";
 import {AuthService} from "../../../auth/auth.service";
-import {ErrorBarService} from "../../../layout/error-bar/error-bar.service";
+import {NotificationBarService} from "../../../layout/notification-bar/notification-bar.service";
 import {SystemService} from "../../../platform-providers/system.service";
 
 @Injectable()
 export class PlatformAppService {
 
     constructor(private auth: AuthService,
-                private errorBar: ErrorBarService,
+                private errorBar: NotificationBarService,
                 private system: SystemService) {
     }
 

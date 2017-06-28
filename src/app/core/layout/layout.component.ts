@@ -11,8 +11,8 @@ import {PANEL_LOCAL_FILES, PANEL_PUBLIC_APPS, PANEL_STRUCTURE, PANEL_USER_PROJEC
     selector: "ct-layout",
     styleUrls: ["./layout.component.scss"],
     template: `
-        <ct-error-bar>
-        </ct-error-bar>
+        <ct-notification-bar>
+        </ct-notification-bar>
 
         <div class="main-content">
 

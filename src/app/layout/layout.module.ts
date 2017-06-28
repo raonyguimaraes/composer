@@ -9,8 +9,8 @@ import {UIModule} from "../ui/ui.module";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {ActionBarComponent} from "./action-bar/action-bar.component";
 import {TabLoaderComponent} from "./tab-loader/tab-loader.component";
-import {ErrorBarComponent} from "./error-bar/error-bar.component";
-import {ErrorBarService} from "./error-bar/error-bar.service";
+import {NotificationBarComponent} from "./notification-bar/notification-bar.component";
+import {NotificationBarService} from "./notification-bar/notification-bar.service";
 
 @NgModule({
     imports: [
@@ -27,7 +27,7 @@ import {ErrorBarService} from "./error-bar/error-bar.service";
         SettingsComponent,
         StatusBarComponent,
         TabLoaderComponent,
-        ErrorBarComponent,
+        NotificationBarComponent,
     ],
     exports: [
         ActionBarComponent,
@@ -36,10 +36,10 @@ import {ErrorBarService} from "./error-bar/error-bar.service";
         SettingsComponent,
         StatusBarComponent,
         TabLoaderComponent,
-        ErrorBarComponent,
+        NotificationBarComponent,
     ],
     providers: [
-        ErrorBarService
+        NotificationBarService
     ]
 })
 export class LayoutModule {
