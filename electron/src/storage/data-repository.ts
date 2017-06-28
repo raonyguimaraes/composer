@@ -20,7 +20,6 @@ export class DataRepository {
                 return;
             }
 
-            console.log("triggered credential load switch");
             this.loadProfile(activeCredentials.id, new UserRepository(), (err, data) => {
                 this.user = data;
                 Object.keys(this.user).forEach(key => this.trigger(`update.user.${key}`, this.user[key]));
@@ -103,7 +102,12 @@ export class DataRepository {
         } else {
             Object.assign(this.user, data);
             this.trigger(`update.${profile}`, this.user);
-            this.trigger(`update.user`, this.user);
+
+            // User to update might not be the active user, so we need to check that before emitting this event
+            if (profile === this.local.activeCredentials.id) {
+                this.trigger(`update.user`, this.user);
+            }
+
             this.enqueueStorageWrite(profilePath, this.user, callback);
         }
 
@@ -120,10 +124,20 @@ export class DataRepository {
         this.update("local", data, callback);
     }
 
-    updateUser(data: Partial<UserRepository>, callback) {
+    updateUser(data: Partial<UserRepository>, callback, profileID?) {
+
+        if (profileID) {
+
+            this.update(profileID, data, callback);
+            return;
+        }
+
         if (this.local.activeCredentials && this.local.activeCredentials.id) {
             this.update(this.local.activeCredentials.id, data, callback);
+            return;
         }
+
+        callback(null);
     }
 
     /**

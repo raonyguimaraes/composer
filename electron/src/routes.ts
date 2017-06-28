@@ -16,12 +16,13 @@ const acceleratorController = require("./controllers/accelerator.controller");
 const resolver              = require("./schema-salad-resolver");
 const md5                   = require("md5");
 
-
 const repository     = new DataRepository();
 const repositoryLoad = new Promise((resolve, reject) => repository.load((err) => err ? reject(err) : resolve(1))).catch(err => {
     console.log("Caught promise rejection", err);
     // return err;
 });
+
+const platformFetchingLocks: { [platformID: string]: Promise<any> } = {};
 
 const ensurePlatformUser = () => {
     return repositoryLoad.then(() => {
@@ -112,7 +113,6 @@ module.exports = {
 
     getLocalRepository: (data: { key?: string } = {}, callback) => {
 
-
         repositoryLoad.then((repoData) => {
             const repositoryData = data.key ? repository.local[data.key] : repository.local;
 
@@ -193,37 +193,90 @@ module.exports = {
         }, err => callback(err));
     },
 
-    fetchPlatformData: (data = {}, callback) => {
+    /**
+     * Hey there. Welcome.
+     *
+     * This fetches all needed platform data for a user.
+     * To determine a user, we look at the given credentials ID first. If it's not there, check the active user.
+     *
+     * Then, we ask the api for the data belonging to that user.
+     * A keen eye can notice that the updateUser method is called with the last argument that specifies the credentials entry id
+     * explicitly. That's because you can request a fetch, then change the active user before it's done. In that case, new user would
+     * get the data of the previous one, so that's how we solve it.
+     *
+     * Also, this fetching can be called many times from the GUI easily, which can flood the network and the rate limit.
+     * That's why there are {@link platformFetchingLocks}. When a platform starts loading data, it creates a Promise,
+     * and stores it as a lock, then releases it after it resolves or rejects.
+     *
+     * If during that time another fetch for the same credentials id is requested, it will not call the api, but instead
+     * get a hold of the existing Promise of an ongoing fetch.
+     *
+     */
+    fetchPlatformData: (data: {
+        credentialsID?: string
+    }, callback) => {
+        const {credentialsID} = data;
+
         repositoryLoad.then(() => {
 
-            if (!repository.local.activeCredentials) {
-                return callback(new Error("Cannot fetch platform data when there is no active user."));
+            let targetCredentials: CredentialsCache;
+
+            if (credentialsID) {
+                targetCredentials = repository.local.credentials.find(c => c.id === credentialsID);
+                if (!targetCredentials) {
+                    return callback(new Error("Cannot fetch platform data for unknown user."));
+                }
+            } else {
+
+                if (!repository.local.activeCredentials) {
+                    return callback(new Error("Cannot fetch platform data when there is no active user."));
+                }
+
+                targetCredentials = repository.local.activeCredentials;
             }
 
-            const {url, token} = repository.local.activeCredentials;
+            const targetID = targetCredentials.id;
+
+            if (platformFetchingLocks[targetID]) {
+                const currentFetch = platformFetchingLocks[targetID];
+                callback(null);
+                // currentFetch.then(data => callback(data)).catch(callback);
+                return
+            }
+
+            const {url, token} = targetCredentials;
 
             const client            = SBGClient.create(url, token);
             const projectsPromise   = client.projects.all();
             const appsPromise       = client.apps.private();
             const publicAppsPromise = client.apps.public();
 
-            Promise.all([projectsPromise, appsPromise, publicAppsPromise]).then(results => {
+            const call = Promise.all([projectsPromise, appsPromise, publicAppsPromise]).then(results => {
+
                 const [projects, apps, publicApps] = results;
+                const timestamp                    = Date.now();
 
-                const timestamp = Date.now();
+                return new Promise((resolve, reject) => {
+                    repository.updateUser({
+                        apps,
+                        projects,
+                        publicApps,
+                        appFetchTimestamp: timestamp,
+                        projectFetchTimestamp: timestamp
+                    }, (err, data) => {
+                        if (err) return reject(err);
 
-                repository.updateUser({
-                    apps,
-                    projects,
-                    publicApps,
-                    appFetchTimestamp: timestamp,
-                    projectFetchTimestamp: timestamp
-                }, (err, data) => {
-                    if (err) return callback(err);
-
-                    callback(null, "success");
+                        resolve(data);
+                    }, targetCredentials.id);
                 });
-            }, err => callback(err));
+
+            }, err => callback(err)).then(resolve => {
+                callback(null, resolve)
+            }).catch(callback);
+
+            platformFetchingLocks[targetID] = call.then(() => {
+                delete platformFetchingLocks[targetID];
+            });
 
 
         }, err => callback(err));

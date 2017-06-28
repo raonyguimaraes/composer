@@ -1,13 +1,13 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, QueryList, ViewChildren} from "@angular/core";
+import {Observable} from "rxjs/Observable";
+import {AuthService} from "../../auth/auth.service";
 import {StatusBarService} from "../../layout/status-bar/status-bar.service";
+import {LocalRepositoryService} from "../../repository/local-repository.service";
 import {IpcService} from "../../services/ipc.service";
 import {MenuItem} from "../../ui/menu/menu-item";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
 import {TabData} from "./tab-data.interface";
 import {WorkboxService} from "./workbox.service";
-import {AuthService} from "../../auth/auth.service";
-import {LocalRepositoryService} from "../../repository/local-repository.service";
-import {Observable} from "rxjs/Observable";
 
 @Component({
     selector: "ct-workbox",
@@ -78,7 +78,7 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
     public tabs: TabData<any>[] = [];
 
     /** Reference to an active tab object */
-    public activeTab;
+    public activeTab: TabData<any>;
 
     private el: Element;
 
@@ -240,6 +240,7 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
 
         this.workbox.startingTabs.subscribeTracked(this, tabDataList => {
 
+            // const lastActiveTab = this.activeTab;
             this.workbox.tabs.next([]);
             this.workbox.activeTab.next(undefined);
 
@@ -269,6 +270,10 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
                 const tab = this.workbox.getOrCreateAppTab(tabDataEntry);
                 this.workbox.openTab(tab);
             });
+
+            // if (lastActiveTab && lastActiveTab.id === "?settings") {
+            //     this.workbox.activeTab.next(lastActiveTab);
+            // }
 
         });
     }
