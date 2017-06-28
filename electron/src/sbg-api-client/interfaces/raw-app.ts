@@ -4,6 +4,7 @@ export interface RawApp {
     "id": string;
     "label": string;
     "class": string;
+    "cwlVersion"?:string;
     "description": string;
     "sbg:categories": string[];
     "sbg:contributors": string[];
