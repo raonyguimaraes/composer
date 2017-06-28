@@ -180,7 +180,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
                     if (this.tabData.isWritable && this.hasCopyOfProperty()) {
                         this.toggleLock(true);
                     }
-                });
+                }, err => console.warn);
             });
 
 
@@ -228,7 +228,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
         this.syncModelAndCode(true).then(() => {
             const modal      = this.modal.fromComponent(PublishModalComponent, {title: "Publish an App"});
             modal.appContent = this.codeEditorContent.value;
-        });
+        }, err => console.warn);
     }
 
     provideStatusControls(): TemplateRef<any> {
@@ -413,7 +413,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
      * When click on Resolve button (visible only if app is a local file and you are in Code mode)
      */
     resolveButtonClick(): void {
-        this.resolveToModel(this.codeEditorContent.value);
+        this.resolveToModel(this.codeEditorContent.value).then(() => {}, err => console.warn);
     }
 
     toggleReport(panel: string) {

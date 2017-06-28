@@ -94,7 +94,7 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
 
 
     protected afterModelCreated(isFirstCreation: boolean): void {
-        if (this.tabData.isWritable) {
+        if (this.tabData.isWritable && this.tabData.dataSource !== "local") {
             this.getStepUpdates();
         }
     }

@@ -2,7 +2,7 @@ import {Observable} from "rxjs/Observable";
 
 export interface AppTabData {
     id: string;
-    dataSource: "local" | "public" | "app";
+    dataSource: "local" | "app";
     parsedContent: any;
     fileContent: Observable<string>;
     isWritable: boolean;
