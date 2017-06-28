@@ -22,14 +22,16 @@ export class AuthService {
             this.repository.getCredentials(),
             this.repository.getActiveCredentials(),
             (all, active) => {
-                if (!active) return undefined;
+                if (!active) {
+                    return undefined;
+                }
 
                 return all.find(c => c.equals(active));
             }
         ).subscribe(this.active);
     }
 
-    getActive() {
+    getActive(): ReplaySubject<AuthCredentials> {
         return this.active;
     }
 
