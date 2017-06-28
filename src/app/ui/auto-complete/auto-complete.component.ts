@@ -2,7 +2,6 @@ import {Component, forwardRef, Input, OnInit} from "@angular/core";
 import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms";
 import {Subject} from "rxjs/Subject";
 import {noop} from "../../lib/utils.lib";
-import "rxjs/add/operator/distinctUntilChanged"
 import {SelectComponent} from "./select/select.component";
 
 @Component({
@@ -25,7 +24,7 @@ export class AutoCompleteComponent extends SelectComponent implements ControlVal
 
     // True makes control mono-selection (suggested input)
     @Input() mono        = false;
-    @Input() disabled    = false;
+
     @Input() placeholder = "";
 
     // Specify the return type of a value that will be propagated
@@ -45,15 +44,6 @@ export class AutoCompleteComponent extends SelectComponent implements ControlVal
         this.update.distinctUntilChanged().subscribe((value) => {
             this.propagateChange(value);
         });
-    }
-
-    ngOnChanges() {
-        // @todo (maya) check that this component works
-        //this.setDisabledState(this.disabled);
-        // Component is initialized through jQuery after view init
-        // if (this.component) {
-        //     (this.disabled || this.readonly) ? this.component.disable() : this.component.enable();
-        // }
     }
 
     writeValue(obj: any): void {
@@ -77,10 +67,6 @@ export class AutoCompleteComponent extends SelectComponent implements ControlVal
 
     registerOnTouched(fn: any): void {
         this.onTouched = fn;
-    }
-
-    setDisabledState(isDisabled: boolean): void {
-        this.disabled = isDisabled;
     }
 }
 

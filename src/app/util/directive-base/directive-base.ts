@@ -44,7 +44,7 @@ export abstract class DirectiveBase implements OnDestroy, AfterViewInit {
         throw new Error("Could not find a method that would destroy an object");
     }
 
-    track(obj: Object){
+    track(obj: Object) {
         this.tracked = obj;
     }
 
