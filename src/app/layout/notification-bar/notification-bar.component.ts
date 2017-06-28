@@ -1,10 +1,10 @@
 import {Component, Input} from "@angular/core";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
-import {ErrorBarService} from "./error-bar.service";
+import {NotificationBarService} from "./notification-bar.service";
 
 @Component({
-    selector: "ct-error-bar",
-    styleUrls: ["./error-bar.component.scss"],
+    selector: "ct-notification-bar",
+    styleUrls: ["./notification-bar.component.scss"],
     template: `
         <div class="error-alert pl-1" [class.show]="show">
             <i class="fa fa-minus-circle"></i>
@@ -17,7 +17,7 @@ import {ErrorBarService} from "./error-bar.service";
         </div>
     `
 })
-export class ErrorBarComponent extends DirectiveBase {
+export class NotificationBarComponent extends DirectiveBase {
 
     @Input()
     public autoClose = false;
@@ -29,7 +29,7 @@ export class ErrorBarComponent extends DirectiveBase {
 
     public error: string;
 
-    constructor(public errorBarService: ErrorBarService) {
+    constructor(public errorBarService: NotificationBarService) {
         super();
         this.tracked = this.errorBarService.message.do((message) => {
             this.error = message;

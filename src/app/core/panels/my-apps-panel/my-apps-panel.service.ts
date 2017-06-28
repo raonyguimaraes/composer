@@ -7,7 +7,7 @@ import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/pro
 import {AuthService} from "../../../auth/auth.service";
 import {AuthCredentials} from "../../../auth/model/auth-credentials";
 import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
-import {ErrorBarService} from "../../../layout/error-bar/error-bar.service";
+import {NotificationBarService} from "../../../layout/notification-bar/notification-bar.service";
 import {StatusBarService} from "../../../layout/status-bar/status-bar.service";
 import {LocalRepositoryService} from "../../../repository/local-repository.service";
 import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
@@ -28,7 +28,7 @@ export class MyAppsPanelService {
     constructor(private auth: AuthService,
                 private statusBar: StatusBarService,
                 private ipc: IpcService,
-                private errorBar: ErrorBarService,
+                private errorBar: NotificationBarService,
                 private localRepository: LocalRepositoryService,
                 private localFileRepository: LocalFileRepositoryService,
                 private platformRepository: PlatformRepositoryService) {

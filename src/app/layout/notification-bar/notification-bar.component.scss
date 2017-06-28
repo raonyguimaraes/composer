@@ -7,7 +7,7 @@
         display: flex;
         opacity: 0;
         height: 0;
-        line-height: $error-bar-height;
+        line-height: $notification-bar-height;
         color: $brand-danger-inverse-color;
         background-color: $brand-danger;
         transition: opacity .25s, height 0.25s;
@@ -22,13 +22,13 @@
             flex-basis: 30px;
             font-weight: bolder;
             font-size: 1rem;
-            line-height: $error-bar-height;
+            line-height: $notification-bar-height;
         }
     }
 
     .show {
         opacity: 1;
-        height: $error-bar-height;
+        height: $notification-bar-height;
     }
 }
 

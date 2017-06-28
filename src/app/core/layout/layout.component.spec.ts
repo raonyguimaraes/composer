@@ -8,7 +8,7 @@ import {LayoutService} from "./layout.service";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {DomEventService} from "../../services/dom/dom-event.service";
 import {StatusBarService} from "../../layout/status-bar/status-bar.service";
-import {ErrorBarService} from "../../layout/error-bar/error-bar.service";
+import {NotificationBarService} from "../../layout/notification-bar/notification-bar.service";
 
 describe("LayoutComponent", () => {
     let component: LayoutComponent;
@@ -32,7 +32,7 @@ describe("LayoutComponent", () => {
                 { provide: UserPreferencesService, useValue: null },
                 { provide: DomEventService, useValue: domEventsStub },
                 { provide: StatusBarService, useValue: {} },
-                { provide: ErrorBarService, useValue: null }
+                { provide: NotificationBarService, useValue: null }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();

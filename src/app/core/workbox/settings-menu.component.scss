@@ -12,6 +12,10 @@
         .text-muted {
             white-space: nowrap;
         }
+
+        &:hover {
+            background: darken($panel-bg, 3);
+        }
     }
 
     .active-icon {

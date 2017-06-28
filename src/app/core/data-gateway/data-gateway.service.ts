@@ -14,7 +14,7 @@ import {Observable, ObservableInput} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
 import {OldAuthService} from "../../auth/auth/auth.service";
-import {ErrorBarService} from "../../layout/error-bar/error-bar.service";
+import {NotificationBarService} from "../../layout/notification-bar/notification-bar.service";
 import {noop} from "../../lib/utils.lib";
 import {PlatformAppEntry} from "../../services/api/platforms/platform-api.types";
 import {IpcService} from "../../services/ipc.service";
@@ -41,7 +41,7 @@ export class DataGatewayService {
 
     constructor(private preferences: UserPreferencesService,
                 private modal: ModalService,
-                private errorBar: ErrorBarService,
+                private errorBar: NotificationBarService,
                 private oldAuth: OldAuthService,
                 private apiGateway: PlatformAPIGatewayService,
                 private ipc: IpcService) {

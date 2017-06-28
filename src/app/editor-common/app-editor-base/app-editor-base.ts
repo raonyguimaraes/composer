@@ -11,7 +11,7 @@ import {DataGatewayService} from "../../core/data-gateway/data-gateway.service";
 import {ProceedToEditingModalComponent} from "../../core/modals/proceed-to-editing-modal/proceed-to-editing-modal.component";
 import {PublishModalComponent} from "../../core/modals/publish-modal/publish-modal.component";
 import {AppTabData} from "../../core/workbox/app-tab-data";
-import {ErrorBarService} from "../../layout/error-bar/error-bar.service";
+import {NotificationBarService} from "../../layout/notification-bar/notification-bar.service";
 import {StatusBarService} from "../../layout/status-bar/status-bar.service";
 import {StatusControlProvider} from "../../layout/status-bar/status-control-provider.interface";
 import {ModalService} from "../../ui/modal/modal.service";
@@ -71,7 +71,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
     protected appSavingService: AppSaver;
 
     constructor(protected statusBar: StatusBarService,
-                protected errorBar: ErrorBarService,
+                protected errorBar: NotificationBarService,
                 protected modal: ModalService,
                 protected inspector: EditorInspectorService,
                 protected dataGateway: DataGatewayService,
