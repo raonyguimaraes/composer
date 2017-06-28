@@ -95,26 +95,26 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
 
         // FIXME: this needs to be handled in a system-specific way
         // Listen for a shortcut that should close the active tab
-        this.tracked = this.ipc.watch("accelerator", "CmdOrCtrl+W").subscribe(() => {
+        this.ipc.watch("accelerator", "CmdOrCtrl+W").subscribeTracked(this, () => {
             this.workbox.closeTab();
         });
 
         // Switch to the tab on the right
-        this.tracked = this.ipc.watch("accelerator", "CmdOrCtrl+Shift+]")
+        this.ipc.watch("accelerator", "CmdOrCtrl+Shift+]")
             .filter(_ => this.activeTab && this.tabs.length > 1)
-            .subscribe(() => {
+            .subscribeTracked(this, () => {
                 this.workbox.activateNext();
             });
 
         // Switch to the tab on the left
-        this.tracked = this.ipc.watch("accelerator", "CmdOrCtrl+Shift+[")
+        this.ipc.watch("accelerator", "CmdOrCtrl+Shift+[")
             .filter(_ => this.activeTab && this.tabs.length > 1)
-            .subscribe(() => {
+            .subscribeTracked(this, () => {
                 this.workbox.activatePrevious();
             });
 
 
-        this.tracked = this.workbox.tabs.subscribe(tabs => {
+        this.workbox.tabs.subscribeTracked(this, tabs => {
             this.tabs = tabs;
         });
     }
@@ -235,10 +235,14 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
 
         this.workbox.startingTabs.subscribeTracked(this, tabDataList => {
 
+            this.workbox.tabs.next([]);
+            this.workbox.activeTab.next(undefined);
+
             if (tabDataList.length === 0) {
                 this.openNewFileTab();
                 return;
             }
+
 
             tabDataList.forEach(tabDataEntry => {
 
@@ -250,6 +254,7 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
                 const tab = this.workbox.getOrCreateAppTab(tabDataEntry);
                 this.workbox.openTab(tab);
             });
+
         });
     }
 }

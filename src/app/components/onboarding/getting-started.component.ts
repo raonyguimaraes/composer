@@ -69,7 +69,7 @@ export class GettingStartedComponent {
 
     initiateFeedbackDialog() {
 
-        this.auth.active.take(1).toPromise().then((credentials) => {
+        this.auth.getActive().take(1).toPromise().then((credentials) => {
             if (!credentials) {
                 this.openMailClient();
                 return;

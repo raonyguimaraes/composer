@@ -16,7 +16,7 @@ export class PlatformAppService {
     }
 
     openOnPlatform(appID: string) {
-        this.auth.active.take(1).subscribe(credentials => {
+        this.auth.getActive().take(1).subscribe(credentials => {
 
             if (!credentials) {
                 this.errorBar.showError("Unable to open the app, it seems that you are not connected to any platform.");

@@ -1,11 +1,18 @@
 import {User} from "../../sbg-api-client/interfaces/user";
 import {RepositoryType} from "./repository-type";
 
+export interface CredentialsCache {
+    id: string;
+    user: User;
+    url: string;
+    token: string;
+}
+
 export class LocalRepository extends RepositoryType {
 
-    activeCredentials: { id: string; user: User, url: string, token: string } = null;
+    activeCredentials: CredentialsCache = null;
 
-    credentials: { id: string; user: User, url: string, token: string }[] = [];
+    credentials: CredentialsCache[] = [];
 
     localFolders: string[] = [];
 
@@ -14,4 +21,5 @@ export class LocalRepository extends RepositoryType {
     selectedAppPanel: "myApps" | "publicApps" = "myApps";
 
     sidebarHidden = false;
+
 }

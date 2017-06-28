@@ -25,6 +25,8 @@ import {ToolEditorModule} from "./tool-editor/tool-editor.module";
 import {ModalService} from "./ui/modal/modal.service";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
+import {GlobalService} from "./core/global/global.service";
+import {StatusBarService} from "./layout/status-bar/status-bar.service";
 
 @NgModule({
     providers: [
@@ -39,7 +41,9 @@ import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
         OldAuthService,
         PlatformAPIGatewayService,
         PlatformConnectionService,
+        StatusBarService,
         PlatformRepositoryService,
+        GlobalService,
         SettingsService,
         UserPreferencesService,
         LocalFileRepositoryService,

@@ -9,7 +9,6 @@ import "rxjs/add/observable/zip";
 import "rxjs/add/operator/catch";
 
 import "rxjs/add/operator/mergeMap";
-import "rxjs/add/operator/publishReplay";
 import {Observable, ObservableInput} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
@@ -195,7 +194,7 @@ export class DataGatewayService {
 
     private makeErrorBarHandler() {
         return <T>(err: Error, observable: ObservableInput<T>) => {
-            if(err.name === "RequestError" && !navigator.onLine){
+            if (err.name === "RequestError" && !navigator.onLine) {
                 this.errorBar.showError("You are offline");
             } else {
                 this.errorBar.showError(err.message);

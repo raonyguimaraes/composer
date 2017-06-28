@@ -1,5 +1,6 @@
 import {Injectable} from "@angular/core";
-import {BehaviorSubject} from "rxjs/BehaviorSubject";
+import "rxjs/add/operator/publishReplay"
+import "rxjs/add/operator/shareReplay"
 import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {RecentAppTab} from "../../../electron/src/storage/types/recent-app-tab";
@@ -10,31 +11,21 @@ import {IpcService} from "../services/ipc.service";
 @Injectable()
 export class LocalRepositoryService {
 
-    private localFolders    = new ReplaySubject<string[]>(1);
-    private expandedFolders = new ReplaySubject<string[]>(1);
-    private recentApps      = new ReplaySubject<RecentAppTab[]>(1);
-    private openTabs        = new ReplaySubject<TabData<any>[]>(1);
-
-    private credentials       = new BehaviorSubject<AuthCredentials[]>([]);
-    private activeCredentials = new BehaviorSubject<AuthCredentials>(undefined);
+    private localFolders: ReplaySubject<string[]>             = new ReplaySubject(1);
+    private openTabs: ReplaySubject<TabData<any>[]>           = new ReplaySubject(1);
+    private expandedFolders: ReplaySubject<string[]>          = new ReplaySubject(1);
+    private recentApps: ReplaySubject<RecentAppTab[]>         = new ReplaySubject(1);
+    private credentials: ReplaySubject<AuthCredentials[]>     = new ReplaySubject(1);
+    private activeCredentials: ReplaySubject<AuthCredentials> = new ReplaySubject(1);
 
     constructor(private ipc: IpcService) {
 
-        this.listen("credentials")
-            .map(creds => creds.map(c => AuthCredentials.from(c)))
-            .subscribe(this.credentials);
-
-        this.listen("activeCredentials")
-            .map(cred => AuthCredentials.from(cred))
-            .subscribe(this.activeCredentials);
-
-        this.listen("localFolders").subscribe(this.localFolders);
-
-        this.listen("expandedNodes").subscribe(this.expandedFolders);
-
-        this.listen("recentApps").subscribe(this.recentApps);
         this.listen("openTabs").subscribe(this.openTabs);
-
+        this.listen("recentApps").subscribe(this.recentApps);
+        this.listen("localFolders").subscribe(this.localFolders);
+        this.listen("expandedNodes").subscribe(this.expandedFolders);
+        this.listen("activeCredentials").map(cred => AuthCredentials.from(cred)).subscribe(this.activeCredentials);
+        this.listen("credentials").map(creds => creds.map(c => AuthCredentials.from(c))).subscribe(this.credentials);
     }
 
     getLocalFolders(): Observable<string[]> {
@@ -61,24 +52,25 @@ export class LocalRepositoryService {
         return this.activeCredentials;
     }
 
-    setActiveCredentials(credentials: AuthCredentials = null): Observable<any> {
-        return this.ipc.request("patchLocalRepository", {
-            activeCredentials: credentials
-        });
+    setActiveCredentials(activeCredentials: AuthCredentials = null): Promise<any> {
+        // return this.ipc.request("patchLocalRepository", {activeCredentials}).toPromise();
+        return this.ipc.request("switchActiveUser", {credentials: activeCredentials})
+            .toPromise();
     }
 
-    setCredentials(credentials: AuthCredentials[]): Observable<any> {
+    setCredentials(credentials: AuthCredentials[]): Promise<any> {
 
-        const activeCredentials    = this.activeCredentials.getValue();
-        const updateContainsActive = credentials.findIndex(c => c.equals(activeCredentials)) !== -1;
+        return this.activeCredentials.take(1).flatMap(activeCredentials => {
+            const updateContainsActive = credentials.findIndex(c => c.equals(activeCredentials)) !== -1;
 
-        const update = {credentials} as { credentials: AuthCredentials[], activeCredentials?: AuthCredentials };
+            const update = {credentials} as { credentials: AuthCredentials[], activeCredentials?: AuthCredentials };
 
-        if (!updateContainsActive) {
-            update.activeCredentials = null;
-        }
+            if (!updateContainsActive) {
+                update.activeCredentials = null;
+            }
 
-        return this.ipc.request("patchLocalRepository", update);
+            return this.ipc.request("patchLocalRepository", update);
+        }).toPromise();
     }
 
     setFolderExpansion(nodeID: string, expanded: boolean): void {

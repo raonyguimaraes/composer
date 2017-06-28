@@ -1,14 +1,13 @@
 import {Component} from "@angular/core";
-import {Subject} from "rxjs/Subject";
+import {AuthService} from "../../auth/auth.service";
+import {AuthCredentials} from "../../auth/model/auth-credentials";
+import {GlobalService} from "../../core/global/global.service";
 import {PlatformCredentialsModalComponent} from "../../core/modals/platform-credentials-modal/platform-credentials-modal.component";
 import {SettingsService} from "../../services/settings/settings.service";
-import {CredentialsEntry} from "../../services/storage/user-preferences-types";
 import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
-import {AuthService} from "../../auth/auth.service";
-import {AuthCredentials} from "../../auth/model/auth-credentials";
-import {LocalRepositoryService} from "../../repository/local-repository.service";
+import {WorkboxService} from "../../core/workbox/workbox.service";
 
 type ViewMode = "auth" | "keyBindings" | "cache";
 
@@ -20,8 +19,8 @@ type ViewMode = "auth" | "keyBindings" | "cache";
 
             <ct-tab-selector [distribute]="'auto'" [active]="viewMode" (activeChange)="switchTab($event)">
                 <ct-tab-selector-entry tabName="auth">Authentication</ct-tab-selector-entry>
-                <ct-tab-selector-entry tabName="keyBindings">Key Bindings</ct-tab-selector-entry>
-                <ct-tab-selector-entry tabName="cache">Cache</ct-tab-selector-entry>
+                <!--<ct-tab-selector-entry tabName="keyBindings">Key Bindings</ct-tab-selector-entry>-->
+                <!--<ct-tab-selector-entry tabName="cache">Cache</ct-tab-selector-entry>-->
             </ct-tab-selector>
 
         </ct-action-bar>
@@ -39,19 +38,19 @@ type ViewMode = "auth" | "keyBindings" | "cache";
                     </thead>
                     <tbody>
 
-                    <tr *ngFor="let entry of (auth.credentials | async)" class="align-middle">
+                    <tr *ngFor="let entry of (auth.getCredentials() | async)" class="align-middle">
                         <td class="align-middle">{{ entry.url }}</td>
                         <td class="align-middle">
                             {{ entry.user.username }}
-                            <span *ngIf="(auth.active | async) === entry" class="tag tag-primary">active</span>
+                            <span *ngIf="(auth.getActive() | async) === entry" class="tag tag-primary">active</span>
                         </td>
                         <td class="text-xs-right">
-                            <button *ngIf="(auth.active | async) === entry; else deactivate;"
-                                    (click)="auth.setActiveCredentials(undefined)"
+                            <button *ngIf="(auth.getActive() | async) === entry; else deactivate;"
+                                    (click)="setActiveCredentials(undefined)"
                                     class="btn btn-secondary">Deactivate
                             </button>
                             <ng-template #deactivate>
-                                <button class="btn btn-secondary" (click)="auth.setActiveCredentials(entry)">Activate</button>
+                                <button class="btn btn-secondary" (click)="setActiveCredentials(entry)">Activate</button>
                             </ng-template>
                             <button class="btn btn-secondary" (click)="editCredentials(entry)">Edit</button>
                             <button class="btn btn-secondary" (click)="auth.removeCredentials(entry)">Remove</button>
@@ -73,7 +72,9 @@ export class SettingsComponent extends DirectiveBase {
 
     constructor(private settings: SettingsService,
                 public preferences: UserPreferencesService,
+                private global: GlobalService,
                 public modal: ModalService,
+                private workbox: WorkboxService,
                 public auth: AuthService) {
 
         super();
@@ -109,4 +110,12 @@ export class SettingsComponent extends DirectiveBase {
         this.viewMode = tab;
     }
 
+    setActiveCredentials(credentials: AuthCredentials) {
+
+        this.auth.setActiveCredentials(credentials).then(() => {
+
+            // this.global.reloadPlatformData();
+            this.workbox.forceReloadTabs();
+        });
+    }
 }

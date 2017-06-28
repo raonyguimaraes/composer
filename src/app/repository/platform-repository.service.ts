@@ -2,6 +2,7 @@ import {Injectable} from "@angular/core";
 
 import * as Yaml from "js-yaml";
 import {LoadOptions} from "js-yaml";
+
 import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {App} from "../../../electron/src/sbg-api-client/interfaces/app";
@@ -13,36 +14,23 @@ import {IpcService} from "../services/ipc.service";
 @Injectable()
 export class PlatformRepositoryService {
 
-    private projects = new ReplaySubject<Project[]>(1);
-
-    private openProjects = new ReplaySubject<string[]>(1);
-
-    private expandedNodes = new ReplaySubject<string[]>(1);
-
-    private recentApps = new ReplaySubject<RecentAppTab[]>(1);
-
-    private openTabs = new ReplaySubject<TabData<any>[]>(1);
-
-    apps = new ReplaySubject<App[]>(1);
-
-    private publicApps = new ReplaySubject<App[]>(1);
+    private apps: ReplaySubject<App[]>                = new ReplaySubject(1);
+    private publicApps: ReplaySubject<App[]>          = new ReplaySubject(1);
+    private projects: ReplaySubject<Project[]>        = new ReplaySubject(1);
+    private openProjects: ReplaySubject<string[]>     = new ReplaySubject(1);
+    private expandedNodes: ReplaySubject<string[]>    = new ReplaySubject(1);
+    private openTabs: ReplaySubject<TabData<any>[]>   = new ReplaySubject(1);
+    private recentApps: ReplaySubject<RecentAppTab[]> = new ReplaySubject(1);
 
     constructor(private ipc: IpcService) {
 
-        this.listen("projects").subscribe(list => this.projects.next(list));
-
-        this.listen("openProjects").subscribe(list => this.openProjects.next(list));
-
-        this.listen("apps").subscribe(list => this.apps.next(list));
-
-        this.listen("expandedNodes").subscribe(list => this.expandedNodes.next(list));
-
-        this.listen("publicApps").subscribe(list => this.publicApps.next(list));
-
-        this.listen("recentApps").subscribe(this.recentApps);
-
+        this.listen("apps").subscribe(this.apps);
+        this.listen("projects").subscribe(this.projects);
         this.listen("openTabs").subscribe(this.openTabs);
-
+        this.listen("publicApps").subscribe(this.publicApps);
+        this.listen("recentApps").subscribe(this.recentApps);
+        this.listen("openProjects").subscribe(this.openProjects);
+        this.listen("expandedNodes").subscribe(this.expandedNodes);
     }
 
     getOpenTabs(): Observable<TabData<any>[]> {
@@ -156,7 +144,6 @@ export class PlatformRepositoryService {
 
 
     createApp(appID: string, content: string): Promise<string> {
-        console.log("Pushing new app", content);
         return this.ipc.request("createPlatformApp", {
             id: appID,
             content: content
@@ -170,7 +157,6 @@ export class PlatformRepositoryService {
             appContent["sbg:revisionNotes"] = revisionNote;
         }
         content = JSON.stringify(appContent, null, 4);
-        console.log("Pushing json content", content);
 
         return this.ipc.request("saveAppRevision", {
             id: appID,

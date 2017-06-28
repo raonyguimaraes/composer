@@ -6,6 +6,7 @@ import {SystemService} from "../../platform-providers/system.service";
 import {SettingsService} from "../../services/settings/settings.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
+import {GlobalService} from "../global/global.service";
 import {SendFeedbackModalComponent} from "../modals/send-feedback-modal/send-feedback.modal.component";
 import {WorkboxService} from "./workbox.service";
 
@@ -21,7 +22,7 @@ import {WorkboxService} from "./workbox.service";
 
         <ng-template #menu class="mr-1">
             <ul class="list-unstyled">
-                <li *ngFor="let c of auth.credentials | async"
+                <li *ngFor="let c of auth.getCredentials() | async"
                     (click)="setActiveUser(c)">
                     <span>
                         {{ c.user.username }} 
@@ -50,10 +51,12 @@ export class SettingsMenuComponent extends DirectiveBase {
                 private settings: SettingsService,
                 private modal: ModalService,
                 private system: SystemService,
+                private global: GlobalService,
                 public auth: AuthService) {
         super();
         settings.validity.subscribeTracked(this, isValid => this.hasWarning = !isValid);
-        auth.active.subscribeTracked(this, cred => {
+
+        auth.getActive().subscribeTracked(this, cred => {
             this.active = cred;
             if (this.active) {
                 this.userLabel = `${this.active.user.username} (${AuthCredentials.getPlatformShortName(this.active.url)})`;
@@ -78,7 +81,11 @@ export class SettingsMenuComponent extends DirectiveBase {
     }
 
     setActiveUser(c) {
-        this.auth.setActiveCredentials(c);
+        this.auth.setActiveCredentials(c).then((user) => {
+            // this.global.reloadPlatformData();
+            this.workbox.forceReloadTabs();
+        });
+
         this.openStatus.next(false);
     }
 }

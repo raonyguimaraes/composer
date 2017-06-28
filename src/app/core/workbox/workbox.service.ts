@@ -22,6 +22,8 @@ export class WorkboxService {
 
     startingTabs: Observable<TabData<any>[]>;
 
+    private priorityTabUpdate = new Subject();
+
     constructor(private dataGateway: DataGatewayService,
                 private localRepository: LocalRepositoryService,
                 private platformRepository: PlatformRepositoryService) {
@@ -50,11 +52,22 @@ export class WorkboxService {
 
         });
 
-        this.startingTabs = Observable.combineLatest(
+        this.startingTabs = this.priorityTabUpdate.startWith(1).withLatestFrom(
             this.localRepository.getOpenTabs(),
             this.platformRepository.getOpenTabs(),
-            (local, platform) => [...local, ...platform].sort((a, b) => a.position - b.position)
-        ).take(1);
+            (_, local, platform) => [...local, ...platform].sort((a, b) => a.position - b.position)
+        );
+    }
+
+    forceReloadTabs() {
+        // this.localRepository.getOpenTabs().take(1).subscribe(data => {
+        //     console.log("local tabs", data);
+        // });
+        //
+        // this.platformRepository.getOpenTabs().take(1).subscribe(data => {
+        //     console.log("platform tabs", data);
+        // });
+        this.priorityTabUpdate.next(1);
     }
 
     openTab(tab, persistToRecentApps: boolean = true) {
@@ -74,7 +87,7 @@ export class WorkboxService {
         this.tabCreation.next(tab);
         this.activateTab(tab);
 
-        if (!persistToRecentApps) {
+        if (!persistToRecentApps || tab.id.startsWith("?")) {
             return;
         }
 
@@ -108,7 +121,7 @@ export class WorkboxService {
             tab = this.extractValues().activeTab;
         }
 
-        if (tab.data && tab.data.id && !tab.data.id.startsWith("?")) {
+        if (tab.data && tab.data.id) {
             console.log("Patching swap for", tab.data.id);
             this.dataGateway.updateSwap(tab.data.id, null);
         }
