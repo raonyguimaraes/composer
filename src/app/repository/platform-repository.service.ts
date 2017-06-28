@@ -7,10 +7,10 @@ import {Observable} from "rxjs/Observable";
 import {ReplaySubject} from "rxjs/ReplaySubject";
 import {App} from "../../../electron/src/sbg-api-client/interfaces/app";
 import {Project} from "../../../electron/src/sbg-api-client/interfaces/project";
+import {RawApp} from "../../../electron/src/sbg-api-client/interfaces/raw-app";
 import {RecentAppTab} from "../../../electron/src/storage/types/recent-app-tab";
 import {TabData} from "../core/workbox/tab-data.interface";
 import {IpcService} from "../services/ipc.service";
-import {RawApp} from "../../../electron/src/sbg-api-client/interfaces/raw-app";
 
 @Injectable()
 export class PlatformRepositoryService {
@@ -48,6 +48,10 @@ export class PlatformRepositoryService {
 
     getPublicApps(): Observable<App[]> {
         return this.publicApps;
+    }
+
+    getPrivateApps(): Observable<App[]> {
+        return this.apps;
     }
 
     getRecentApps(): Observable<RecentAppTab[]> {
@@ -90,27 +94,26 @@ export class PlatformRepositoryService {
     }
 
     setNodeExpansion(id: string, isExpanded: boolean): void {
-        this.expandedNodes.take(1)
-            .subscribe(expandedNodes => {
-                const index = expandedNodes.indexOf(id);
+        this.expandedNodes.take(1).subscribe(expandedNodes => {
+            const index = expandedNodes.indexOf(id);
 
-                const shouldBeAdded   = isExpanded && index === -1;
-                const shouldBeRemoved = !isExpanded && index !== -1;
+            const shouldBeAdded   = isExpanded && index === -1;
+            const shouldBeRemoved = !isExpanded && index !== -1;
 
-                const patch = expandedNodes.slice();
+            const patch = expandedNodes.slice();
 
-                if (shouldBeAdded) {
-                    patch.push(id);
-                } else if (shouldBeRemoved) {
-                    patch.splice(index, 1);
-                }
+            if (shouldBeAdded) {
+                patch.push(id);
+            } else if (shouldBeRemoved) {
+                patch.splice(index, 1);
+            }
 
-                if (shouldBeAdded || shouldBeRemoved) {
-                    this.patch({
-                        expandedNodes: patch
-                    });
-                }
-            });
+            if (shouldBeAdded || shouldBeRemoved) {
+                this.patch({
+                    expandedNodes: patch
+                });
+            }
+        });
     }
 
     addOpenProjects(...projectIDs: string[]) {
@@ -191,6 +194,53 @@ export class PlatformRepositoryService {
     getApp(id: string): Promise<RawApp> {
         return this.ipc.request("getPlatformApp", {id}).toPromise().then((appText: string) => {
             return JSON.parse(appText);
+        });
+    }
+
+    searchAppsFromOpenProjects(substring?: string): Observable<App[]> {
+
+        const term = substring.toLowerCase();
+
+        return this.getOpenProjects().flatMap(openProjects => {
+
+            const openProjectIDs = openProjects.map(project => project.id);
+
+            return this.getPrivateApps().map(apps => {
+
+                return apps.filter(app => {
+
+                    if (openProjectIDs.indexOf(app.project) === -1) {
+                        return false;
+                    }
+
+                    if (!substring) {
+                        return true;
+                    }
+
+                    const appID   = app.id.toLowerCase();
+                    const appName = app.name.toLowerCase();
+
+                    return appID.indexOf(term) !== -1 || appName.indexOf(term) !== -1;
+                });
+            });
+        });
+    }
+
+    searchPublicApps(substring?: string): Observable<App[]> {
+        const term = substring.toLowerCase();
+
+        return this.getPublicApps().map(apps => {
+            return apps.filter(app => {
+
+                if (!substring) {
+                    return true;
+                }
+
+                const appID   = app.id.toLowerCase();
+                const appName = app.name.toLowerCase();
+
+                return appID.indexOf(term) !== -1 || appName.indexOf(term) !== -1;
+            });
         });
     }
 }

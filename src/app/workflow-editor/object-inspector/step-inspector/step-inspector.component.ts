@@ -1,14 +1,13 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input} from "@angular/core";
+import {ChangeDetectorRef, Component, Input} from "@angular/core";
 import {Workflow} from "cwl-svg";
 import {StepModel, WorkflowModel} from "cwlts/models";
+import {RawApp} from "../../../../../electron/src/sbg-api-client/interfaces/raw-app";
 import {NotificationBarService} from "../../../layout/notification-bar/notification-bar.service";
 import {StatusBarService} from "../../../layout/status-bar/status-bar.service";
 import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
-import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
 import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {UpdateStepModalComponent} from "../../update-step-modal/update-step-modal.component";
-import {RawApp} from "../../../../../electron/src/sbg-api-client/interfaces/raw-app";
 
 @Component({
     selector: "ct-workflow-step-inspector",
@@ -93,8 +92,7 @@ export class StepInspectorComponent extends DirectiveBase {
                 private platformRepository: PlatformRepositoryService,
                 private cdr: ChangeDetectorRef,
                 private notificationBar: NotificationBarService,
-                private statusBar: StatusBarService,
-                private userPrefService: UserPreferencesService) {
+                private statusBar: StatusBarService) {
         super();
     }
 
@@ -105,10 +103,8 @@ export class StepInspectorComponent extends DirectiveBase {
         const appID = this.step.run.customProps["sbg:id"].split("/").slice(0, 3).join("/");
         const proc  = this.statusBar.startProcess("Updating " + appID);
 
-
         const modal = this.modal.fromComponent(UpdateStepModalComponent, {title: `Update ${appID}?`});
         modal.step  = this.step;
-
 
         this.platformRepository.getApp(appID).then((app: RawApp) => {
             this.statusBar.stopProcess(proc);
@@ -130,6 +126,5 @@ export class StepInspectorComponent extends DirectiveBase {
 
     changeTab(tab: string) {
         this.viewMode = tab;
-        this.userPrefService.put("step_inspector_active_tab", tab);
     }
 }

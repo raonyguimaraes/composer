@@ -1,20 +1,19 @@
 import {AfterViewInit, Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren} from "@angular/core";
 import {FormControl} from "@angular/forms";
-import "rxjs/add/operator/do";
-
-import "rxjs/add/operator/map";
 import {Observable} from "rxjs/Observable";
 import {App} from "../../../../../electron/src/sbg-api-client/interfaces/app";
 
 import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
-import {UserPreferencesService} from "../../../services/storage/user-preferences.service";
+import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
 import {TreeNode} from "../../../ui/tree-view/tree-node";
 import {TreeViewComponent} from "../../../ui/tree-view/tree-view.component";
 import {TreeViewService} from "../../../ui/tree-view/tree-view.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
+import {TabData} from "../../workbox/tab-data.interface";
 import {WorkboxService} from "../../workbox/workbox.service";
 import {NavSearchResultComponent} from "../nav-search-result/nav-search-result.component";
 import {PublicAppsPanelService} from "./public-apps-panel.service";
+import {LocalRepositoryService} from "../../../repository/local-repository.service";
 
 @Component({
     selector: "ct-public-apps-panel",
@@ -44,6 +43,8 @@ import {PublicAppsPanelService} from "./public-apps-panel.service";
                                       [icon]="entry?.icon"
                                       [label]="entry?.label"
                                       [title]="entry?.title"
+
+                                      [tabData]="entry?.tabData"
 
                                       [ct-drag-enabled]="entry?.dragEnabled"
                                       [ct-drag-transfer-data]="entry?.dragTransferData"
@@ -100,8 +101,9 @@ export class PublicAppsPanelComponent extends DirectiveBase implements OnInit, A
     appsByToolkit: Observable<TreeNode<any>[]>;
     appsByCategory: Observable<TreeNode<any>[]>;
 
-    constructor(private preferences: UserPreferencesService,
-                private workbox: WorkboxService,
+    constructor(private workbox: WorkboxService,
+                private localRepository: LocalRepositoryService,
+                private platformRepository: PlatformRepositoryService,
                 private service: PublicAppsPanelService) {
         super();
 
@@ -112,6 +114,10 @@ export class PublicAppsPanelComponent extends DirectiveBase implements OnInit, A
 
     ngOnInit() {
 
+        this.localRepository.getPublicAppsGrouping().take(1).subscribeTracked(this, (grouping) =>{
+            this.grouping = grouping;
+        });
+
     }
 
     ngAfterViewInit() {
@@ -120,81 +126,73 @@ export class PublicAppsPanelComponent extends DirectiveBase implements OnInit, A
 
         this.listenForAppOpening();
 
-        // setTimeout(() => {
-        //     this.loadDataSources();
-        //     this.attachSearchObserver();
-        //     this.attachExpansionStateSaving();
-        //     this.listenForAppOpening();
-        // });
+        this.attachSearchObserver();
 
-        // this.searchResultComponents.changes.subscribe(list => {
-        //     list.forEach((el, idx) => setTimeout(() => el.nativeElement.classList.add("shown"), idx * 20));
-        // });
+        this.attachExpansionStateSaving();
+
+        this.searchResultComponents.changes.subscribeTracked(this, list => {
+            list.forEach((el, idx) => setTimeout(() => el.nativeElement.classList.add("shown"), idx * 20));
+        });
     }
 
     switchGrouping(type: "toolkit" | "category") {
         this.grouping = type;
+
+        this.localRepository.setPublicAppsGrouping(type);
+    }
+
+    private search(term): Observable<any[]> {
+        return this.platformRepository.searchPublicApps(term).map(apps => {
+            return apps.map(app => {
+
+                return {
+                    id: app.id,
+                    icon: app.raw["class"] === "Workflow" ? "fa-share-alt" : "fa-terminal",
+                    title: app.name,
+                    label: app.id.split("/").join(" → "),
+                    relevance: 1.5,
+
+                    tabData: {
+                        id: app.id,
+                        isWritable: false,
+                        label: app.name,
+                        language: "json",
+                        type: app.raw["class"],
+                    } as TabData<any>,
+
+                    dragEnabled: true,
+                    dragTransferData: app.id,
+                    dragLabel: app.name,
+                    dragImageClass: app.raw["class"] === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
+                    dragDropZones: ["zone1"]
+                }
+            });
+        });
     }
 
 
     private attachSearchObserver() {
 
+        const searchValueChanges = this.searchContent.valueChanges;
 
-        // const search = (term) => {
-        //
-        //
-        //     const reversedTerm = term.split("").reverse().join("");
-        //     return this.treeNodes.reduce((acc, node) => {
-        //         return acc.concat(node.children.map(child => Object.assign(child, {parentLabel: node.label})));
-        //     }, []).map((child) => {
-        //         const fuzziness = DataGatewayService.fuzzyMatch(reversedTerm, child.id.split("").reverse().join(""));
-        //         return {
-        //             id: child.id,
-        //             title: child.label,
-        //             label: [child["parentLabel"], child.data["sbg:toolkit"], (child.data["sbg:categories"] || []).join(", ")].join("/"),
-        //             icon: child.data.class === "Workflow" ? "fa-share-alt" : "fa-terminal",
-        //
-        //             dragEnabled: true,
-        //             dragTransferData: child.id,
-        //             dragLabel: child.label,
-        //             dragImageClass: child.data["class"] === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
-        //             dragDropZones: ["zone1"],
-        //
-        //             fuzziness
-        //         };
-        //     }).filter(child => child.fuzziness > 0.01)
-        //         .sort((a, b) => b.fuzziness - a.fuzziness)
-        //         .slice(0, 20);
-        // };
-        //
-        // this.searchContent.valueChanges
-        //     .do(term => this.searchResults = undefined)
-        //     .debounceTime(250)
-        //     .distinctUntilChanged()
-        //     .filter(term => term.trim().length !== 0)
-        //     .switchMap(term => Observable.of(search(term)))
-        //     .subscribe(results => {
-        //         this.searchResults = results;
-        //         this.cdr.markForCheck();
-        //     });
+        searchValueChanges
+            .subscribeTracked(this, () => this.searchResults = undefined);
+
+        searchValueChanges
+            .debounceTime(250)
+            .filter(term => term.trim().length !== 0)
+            .switchMap(term => this.search(term))
+            .subscribe(results => {
+                this.searchResults = results;
+            });
     }
 
     private attachExpansionStateSaving() {
-        this.tree.expansionChanges
-            .flatMap(node => this.preferences.get("expandedNodes"), (node, expanded) => ({node, expanded}))
-            .subscribe((data: { node: any, expanded: string[] }) => {
-                const {node, expanded} = data;
 
-                if (node.isExpanded && expanded.indexOf(node.id) === -1) {
-                    this.preferences.put("expandedNodes", expanded.concat(node.id));
-                } else if (!node.isExpanded) {
-                    const idx = expanded.indexOf(node.id);
-                    if (idx !== -1) {
-                        expanded.splice(idx, 1);
-                        this.preferences.put("expandedNodes", expanded);
-                    }
-                }
-            });
+        this.tree.expansionChanges.subscribeTracked(this, (node) => {
+            const state = node.getExpansionState();
+            this.platformRepository.setNodeExpansion(node.id, state);
+        });
     }
 
 
@@ -218,18 +216,10 @@ export class PublicAppsPanelComponent extends DirectiveBase implements OnInit, A
 
             this.workbox.openTab(tab);
         });
-
-        // this.tree.open.filter(n => n.)
-        // this.tree.open.filter(n => n.type === "app")
-        //     .flatMap(node => this.workbox.getOrCreateFileTab(node.id).catch(() => {
-        //         return Observable.empty()
-        //     }))
-        //     .subscribe(tab => this.workbox.openTab(tab));
     }
 
-    openSearchResult(entry: {
-        id: string
-    }) {
-        this.workbox.getOrCreateFileTab(entry.id).take(1).subscribe(tab => this.workbox.openTab(tab));
+    openSearchResult(entry: NavSearchResultComponent) {
+        const tab = this.workbox.getOrCreateAppTab(entry.tabData);
+        this.workbox.openTab(tab);
     }
 }

@@ -1,13 +1,11 @@
 import {Component} from "@angular/core";
 import {AuthService} from "../../auth/auth.service";
 import {AuthCredentials} from "../../auth/model/auth-credentials";
-import {GlobalService} from "../../core/global/global.service";
 import {PlatformCredentialsModalComponent} from "../../core/modals/platform-credentials-modal/platform-credentials-modal.component";
+import {WorkboxService} from "../../core/workbox/workbox.service";
 import {SettingsService} from "../../services/settings/settings.service";
-import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {ModalService} from "../../ui/modal/modal.service";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
-import {WorkboxService} from "../../core/workbox/workbox.service";
 
 type ViewMode = "auth" | "keyBindings" | "cache";
 
@@ -71,8 +69,6 @@ export class SettingsComponent extends DirectiveBase {
 
 
     constructor(private settings: SettingsService,
-                public preferences: UserPreferencesService,
-                private global: GlobalService,
                 public modal: ModalService,
                 private workbox: WorkboxService,
                 public auth: AuthService) {
@@ -113,8 +109,6 @@ export class SettingsComponent extends DirectiveBase {
     setActiveCredentials(credentials: AuthCredentials) {
 
         this.auth.setActiveCredentials(credentials).then(() => {
-
-            // this.global.reloadPlatformData();
             this.workbox.forceReloadTabs();
         });
     }

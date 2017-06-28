@@ -48,11 +48,13 @@ export class PublicAppsPanelService {
                         return;
                     }
 
+                    const nodeID = `__toolkit/${toolkit}`;
+
                     folderNodes.push({
-                        id: `__toolkit/${toolkit}`,
+                        id: nodeID,
                         type: "toolkit",
                         label: toolkit,
-                        isExpanded: false,
+                        isExpanded: this.platformRepository.getExpandedNodes().map(list => list.indexOf(nodeID) !== -1),
                         isExpandable: true,
                         icon: "fa-folder",
                         children: Observable.of(appNodes)
@@ -97,11 +99,13 @@ export class PublicAppsPanelService {
                         uncategorizedAppNodes.push(...appNodes);
                         return;
                     }
+
+                    const nodeID = `__category/${category}`;
                     folderNodes.push({
-                        id: `__category/${category}`,
+                        id: nodeID,
                         type: "category",
                         label: category,
-                        isExpanded: false,
+                        isExpanded: this.platformRepository.getExpandedNodes().map(list => list.indexOf(nodeID) !== -1),
                         isExpandable: true,
                         children: Observable.of(appNodes),
                         icon: "fa-folder"

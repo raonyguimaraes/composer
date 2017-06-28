@@ -87,7 +87,12 @@ module.exports = {
     },
 
     searchLocalProjects: (data: { term: string, limit: number, folders: string[] }, callback) => {
-        SearchController.searchLocalProjects(data.folders, data.term, data.limit, callback);
+        repositoryLoad.then(() => {
+
+            const localFolders = repository.local.localFolders;
+            SearchController.searchLocalProjects(localFolders, data.term, data.limit, callback);
+
+        }).catch(callback);
     },
 
 

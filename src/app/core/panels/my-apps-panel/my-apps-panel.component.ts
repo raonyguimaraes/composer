@@ -1,18 +1,7 @@
-import {
-    AfterContentInit,
-    AfterViewInit,
-    ChangeDetectorRef,
-    Component,
-    ElementRef,
-    OnInit,
-    QueryList,
-    ViewChild,
-    ViewChildren
-} from "@angular/core";
+import {AfterContentInit, AfterViewInit, ChangeDetectorRef, Component, ElementRef, QueryList, ViewChild, ViewChildren} from "@angular/core";
 import {FormControl} from "@angular/forms";
-import "rxjs/add/operator/do";
-import "rxjs/add/operator/map";
 import {Observable} from "rxjs/Observable";
+import {PlatformRepositoryService} from "../../../repository/platform-repository.service";
 import {ContextService} from "../../../ui/context/context.service";
 import {MenuItem} from "../../../ui/menu/menu-item";
 import {ModalService} from "../../../ui/modal/modal.service";
@@ -24,6 +13,7 @@ import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 import {AddSourceModalComponent} from "../../modals/add-source-modal/add-source-modal.component";
 import {CreateAppModalComponent} from "../../modals/create-app-modal/create-app-modal.component";
 import {CreateLocalFolderModalComponent} from "../../modals/create-local-folder-modal/create-local-folder-modal.component";
+import {TabData} from "../../workbox/tab-data.interface";
 import {WorkboxService} from "../../workbox/workbox.service";
 import {NavSearchResultComponent} from "../nav-search-result/nav-search-result.component";
 import {MyAppsPanelService} from "./my-apps-panel.service";
@@ -34,7 +24,7 @@ import {MyAppsPanelService} from "./my-apps-panel.service";
     templateUrl: "./my-apps-panel.component.html",
     styleUrls: ["./my-apps-panel.component.scss"]
 })
-export class MyAppsPanelComponent extends DirectiveBase implements AfterContentInit, OnInit, AfterViewInit {
+export class MyAppsPanelComponent extends DirectiveBase implements AfterContentInit, AfterViewInit {
 
     searchContent = new FormControl();
 
@@ -56,13 +46,11 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
                 private workbox: WorkboxService,
                 private modal: ModalService,
                 private dataGateway: DataGatewayService,
+                private platformRepository: PlatformRepositoryService,
                 private service: MyAppsPanelService,
                 private context: ContextService) {
         super();
 
-    }
-
-    ngOnInit(): void {
     }
 
     ngAfterContentInit() {
@@ -93,80 +81,93 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
         });
     }
 
-    openSearchResult(entry: { id: string }) {
-        this.workbox.getOrCreateFileTab(entry.id)
-            .take(1)
-            .subscribe(tab => this.workbox.openTab(tab));
+    openSearchResult(entry: NavSearchResultComponent) {
+
+        const tab = this.workbox.getOrCreateAppTab(entry.tabData);
+        this.workbox.openTab(tab);
     }
 
     private attachSearchObserver() {
 
-        const localFileSearch = (term) => this.dataGateway.searchLocalProjects(term).map(results => results.map(result => {
+        const localFileSearch = (term) => this.dataGateway.searchLocalProjects(term).then(results => {
+            return results.map(result => {
+                const id    = result.path;
+                const label = result.path.split("/").slice(-3, -1).join("/");
+                const title = result.path.split("/").pop();
 
-            const id    = result.path;
-            const label = result.path.split("/").slice(-3, -1).join("/");
-            const title = result.path.split("/").pop();
+                let icon      = "fa-file";
+                let relevance = result.relevance;
 
-            let icon      = "fa-file";
-            let relevance = result.relevance;
+                if (result.type === "Workflow") {
+                    icon = "fa-share-alt";
+                    relevance++;
+                } else if (result.type === "CommandLineTool") {
+                    icon = "fa-terminal";
+                    relevance++;
+                }
 
-            if (result.type === "Workflow") {
-                icon = "fa-share-alt";
-                relevance++;
-            } else if (result.type === "CommandLineTool") {
-                icon = "fa-terminal";
-                relevance++;
-            }
-
-            return {
-                id, icon, title, label, relevance,
-                dragEnabled: ["Workflow", "CommandLineTool"].indexOf(result.type) !== -1,
-                dragTransferData: id,
-                dragLabel: title,
-                dragImageClass: result.type === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
-                dragDropZones: ["zone1"]
-            };
-        }));
-
-
-        const projectSearch = (term) => this.dataGateway.searchUserProjects(term)
-            .map(resultGroups => {
-                return resultGroups.map(group => {
-
-                    const {results, hash} = group;
-
-                    return results.map(result => {
-                        const id    = hash + "/" + result["owner"] + "/" + result["slug"] + "/" + result["sbg:id"];
-                        const title = result.label;
-
-                        return {
-                            id,
-                            icon: result.class === "Workflow" ? "fa-share-alt" : "fa-terminal",
-                            title,
-                            label: result.id.split("/").slice(5, 7).join(" → "),
-                            relevance: 1.5,
-
-                            dragEnabled: true,
-                            dragTransferData: id,
-                            dragLabel: title,
-                            dragImageClass: result["class"] === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
-                            dragDropZones: ["zone1"]
-                        };
-                    });
-
-                }).reduce((acc, item) => acc.concat(...item), []);
+                return {
+                    id, icon, title, label, relevance,
+                    tabData: {
+                        id: result.path,
+                        isWritable: result.isWritable,
+                        label: result.name,
+                        language: ["cwl", "yml", "yaml"].indexOf(result.language) === -1 ? "json" : "yaml",
+                        type: result.type,
+                    } as TabData<any>,
+                    type: "file",
+                    dragEnabled: ["Workflow", "CommandLineTool"].indexOf(result.type) !== -1,
+                    dragTransferData: id,
+                    dragLabel: title,
+                    dragImageClass: result.type === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
+                    dragDropZones: ["zone1"]
+                };
             });
+        });
+
+        const projectSearch = (term) => this.platformRepository.searchAppsFromOpenProjects(term).take(1).toPromise().then(apps => {
+            return apps.map(app => {
+
+                return {
+                    id: app.id,
+                    icon: app.raw["class"] === "Workflow" ? "fa-share-alt" : "fa-terminal",
+                    title: app.name,
+                    label: app.id.split("/").join(" → "),
+                    relevance: 1.5,
+
+                    tabData: {
+                        id: app.id,
+                        isWritable: true,
+                        label: app.name,
+                        language: "json",
+                        type: app.raw["class"],
+                    } as TabData<any>,
+
+                    dragEnabled: true,
+                    dragTransferData: app.id,
+                    dragLabel: app.name,
+                    dragImageClass: app.raw["class"] === "CommandLineTool" ? "icon-command-line-tool" : "icon-workflow",
+                    dragDropZones: ["zone1"]
+                }
+
+            })
+        });
 
         this.searchContent.valueChanges
             .do(term => this.searchResults = undefined)
             .debounceTime(250)
             .distinctUntilChanged()
             .filter(term => term.trim().length !== 0)
-            .flatMap(term => Observable.zip(localFileSearch(term), projectSearch(term)))
+            .flatMap(term => Observable.zip(
+                localFileSearch(term),
+                projectSearch(term)
+            ))
             .subscribe(datasets => {
                 const combined     = [].concat(...datasets).sort((a, b) => b.relevance - a.relevance);
                 this.searchResults = combined;
+
                 this.cdr.markForCheck();
+                this.cdr.detectChanges();
             });
     }
 
@@ -176,7 +177,7 @@ export class MyAppsPanelComponent extends DirectiveBase implements AfterContentI
      */
     private attachExpansionStateSaving(): void {
 
-        this.tree.expansionChanges.subscribe(node => {
+        this.tree.expansionChanges.subscribeTracked(this, node => {
 
             const state = node.getExpansionState();
 

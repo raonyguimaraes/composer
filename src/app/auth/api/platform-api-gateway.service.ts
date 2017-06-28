@@ -1,7 +1,6 @@
 import {Injectable} from "@angular/core";
-import {UserPreferencesService} from "../../services/storage/user-preferences.service";
-import {PlatformAPI} from "./platform-api";
 import {CtHttp} from "../../http/ct-http.service";
+import {PlatformAPI} from "./platform-api";
 
 @Injectable()
 export class PlatformAPIGatewayService {
@@ -9,7 +8,7 @@ export class PlatformAPIGatewayService {
     private apis: { [hash: string]: PlatformAPI } = {};
 
 
-    constructor(private http: CtHttp, private prefs: UserPreferencesService) {
+    constructor(private http: CtHttp) {
 
         // prefs.getCredentials().subscribe(credentials => {
         //     credentials.forEach(cred => {

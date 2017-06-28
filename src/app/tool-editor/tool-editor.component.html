@@ -121,7 +121,7 @@
     </ct-code-editor>
 
     <!--GUI Editor-->
-    <ct-tool-visual-editor *ngIf="viewMode === 'gui' && !isLoading"
+    <ct-tool-visual-editor *ngIf="viewMode === 'gui' && !isLoading && dataModel"
                            class="flex-col"
                            [readonly]="!tabData.isWritable"
                            [formGroup]="toolGroup"

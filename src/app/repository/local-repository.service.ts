@@ -11,12 +11,14 @@ import {IpcService} from "../services/ipc.service";
 @Injectable()
 export class LocalRepositoryService {
 
-    private localFolders: ReplaySubject<string[]>             = new ReplaySubject(1);
-    private openTabs: ReplaySubject<TabData<any>[]>           = new ReplaySubject(1);
-    private expandedFolders: ReplaySubject<string[]>          = new ReplaySubject(1);
-    private recentApps: ReplaySubject<RecentAppTab[]>         = new ReplaySubject(1);
-    private credentials: ReplaySubject<AuthCredentials[]>     = new ReplaySubject(1);
-    private activeCredentials: ReplaySubject<AuthCredentials> = new ReplaySubject(1);
+    private localFolders: ReplaySubject<string[]>                     = new ReplaySubject(1);
+    private openTabs: ReplaySubject<TabData<any>[]>                   = new ReplaySubject(1);
+    private expandedFolders: ReplaySubject<string[]>                  = new ReplaySubject(1);
+    private recentApps: ReplaySubject<RecentAppTab[]>                 = new ReplaySubject(1);
+    private credentials: ReplaySubject<AuthCredentials[]>             = new ReplaySubject(1);
+    private activeCredentials: ReplaySubject<AuthCredentials>         = new ReplaySubject(1);
+    private selectedAppsPanel: ReplaySubject<"myApps" | "publicApps"> = new ReplaySubject(1);
+    private publicAppsGrouping: ReplaySubject<"toolkit" | "category"> = new ReplaySubject(1);
 
     constructor(private ipc: IpcService) {
 
@@ -24,8 +26,26 @@ export class LocalRepositoryService {
         this.listen("recentApps").subscribe(this.recentApps);
         this.listen("localFolders").subscribe(this.localFolders);
         this.listen("expandedNodes").subscribe(this.expandedFolders);
+        this.listen("selectedAppsPanel").subscribe(this.selectedAppsPanel);
+        this.listen("publicAppsGrouping").subscribe(this.publicAppsGrouping);
         this.listen("activeCredentials").map(cred => AuthCredentials.from(cred)).subscribe(this.activeCredentials);
         this.listen("credentials").map(creds => creds.map(c => AuthCredentials.from(c))).subscribe(this.credentials);
+    }
+
+    getSelectedAppsPanel(): Observable<"myApps" | "publicApps"> {
+        return this.selectedAppsPanel;
+    }
+
+    setSelectedAppsPanel(selectedAppsPanel: "myApps" | "publicApps"): Promise<any> {
+        return this.patch({selectedAppsPanel}).toPromise();
+    }
+
+    getPublicAppsGrouping(): Observable<"toolkit" | "category"> {
+        return this.publicAppsGrouping;
+    }
+
+    setPublicAppsGrouping(publicAppsGrouping: "toolkit" | "category"): Promise<any> {
+        return this.patch({publicAppsGrouping}).toPromise();
     }
 
     getLocalFolders(): Observable<string[]> {

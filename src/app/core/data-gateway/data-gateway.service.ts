@@ -9,15 +9,11 @@ import "rxjs/add/observable/zip";
 import "rxjs/add/operator/catch";
 
 import "rxjs/add/operator/mergeMap";
-import {Observable, ObservableInput} from "rxjs/Observable";
+import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
 import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
-import {OldAuthService} from "../../auth/auth/auth.service";
-import {NotificationBarService} from "../../layout/notification-bar/notification-bar.service";
 import {noop} from "../../lib/utils.lib";
-import {PlatformAppEntry} from "../../services/api/platforms/platform-api.types";
 import {IpcService} from "../../services/ipc.service";
-import {UserPreferencesService} from "../../services/storage/user-preferences.service";
 import {ModalService} from "../../ui/modal/modal.service";
 
 @Injectable()
@@ -38,10 +34,7 @@ export class DataGatewayService {
     }
 
 
-    constructor(private preferences: UserPreferencesService,
-                private modal: ModalService,
-                private errorBar: NotificationBarService,
-                private oldAuth: OldAuthService,
+    constructor(private modal: ModalService,
                 private apiGateway: PlatformAPIGatewayService,
                 private ipc: IpcService) {
     }
@@ -58,30 +51,20 @@ export class DataGatewayService {
         this.cacheInvalidation.next(`readDirectory.${folder}`);
     }
 
-    searchLocalProjects(term, limit = 20) {
+    searchLocalProjects(term, limit = 20): Promise<{
+        type: "Workflow" | "CommandLineTool" | string;
+        path: string;
+        name: string;
+        isReadable: boolean;
+        isWritable: boolean;
+        isDir: boolean;
+        isFile: boolean;
+        dirname: string;
+        language: "cwl" | "json" | "yaml" | string;
+        relevance: number;
+    }[]> {
 
-        return this.preferences.get("localFolders", []).switchMap(folders => this.ipc.request("searchLocalProjects", {
-            term,
-            limit,
-            folders
-        })).take(1);
-    }
-
-    searchUserProjects(term: string, limit = 20): Observable<{ hash: string, results: PlatformAppEntry[] }[]> {
-        return this.oldAuth.connections.take(1).flatMap(credentials => {
-            const hashes   = credentials.map(c => c.hash);
-            const requests = hashes.map(hash => {
-
-                const platform = this.apiGateway.forHash(hash);
-
-                return platform ? platform.searchUserProjects(term, limit).map(results => ({results, hash}))
-                    : Observable.throw(
-                        new Error("Cannot get public apps because you are not connected to the necessary platform."));
-
-            });
-
-            return Observable.zip(...requests);
-        });
+        return this.ipc.request("searchLocalProjects", {term, limit,}).toPromise();
     }
 
     fetchFileContent(almostID: string, parse = false): Observable<string> {
@@ -190,17 +173,6 @@ export class DataGatewayService {
             swapID: swapID,
             swapContent: content
         });
-    }
-
-    private makeErrorBarHandler() {
-        return <T>(err: Error, observable: ObservableInput<T>) => {
-            if (err.name === "RequestError" && !navigator.onLine) {
-                this.errorBar.showError("You are offline");
-            } else {
-                this.errorBar.showError(err.message);
-            }
-            return Observable.throw(err);
-        }
     }
 
     sendFeedbackToPlatform(type: string, text: string): Promise<any> {

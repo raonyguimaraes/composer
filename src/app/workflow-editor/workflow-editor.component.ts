@@ -141,7 +141,7 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
 
             this.statusBar.stopProcess(updateStatusProcess);
         }).catch(err => {
-            this.errorBar.showError(err.error ? err.error.message : err.message);
+            this.errorBar.showError("Cannot get app updates. " + (err.error ? err.error.message : err.message));
             this.statusBar.stopProcess(updateStatusProcess);
         });
 
