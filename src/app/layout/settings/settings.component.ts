@@ -114,7 +114,7 @@ export class SettingsComponent extends DirectiveBase {
 
         this.auth.setActiveCredentials(credentials).then(() => {
 
-            this.global.reloadPlatformData();
+            // this.global.reloadPlatformData();
             this.workbox.forceReloadTabs();
         });
     }

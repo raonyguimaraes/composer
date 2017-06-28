@@ -34,7 +34,7 @@ export class PlatformRepositoryService {
     }
 
     getOpenTabs(): Observable<TabData<any>[]> {
-        return this.openTabs.do(data => console.log("Received open tabs for platform", data));
+        return this.openTabs;
     }
 
     getAppsForProject(projectID): Observable<App[]> {
@@ -144,7 +144,6 @@ export class PlatformRepositoryService {
 
 
     createApp(appID: string, content: string): Promise<string> {
-        console.log("Pushing new app", content);
         return this.ipc.request("createPlatformApp", {
             id: appID,
             content: content
@@ -158,7 +157,6 @@ export class PlatformRepositoryService {
             appContent["sbg:revisionNotes"] = revisionNote;
         }
         content = JSON.stringify(appContent, null, 4);
-        console.log("Pushing json content", content);
 
         return this.ipc.request("saveAppRevision", {
             id: appID,

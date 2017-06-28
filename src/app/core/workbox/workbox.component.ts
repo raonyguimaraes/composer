@@ -115,7 +115,6 @@ export class WorkBoxComponent extends DirectiveBase implements OnInit, AfterView
 
 
         this.workbox.tabs.subscribeTracked(this, tabs => {
-            console.log("Setting tracked tabs to", tabs);
             this.tabs = tabs;
         });
     }
