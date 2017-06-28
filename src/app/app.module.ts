@@ -2,9 +2,8 @@ import {NgModule} from "@angular/core";
 import {FormBuilder, FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {HttpModule, RequestOptions, XHRBackend} from "@angular/http";
 import {BrowserModule} from "@angular/platform-browser";
-import {PlatformAPIGatewayService} from "./auth/api/platform-api-gateway.service";
+import "rxjs/Rx";
 import {AuthService} from "./auth/auth.service";
-import {OldAuthService} from "./auth/auth/auth.service";
 import {MainComponent} from "./components/main/main.component";
 import {PlatformConnectionService} from "./core/auth/platform-connection.service";
 import {CoreModule} from "./core/core.module";
@@ -26,7 +25,6 @@ import {ToolEditorModule} from "./tool-editor/tool-editor.module";
 import {ModalService} from "./ui/modal/modal.service";
 import {UIModule} from "./ui/ui.module";
 import {WorkflowEditorModule} from "./workflow-editor/workflow-editor.module";
-import "rxjs/Rx";
 
 @NgModule({
     providers: [
@@ -38,8 +36,6 @@ import "rxjs/Rx";
         IpcService,
         LocalRepositoryService,
         ModalService,
-        OldAuthService,
-        PlatformAPIGatewayService,
         PlatformConnectionService,
         StatusBarService,
         PlatformRepositoryService,

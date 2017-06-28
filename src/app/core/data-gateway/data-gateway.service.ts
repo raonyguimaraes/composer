@@ -1,20 +1,9 @@
 import {Injectable} from "@angular/core";
-import {FormControl} from "@angular/forms";
 import * as YAML from "js-yaml";
-import "rxjs/add/observable/empty";
-import "rxjs/add/observable/fromPromise";
-import "rxjs/add/observable/merge";
-import "rxjs/add/observable/throw";
-import "rxjs/add/observable/zip";
-import "rxjs/add/operator/catch";
-
-import "rxjs/add/operator/mergeMap";
 import {Observable} from "rxjs/Observable";
 import {Subject} from "rxjs/Subject";
-import {PlatformAPIGatewayService} from "../../auth/api/platform-api-gateway.service";
 import {noop} from "../../lib/utils.lib";
 import {IpcService} from "../../services/ipc.service";
-import {ModalService} from "../../ui/modal/modal.service";
 
 @Injectable()
 export class DataGatewayService {
@@ -34,9 +23,7 @@ export class DataGatewayService {
     }
 
 
-    constructor(private modal: ModalService,
-                private apiGateway: PlatformAPIGatewayService,
-                private ipc: IpcService) {
+    constructor(private ipc: IpcService) {
     }
 
     checkIfPathExists(path) {
@@ -117,38 +104,7 @@ export class DataGatewayService {
     }
 
     saveFile(fileID, content): Observable<string> {
-        const fileSource = DataGatewayService.getFileSource(fileID);
-
-        if (fileSource === "public") {
-            return Observable.throw("Cannot save a public file.");
-        }
-
-        if (fileSource === "local") {
-            return this.saveLocalFileContent(fileID, content).map(() => content);
-        }
-
-        const [hash] = fileID.split("/");
-
-        const revNote = new FormControl("");
-        return Observable.fromPromise(this.modal.prompt({
-            title: "Publish New App Revision",
-            content: "Revision Note",
-            cancellationLabel: "Cancel",
-            confirmationLabel: "Publish",
-            formControl: revNote
-        })).catch(() => {
-            // In case when you click on Cancel button or Esc button on your keyboard
-            return Observable.empty()
-        }).flatMap(() => {
-            const platform = this.apiGateway.forHash(hash);
-
-            const call = platform ? platform.saveApp(YAML.safeLoad(content, {json: true} as any), revNote.value)
-                : Observable.throw(
-                    new Error("Could not save the app because you are not connected to the necessary platform."));
-
-            return call.map(r => JSON.stringify(r.message, null, 4));
-
-        });
+        return this.saveLocalFileContent(fileID, content).map(() => content);
     }
 
     /**

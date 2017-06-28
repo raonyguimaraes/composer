@@ -4,7 +4,6 @@ import * as YAML from "js-yaml";
 import {SlugifyPipe} from "ngx-pipes";
 import {Observable} from "rxjs/Observable";
 import {Project} from "../../../../../electron/src/sbg-api-client/interfaces/project";
-import {PlatformAPIGatewayService} from "../../../auth/api/platform-api-gateway.service";
 import {AppGeneratorService} from "../../../cwl/app-generator/app-generator.service";
 import {LocalFileRepositoryService} from "../../../file-repository/local-file-repository.service";
 import {LocalRepositoryService} from "../../../repository/local-repository.service";
@@ -13,7 +12,6 @@ import {ModalService} from "../../../ui/modal/modal.service";
 import {DirectiveBase} from "../../../util/directive-base/directive-base";
 import {DataGatewayService} from "../../data-gateway/data-gateway.service";
 import {WorkboxService} from "../../workbox/workbox.service";
-import {App} from "../../../../../electron/src/sbg-api-client/interfaces/app";
 
 const {app, dialog} = window["require"]("electron").remote;
 
@@ -146,7 +144,6 @@ export class CreateAppModalComponent extends DirectiveBase implements OnInit {
     constructor(private dataGateway: DataGatewayService,
                 public modal: ModalService,
                 private slugify: SlugifyPipe,
-                private apiGateway: PlatformAPIGatewayService,
                 private cdr: ChangeDetectorRef,
                 private workbox: WorkboxService,
                 private platformRepository: PlatformRepositoryService,

@@ -108,7 +108,8 @@ export class PublicAppsPanelService {
                         isExpanded: this.platformRepository.getExpandedNodes().map(list => list.indexOf(nodeID) !== -1),
                         isExpandable: true,
                         children: Observable.of(appNodes),
-                        icon: "fa-folder"
+                        icon: "fa-folder",
+                        iconExpanded: "fa-folder-open"
                     });
                 });
 
