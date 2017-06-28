@@ -1334,11 +1334,7 @@ cwl-svg@0.0.35:
     core-js "^2.4.1"
     cwlts "^1.13.15"
 
-cwlts@^1.13.15:
-  version "1.13.21"
-  resolved "https://registry.yarnpkg.com/cwlts/-/cwlts-1.13.21.tgz#a4347ef9d2c9993bcdfbca0ccfb8ef8ef980b46f"
-
-cwlts@^1.13.22:
+cwlts@^1.13.15, cwlts@^1.13.22:
   version "1.13.22"
   resolved "https://registry.yarnpkg.com/cwlts/-/cwlts-1.13.22.tgz#64084aaec2e4ce3c670ce249ba5939b186fa2169"
 
@@ -5408,7 +5404,7 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
-"typescript@>=2.0.0 <2.4.0", typescript@^2.3.4:
+typescript@2.3.4, "typescript@>=2.0.0 <2.4.0":
   version "2.3.4"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.3.4.tgz#3d38321828231e434f287514959c37a82b629f42"
 

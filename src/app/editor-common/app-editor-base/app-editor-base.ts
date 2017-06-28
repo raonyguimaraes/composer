@@ -1,4 +1,12 @@
-import {AfterViewInit, Injector, Input, OnInit, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
+import {
+    AfterViewInit,
+    Injector,
+    Input,
+    OnInit,
+    TemplateRef,
+    ViewChild,
+    ViewContainerRef
+} from "@angular/core";
 import {FormControl} from "@angular/forms";
 import {CommandLineToolModel, WorkflowModel} from "cwlts/models";
 
@@ -164,9 +172,6 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
                 this.isLoading = false;
 
                 if (this.validationState.isInvalid) {
-                    if (this.tabData.isWritable) {
-                        this.toggleLock(true);
-                    }
                     return;
                 }
 
@@ -361,7 +366,16 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
         }, err => {
             this.errorBar.showError("RDF resolution error: " + err.message);
             this.isResolvingContent = false;
-            return err;
+
+            this.validationState.isValid = false;
+            this.validationState.errors  = [{
+                loc: "document",
+                type: "error",
+                message: err.message
+            }];
+
+            this.viewMode = "code";
+            throw err;
         });
     }
 
@@ -387,8 +401,6 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
                 this.viewMode = tabName;
             }, err => {
                 this.viewMode = "code";
-                this.errorBar.showError(`Cannot resolve RDF schema: “${err}”`);
-
             });
             return;
         }
