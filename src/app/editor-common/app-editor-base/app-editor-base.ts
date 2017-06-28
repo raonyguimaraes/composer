@@ -1,4 +1,12 @@
-import {AfterViewInit, Injector, Input, OnInit, TemplateRef, ViewChild, ViewContainerRef} from "@angular/core";
+import {
+    AfterViewInit,
+    Injector,
+    Input,
+    OnInit,
+    TemplateRef,
+    ViewChild,
+    ViewContainerRef
+} from "@angular/core";
 import {FormControl} from "@angular/forms";
 import {CommandLineToolModel, WorkflowModel} from "cwlts/models";
 
@@ -164,9 +172,6 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
                 this.isLoading = false;
 
                 if (this.validationState.isInvalid) {
-                    if (this.tabData.isWritable) {
-                        this.toggleLock(true);
-                    }
                     return;
                 }
 
@@ -175,7 +180,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
                     if (this.tabData.isWritable && this.hasCopyOfProperty()) {
                         this.toggleLock(true);
                     }
-                });
+                }, err => console.warn);
             });
 
 
@@ -223,7 +228,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
         this.syncModelAndCode(true).then(() => {
             const modal      = this.modal.fromComponent(PublishModalComponent, {title: "Publish an App"});
             modal.appContent = this.codeEditorContent.value;
-        });
+        }, err => console.warn);
     }
 
     provideStatusControls(): TemplateRef<any> {
@@ -361,7 +366,16 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
         }, err => {
             this.errorBar.showError("RDF resolution error: " + err.message);
             this.isResolvingContent = false;
-            return err;
+
+            this.validationState.isValid = false;
+            this.validationState.errors  = [{
+                loc: "document",
+                type: "error",
+                message: err.message
+            }];
+
+            this.viewMode = "code";
+            throw err;
         });
     }
 
@@ -387,8 +401,6 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
                 this.viewMode = tabName;
             }, err => {
                 this.viewMode = "code";
-                this.errorBar.showError(`Cannot resolve RDF schema: “${err}”`);
-
             });
             return;
         }
@@ -401,7 +413,7 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
      * When click on Resolve button (visible only if app is a local file and you are in Code mode)
      */
     resolveButtonClick(): void {
-        this.resolveToModel(this.codeEditorContent.value);
+        this.resolveToModel(this.codeEditorContent.value).then(() => {}, err => console.warn);
     }
 
     toggleReport(panel: string) {
