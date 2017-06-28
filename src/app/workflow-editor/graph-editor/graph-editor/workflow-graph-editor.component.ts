@@ -26,7 +26,7 @@ import {WorkflowEditorService} from "../../workflow-editor.service";
     encapsulation: ViewEncapsulation.None,
     styleUrls: ["./workflow-graph-editor.component.scss"],
     template: `
-        <div *ngIf="model.steps.length === 0" class="svg-graph-empty-state"></div>
+        <div *ngIf="model && model.steps.length === 0" class="svg-graph-empty-state"></div>
         
         <svg (dblclick)="openInspector($event)"
              ct-click

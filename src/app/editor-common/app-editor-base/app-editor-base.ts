@@ -138,6 +138,15 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
         });
 
         /**
+         * We will store the validation state from the validator to avoid excessive template subscribers.
+         * Also, we will at some times override the data from the state validity with model validation.
+         */
+        validation.subscribe(state => {
+            console.log("subsequent", JSON.parse(JSON.stringify(state)));
+            this.validationState = state;
+        });
+
+        /**
          * After the initial validation, external code changes should resolve and recreate the model.
          * The issue is that model creation registers a validation callback that overrides validation state
          * provided by the {@link validation} stream. For the first input, however, the app might not be
@@ -147,10 +156,20 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
          * the model creation.
          */
         firstValidationEnd.withLatestFrom(externalCodeChanges, (_, inner) => inner)
+
             .switchMap(inner => Observable.of(inner).merge(externalCodeChanges).distinctUntilChanged())
             .subscribeTracked(this, code => {
+
+                this.isLoading = false;
+
+                if (this.validationState.isInvalid) {
+                    if (this.tabData.isWritable) {
+                        this.toggleLock(true);
+                    }
+                    return;
+                }
+
                 this.resolveToModel(code).then(() => {
-                    this.isLoading = false;
 
                     if (this.tabData.isWritable && this.hasCopyOfProperty()) {
                         this.toggleLock(true);
@@ -163,14 +182,10 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
         /** This does not work very well, so disable it for now */
         // firstDirtyCodeChange.subscribeTracked(this, isDirty => this.changeTabLabel(this.originalTabLabel + (isDirty ? " (modified)" : "")));
 
-        /**
-         * We will store the validation state from the validator to avoid excessive template subscribers.
-         * Also, we will at some times override the data from the state validity with model validation.
-         */
-        validation.subscribe(state => this.validationState = state);
 
         /** When the first validation ends, turn off the loader and determine which view we can show. Invalid app forces code view */
         firstValidationEnd.subscribe(state => {
+            console.log("First validation end", JSON.parse(JSON.stringify(state)));
             this.viewMode    = state.isValid ? this.getPreferredTab() : "code";
             this.reportPanel = state.isValid ? this.getPreferredReportPanel() : this.reportPanel;
         });
@@ -181,11 +196,9 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
         const proc = this.statusBar.startProcess(`Saving ${this.originalTabLabel}`);
         const text = this.viewMode === "code" ? this.codeEditorContent.value : this.getModelText();
 
-        console.log("Starging app saving");
         this.appSavingService
             .save(this.tabData.id, text)
             .then(update => {
-                console.log("Done with app saving");
                 this.priorityCodeUpdates.next(update);
                 this.statusBar.stopProcess(proc, `Saved: ${this.originalTabLabel}`);
             }, err => {
@@ -290,10 +303,16 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
     }
 
     protected afterModelValidation(): void {
-        Object.assign(this.validationState, {
+
+        const hasErrorsOrWarnings = this.dataModel.errors.length || this.dataModel.warnings.length;
+
+        this.validationState = {
             errors: this.dataModel.errors || [],
-            warnings: this.dataModel.warnings || []
-        });
+            warnings: this.dataModel.warnings || [],
+            isValid: !hasErrorsOrWarnings,
+            isInvalid: !!hasErrorsOrWarnings,
+            isPending: false
+        };
     }
 
     /**

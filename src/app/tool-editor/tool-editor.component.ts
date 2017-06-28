@@ -23,6 +23,7 @@ import {IpcService} from "../services/ipc.service";
 import {ModalService} from "../ui/modal/modal.service";
 import "../util/rx-extensions/subscribe-tracked";
 import {PlatformRepositoryService} from "../repository/platform-repository.service";
+import {CommandLineToolModel} from "cwlts/models";
 
 @Component({
     selector: "ct-tool-editor",
@@ -56,7 +57,7 @@ export class ToolEditorComponent extends AppEditorBase implements OnInit {
     reportPanel: "validation" | "commandLinePreview" | undefined;
 
     /** Model that's recreated on document change */
-    dataModel = CommandLineToolFactory.from(null, "document");
+    dataModel: CommandLineToolModel;
 
     /** Sorted array of resulting command line parts */
     commandLineParts: Subject<CommandLinePart[]> = new ReplaySubject();
