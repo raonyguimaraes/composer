@@ -49,7 +49,7 @@
                 *ngIf="tabData.dataSource !== 'local'"
                 ct-tooltip="Open on Platform"
                 tooltipPlacement="bottom"
-                (click)="platformAppService.openOnPlatform(dataModel.sbgId)">
+                (click)="openOnPlatform(dataModel.sbgId)">
             <i class="fa fa-fw fa-external-link"></i>
         </button>
 

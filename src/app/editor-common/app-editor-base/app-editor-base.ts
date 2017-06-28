@@ -17,6 +17,7 @@ import {StatusControlProvider} from "../../layout/status-bar/status-control-prov
 import {ModalService} from "../../ui/modal/modal.service";
 import {DirectiveBase} from "../../util/directive-base/directive-base";
 import {AppValidatorService, AppValidityState} from "../app-validator/app-validator.service";
+import {PlatformAppService} from "../components/platform-app-common/platform-app.service";
 import {EditorInspectorService} from "../inspector/editor-inspector.service";
 import {APP_SAVER_TOKEN, AppSaver} from "../services/app-saving/app-saver.interface";
 
@@ -77,7 +78,8 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
                 protected dataGateway: DataGatewayService,
                 protected injector: Injector,
                 protected appValidator: AppValidatorService,
-                protected codeSwapService: CodeSwapService) {
+                protected codeSwapService: CodeSwapService,
+                protected platformAppService: PlatformAppService) {
 
         super();
     }
@@ -376,6 +378,10 @@ export abstract class AppEditorBase extends DirectiveBase implements StatusContr
 
         // Force browser reflow, heights and scroll bar size gets inconsistent otherwise
         setTimeout(() => window.dispatchEvent(new Event("resize")));
+    }
+
+    openOnPlatform(appID: string) {
+        this.platformAppService.openOnPlatform(appID);
     }
 
     protected abstract recreateModel(json: Object): void;

@@ -70,8 +70,9 @@ export class ToolEditorComponent extends AppEditorBase implements OnInit {
                 dataGateway: DataGatewayService,
                 injector: Injector,
                 appValidator: AppValidatorService,
-                codeSwapService: CodeSwapService) {
-        super(statusBar, errorBar, modal, inspector, dataGateway, injector, appValidator, codeSwapService);
+                codeSwapService: CodeSwapService,
+                platformAppService: PlatformAppService) {
+        super(statusBar, errorBar, modal, inspector, dataGateway, injector, appValidator, codeSwapService, platformAppService);
     }
 
     ngOnInit(): any {
@@ -92,6 +93,7 @@ export class ToolEditorComponent extends AppEditorBase implements OnInit {
     resetJob() {
         this.dataModel.resetJobDefaults();
     }
+
 
     protected getPreferredTab(): string {
         return "gui";

@@ -4,13 +4,11 @@ import "rxjs/add/operator/take";
 import {AuthService} from "../../../auth/auth.service";
 import {ErrorBarService} from "../../../layout/error-bar/error-bar.service";
 import {SystemService} from "../../../platform-providers/system.service";
-import {IpcService} from "../../../services/ipc.service";
 
 @Injectable()
 export class PlatformAppService {
 
     constructor(private auth: AuthService,
-                private ipc: IpcService,
                 private errorBar: ErrorBarService,
                 private system: SystemService) {
     }

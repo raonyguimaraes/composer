@@ -41,7 +41,7 @@
         <!--Go to app-->
         <button class="btn"
                 type="button"
-                (click)="platformAppService.openOnPlatform(dataModel.sbgId)"
+                (click)="openOnPlatform(dataModel.sbgId)"
                 tooltipPlacement="bottom"
                 *ngIf="tabData.dataSource !== 'local'"
                 ct-tooltip="Open on Platform">

@@ -49,8 +49,9 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
                 dataGateway: DataGatewayService,
                 injector: Injector,
                 appValidator: AppValidatorService,
-                codeSwapService: CodeSwapService) {
-        super(statusBar, errorBar, modal, inspector, dataGateway, injector, appValidator, codeSwapService);
+                codeSwapService: CodeSwapService,
+                platformAppService: PlatformAppService) {
+        super(statusBar, errorBar, modal, inspector, dataGateway, injector, appValidator, codeSwapService, platformAppService);
     }
 
     protected getPreferredTab(): string {
