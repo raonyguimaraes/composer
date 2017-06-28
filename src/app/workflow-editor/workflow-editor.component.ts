@@ -108,7 +108,9 @@ export class WorkflowEditorComponent extends AppEditorBase implements OnDestroy,
         const updateStatusProcess      = this.statusBar.startProcess("Checking for app updates…");
         const nestedAppRevisionlessIDs = this.dataModel.steps
             .map(step => {
-                if (!step.run) return;
+                if (!step.run || !step.run.customProps || !step.run.customProps["sbg:id"]) {
+                    return;
+                }
 
                 return step.run.customProps["sbg:id"].split("/").slice(0, 3).join("/");
             })
