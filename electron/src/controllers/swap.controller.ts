@@ -27,7 +27,11 @@ export class SwapController {
     remove(fp: string, callback: (err?: Error, data?: any) => void) {
         const hash = this.makeHashedPath(fp);
 
-        fs.unlink(hash, callback);
+        fs.unlink(hash, (err?, done?) =>{
+            // Ignore failures, just return when it's done.
+            // It might not be there in the first place, so the error is fine.
+            callback(null, done);
+        });
     }
 
     exists(fp: string, callback: (err?: Error, data?: boolean) => void) {
