@@ -69,8 +69,8 @@
         "@types/node": "^8.0.1",
         "@types/selectize": "^0.12.29",
         "codelyzer": "^3.1.1",
-        "electron": "^1.6.11",
-        "electron-packager": "^8.7.1",
+        "electron": "1.7.3",
+        "electron-packager": "8.7.1",
         "git-changelog": "^1.1.2",
         "glob": "^7.1.1",
         "jasmine-core": "^2.6.4",
@@ -91,6 +91,6 @@
     },
     "engines": {
         "node": ">= 7.4.0",
-        "npm": ">= 3"
+        "npm": "^5.0.4"
     }
 }
