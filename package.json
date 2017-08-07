@@ -11,6 +11,10 @@
         "type": "git",
         "url": "git+https://github.com/rabix/cottontail-frontend.git"
     },
+    "build": {
+        "appId": "com.sbgenomics.rabix-composer",
+        "productName": "Rabix Composer"
+    },
     "scripts": {
         "build": "npm run compile:electron && npm run compile:angular && npm run package",
         "changelog": "./node_modules/.bin/git-changelog",
@@ -29,7 +33,10 @@
         "test:electron": "./node_modules/electron/cli.js ./electron/node_modules/.bin/_mocha --recursive --ui bdd 'electron/dist/**/*.spec.js'",
         "travis": "npm run build && npm test",
         "update-webdriver": "node node_modules/protractor/bin/webdriver-manager update",
-        "i18n": "ng-xi18n"
+        "i18n": "ng-xi18n",
+
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder"
     },
     "private": true,
     "dependencies": {
